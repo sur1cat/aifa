@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS habit_progress;
+
+ALTER TABLE habits DROP COLUMN IF EXISTS target_value;
+ALTER TABLE habits DROP COLUMN IF EXISTS unit;
