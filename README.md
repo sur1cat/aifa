@@ -1,92 +1,96 @@
-# Aifa Backend
+# AIFA — Microservices Backend
 
-Go API for Aifa application.
+Привычки, задачи, финансы — одним потоком. Мобильный клиент iOS,
+бэкенд — набор независимых Go-микросервисов за Traefik-шлюзом.
 
-## Tech Stack
-
-- Go 1.22
-- Gin web framework
-- PostgreSQL 16
-- JWT authentication
-
-## Project Structure
+## Архитектура
 
 ```
-backend/
-├── cmd/
-│   └── api/
-│       └── main.go          # Entry point
-├── internal/
-│   ├── domain/              # Business entities
-│   ├── usecase/             # Business logic
-│   ├── repository/          # Data access
-│   ├── handler/             # HTTP handlers
-│   └── middleware/          # HTTP middleware
-├── pkg/                     # Shared packages
-├── migrations/              # Database migrations
-├── go.mod
-└── Dockerfile
+iOS / Web → Traefik (:8080) → one of:
+  /api/v1/auth/*          → auth-service
+  /api/v1/users/*         → user-service
+  /api/v1/habits/*        → habit-service
+  /api/v1/goals/*         → goal-service
+  /api/v1/tasks/*         → task-service
+  /api/v1/transactions/*  → finance-service
+  /api/v1/recurring-*     → finance-service
+  /api/v1/savings-goal    → finance-service
+  /api/v1/ai/*            → ai-service
+  /api/v1/push/*          → notification-service
+
+Инфра:  Postgres 16 (schema-per-service) · Redis · NATS JetStream
+Крон:   scheduler-worker (recurring transactions, reminders)
 ```
 
-## Development
+Каждый сервис — отдельный Go-модуль со своим `go.mod`, `Dockerfile`,
+CI-workflow и Helm-чартом. Подробнее: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-### Prerequisites
-
-- Go 1.22+
-- Docker (for PostgreSQL)
-
-### Run Locally
+## Запуск локально
 
 ```bash
-# From project root
-make dev
-
-# Or manually
-cd backend
-go run ./cmd/api
+cp .env.example .env
+docker compose up -d
 ```
 
-### Environment Variables
+Traefik дашборд: http://localhost:8090. Публичный API: http://localhost:8080.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| PORT | 8080 | Server port |
-| DEBUG | false | Enable debug mode |
-| DATABASE_URL | - | PostgreSQL connection string |
-| JWT_SECRET | - | JWT signing secret |
+Остановить всё: `docker compose down`. Полностью сбросить БД: `docker compose down -v`.
 
-### API Endpoints
+## Разработка одного сервиса
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | /health | Health check |
-| GET | /api/v1/health | API health check |
-
-## Testing
+Каждый сервис независим — заходишь в директорию и работаешь как с отдельным проектом:
 
 ```bash
-go test -v ./...
+cd services/auth
+cp .env.example .env
+make run          # go run ./cmd/server
+make test         # go test ./...
+make docker       # build image
+make migrate-up   # apply schema migrations
 ```
 
-## Building
+Для запуска сервиса в изоляции (с инфрой из корня):
 
 ```bash
-# Local build
-go build -o bin/api ./cmd/api
-
-# Docker build
-docker build -t aifa-api .
+docker compose up -d postgres redis nats
+cd services/auth
+docker compose -f docker-compose.service.yml up --build
 ```
 
-## Migrations
+## Сервисы
 
-```bash
-# Apply migrations
-make migrate-up
+| Сервис | Порт | Назначение |
+|---|---|---|
+| auth-service | 8001 | OAuth Google/Apple, JWT, logout blacklist |
+| user-service | 8002 | Профили, удаление аккаунта |
+| habit-service | 8003 | Привычки + completions |
+| goal-service | 8004 | Долгосрочные цели |
+| task-service | 8005 | Задачи |
+| finance-service | 8006 | Транзакции, recurring, savings goal |
+| ai-service | 8007 | OpenAI assistants |
+| notification-service | 8008 | APNS push |
+| scheduler-worker | — | Cron для recurring + reminders |
 
-# Rollback
-make migrate-down
+## Межсервисное взаимодействие
 
-# Create new migration
-make migrate-create name=add_users
-```
+- **JWT**: все сервисы валидируют пользовательский токен локально через общий `JWT_SECRET` — без ходок в auth-service.
+- **Logout**: auth-service пишет хэш токена в Redis (TTL = остаток жизни), остальные сервисы проверяют blacklist там же.
+- **События**: `user.deleted`, `transaction.created` и др. — через NATS JetStream. Подписчики чистят/реагируют асинхронно.
+- **Service-to-service REST**: ai-service дёргает habit/finance с отдельным `SERVICE_JWT_SECRET`, claim `service:<name>`.
+
+## Миграции
+
+Каждый сервис хранит миграции в `services/<name>/migrations/` и запускает их на старте `cmd/server`
+против своей схемы в общей БД. Схемы создаются один раз в [`deploy/postgres/init.sql`](deploy/postgres/init.sql).
+
+## CI/CD
+
+Per-service GitHub Actions в `services/<name>/.github/workflows/ci.yml`:
+- `go test ./...`
+- `go build ./...`
+- docker build + push (main only)
+- опциональный Helm lint
+
+## Helm
+
+Чарты: `services/<name>/helm/<name>/`. Универсальный шаблон Deployment + Service + Ingress + ConfigMap + Secret. Values подставляются при деплое в конкретное окружение.

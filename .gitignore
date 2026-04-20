@@ -1,0 +1,48 @@
+# Binaries
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go
+vendor/
+coverage.txt
+coverage.out
+*.prof
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Secrets
+*.p8
+*.pem
+*.key
+!**/testdata/*.pem
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Docker / k8s local state
+.volumes/
+postgres-data/
+redis-data/
+nats-data/
+
+# Helm
+charts/*.tgz

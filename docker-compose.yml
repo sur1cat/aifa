@@ -1,0 +1,99 @@
+# AIFA — local orchestration for all microservices + infra.
+# Run:   docker compose up -d
+# Logs:  docker compose logs -f <service>
+#
+# Each service also has services/<name>/docker-compose.service.yml
+# for running a single service in isolation.
+
+networks:
+  aifa:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  nats-data:
+
+services:
+  # ---- Postgres: one instance, schema-per-service ----
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aifa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aifa}
+      POSTGRES_DB: ${POSTGRES_DB:-aifa}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    networks: [aifa]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-aifa}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---- Redis: rate limits, JWT blacklist, caches ----
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks: [aifa]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---- NATS: cross-service events (user.deleted, etc.) ----
+  nats:
+    image: nats:2.10-alpine
+    restart: unless-stopped
+    command: ["-js", "-sd", "/data"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats-data:/data
+    networks: [aifa]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- Traefik: api-gateway, routes /api/v1/<domain>/* to services ----
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=aifa_aifa
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.traefik.address=:8090
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --log.level=INFO
+      - --accesslog=true
+    ports:
+      - "8080:80"
+      - "${TRAEFIK_DASHBOARD_PORT:-8090}:8090"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./gateway/traefik/dynamic:/etc/traefik/dynamic:ro
+    networks: [aifa]
+    depends_on:
+      - postgres
+      - redis
+      - nats
+
+  # ---- Services are appended below in subsequent commits ----

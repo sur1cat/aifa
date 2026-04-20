@@ -1,0 +1,54 @@
+# Shared Traefik middlewares used via labels from service containers.
+
+http:
+  middlewares:
+    cors:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        accessControlAllowHeaders:
+          - Origin
+          - Content-Type
+          - Accept
+          - Authorization
+        accessControlAllowOriginList:
+          - "https://aifa.app"
+          - "https://www.aifa.app"
+          - "http://localhost:3000"
+          - "http://localhost:8080"
+          - "http://127.0.0.1:3000"
+          - "http://127.0.0.1:8080"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 600
+        addVaryHeader: true
+
+    # General API rate limit — 100 req / min per client IP.
+    ratelimit-general:
+      rateLimit:
+        average: 100
+        period: 1m
+        burst: 20
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
+    # Strict rate limit for /auth/* — 10 req / min per client IP.
+    ratelimit-auth:
+      rateLimit:
+        average: 10
+        period: 1m
+        burst: 3
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
+    # Strip /api/v1 prefix so services see clean routes.
+    strip-api-prefix:
+      stripPrefix:
+        prefixes:
+          - /api/v1
