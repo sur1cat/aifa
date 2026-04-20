@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Atoma</string>
+    <string name="tagline">hábitos, tareas, dinero — en un flujo</string>
+
+    <!-- Auth -->
+    <string name="sign_in_with_google">Iniciar sesión con Google</string>
+    <string name="sign_in_error">Error de inicio de sesión</string>
+
+    <!-- Navigation -->
+    <string name="nav_habits">Hábitos</string>
+    <string name="nav_tasks">Tareas</string>
+    <string name="nav_budget">Presupuesto</string>
+    <string name="nav_profile">Perfil</string>
+
+    <!-- Habits -->
+    <string name="habits_title">Atoma Hábitos</string>
+    <string name="habits_subtitle">construye rutinas consistentes</string>
+    <string name="add_habit">Añadir hábito</string>
+    <string name="habit_daily">Diario</string>
+    <string name="habit_weekly">Semanal</string>
+    <string name="habit_monthly">Mensual</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Atoma Tareas</string>
+    <string name="tasks_subtitle">termina lo que importa</string>
+    <string name="add_task">Añadir tarea</string>
+
+    <!-- Budget -->
+    <string name="budget_title">Atoma Presupuesto</string>
+    <string name="budget_subtitle">controla tu dinero diariamente</string>
+    <string name="add_transaction">Añadir transacción</string>
+    <string name="income">Ingreso</string>
+    <string name="expense">Gasto</string>
+    <string name="category">Categoría</string>
+
+    <!-- Categories -->
+    <string name="category_food">Comida y bebidas</string>
+    <string name="category_transport">Transporte</string>
+    <string name="category_shopping">Compras</string>
+    <string name="category_entertainment">Entretenimiento</string>
+    <string name="category_health">Salud</string>
+    <string name="category_education">Educación</string>
+    <string name="category_bills">Facturas</string>
+    <string name="category_salary">Salario</string>
+    <string name="category_freelance">Freelance</string>
+    <string name="category_investment">Inversión</string>
+    <string name="category_gift">Regalo</string>
+    <string name="category_other">Otro</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Atoma Perfil</string>
+    <string name="sign_out">Cerrar sesión</string>
+    <string name="premium">Premium</string>
+
+    <!-- Common -->
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Eliminar</string>
+    <string name="edit">Editar</string>
+    <string name="loading">Cargando…</string>
+    <string name="error">Error</string>
+    <string name="retry">Reintentar</string>
+</resources>

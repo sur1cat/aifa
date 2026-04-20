@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Atoma</string>
+    <string name="tagline">habits, tasks, money — in one flow</string>
+
+    <!-- Auth -->
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="sign_in_error">Sign in failed</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_habits">Habits</string>
+    <string name="nav_tasks">Tasks</string>
+    <string name="nav_budget">Budget</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Habits -->
+    <string name="habits_title">Atoma Habits</string>
+    <string name="habits_subtitle">build consistent routines</string>
+    <string name="add_habit">Add Habit</string>
+    <string name="habit_daily">Daily</string>
+    <string name="habit_weekly">Weekly</string>
+    <string name="habit_monthly">Monthly</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Atoma Tasks</string>
+    <string name="tasks_subtitle">finish what matters</string>
+    <string name="add_task">Add Task</string>
+
+    <!-- Budget -->
+    <string name="budget_title">Atoma Budget</string>
+    <string name="budget_subtitle">control your money daily</string>
+    <string name="add_transaction">Add Transaction</string>
+    <string name="income">Income</string>
+    <string name="expense">Expense</string>
+    <string name="category">Category</string>
+
+    <!-- Categories -->
+    <string name="category_food">Food &amp; Drinks</string>
+    <string name="category_transport">Transport</string>
+    <string name="category_shopping">Shopping</string>
+    <string name="category_entertainment">Entertainment</string>
+    <string name="category_health">Health</string>
+    <string name="category_education">Education</string>
+    <string name="category_bills">Bills</string>
+    <string name="category_salary">Salary</string>
+    <string name="category_freelance">Freelance</string>
+    <string name="category_investment">Investment</string>
+    <string name="category_gift">Gift</string>
+    <string name="category_other">Other</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Atoma Profile</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="premium">Premium</string>
+
+    <!-- Common -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="loading">Loading…</string>
+    <string name="error">Error</string>
+    <string name="retry">Retry</string>
+</resources>

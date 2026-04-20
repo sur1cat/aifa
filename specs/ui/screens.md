@@ -1,0 +1,345 @@
+# Screen Specifications
+
+## Navigation Structure
+
+```
+TabBar
+├── Today (default)
+├── Habits
+├── Stats
+└── Settings
+```
+
+## 1. Today Screen
+
+**Purpose**: Main screen showing what needs to be done today.
+
+### Layout
+
+```
+┌─────────────────────────────┐
+│  HabitFlow           ⚙️     │  ← Navigation bar
+├─────────────────────────────┤
+│  [Today] [Week] [Month]     │  ← Segmented control
+├─────────────────────────────┤
+│                             │
+│  ┌───────────────────────┐  │
+│  │ 🏃 Morning Run    🔥3  │  │  ← Habit card (incomplete)
+│  │ □                     │  │
+│  └───────────────────────┘  │
+│                             │
+│  ┌───────────────────────┐  │
+│  │ 💊 Take Vitamins  🔥7  │  │  ← Habit card (complete)
+│  │ ✓                     │  │
+│  └───────────────────────┘  │
+│                             │
+│  ┌───────────────────────┐  │
+│  │ 📚 Read 30min     🔥1  │  │
+│  │ □                     │  │
+│  └───────────────────────┘  │
+│                             │
+│           (empty space)     │
+│                             │
+│                        ➕   │  ← FAB (add habit)
+└─────────────────────────────┘
+```
+
+### Elements
+
+| Element | Type | Behavior |
+|---------|------|----------|
+| Title | Text | "HabitFlow" |
+| Settings | Button | Navigate to Settings |
+| Period selector | Segmented | Switch view period |
+| Habit list | LazyVStack | Scrollable, pull to refresh |
+| Habit card | Custom | Tap to complete, swipe for options |
+| FAB | Button | Navigate to Create Habit |
+
+### States
+
+- **Loading**: Skeleton cards
+- **Empty**: Illustration + "Create your first habit" CTA
+- **Error**: Error message + retry button
+- **Loaded**: Habit list
+
+---
+
+## 2. Create Habit Screen
+
+**Purpose**: Create a new habit.
+
+### Layout
+
+```
+┌─────────────────────────────┐
+│  ←  Create Habit            │
+├─────────────────────────────┤
+│                             │
+│  Title                      │
+│  ┌───────────────────────┐  │
+│  │ Morning Run           │  │
+│  └───────────────────────┘  │
+│                             │
+│  Icon                       │
+│  ┌───────────────────────┐  │
+│  │ 🏃 🚶 🏋️ ❤️ 💤 💧 🧠  │  │
+│  │ 📚 ✏️ 🎓 💡 ✅ 🎯 ⏰  │  │
+│  │ ...                   │  │
+│  └───────────────────────┘  │
+│                             │
+│  Color                      │
+│  ┌───────────────────────┐  │
+│  │ 🔴 🟠 🟡 🟢 🔵 🟣     │  │
+│  │ ⚫ ⬜ ...              │  │
+│  └───────────────────────┘  │
+│                             │
+│  Period                     │
+│  [Daily] [Weekly] [Monthly] │
+│                             │
+│  Target per period          │
+│  [−]    1    [+]            │
+│                             │
+│  ┌───────────────────────┐  │
+│  │      Save Habit       │  │
+│  └───────────────────────┘  │
+└─────────────────────────────┘
+```
+
+### Elements
+
+| Element | Type | Validation |
+|---------|------|------------|
+| Title input | TextField | Required, max 50 chars |
+| Icon picker | Grid | Required, 50 options |
+| Color picker | Grid | Required, 12 options |
+| Period | Segmented | Default: daily |
+| Target stepper | Stepper | 1-10, default: 1 |
+| Save button | Button | Disabled until valid |
+
+---
+
+## 3. Habit Detail Screen
+
+**Purpose**: View habit stats and history.
+
+### Layout
+
+```
+┌─────────────────────────────┐
+│  ←  Morning Run        ✏️   │
+├─────────────────────────────┤
+│         ┌─────┐             │
+│         │ 🏃  │             │  ← Large icon
+│         └─────┘             │
+│                             │
+│  ┌──────────┬──────────┐    │
+│  │Current   │ Longest  │    │
+│  │  🔥 12   │  🏆 45   │    │  ← Stats cards
+│  │  days    │  days    │    │
+│  └──────────┴──────────┘    │
+│                             │
+│  Completion Rate: 85%       │
+│  ████████░░ 85/100          │  ← Progress bar
+│                             │
+│  History                    │
+│  ┌───────────────────────┐  │
+│  │ Mo Tu We Th Fr Sa Su  │  │
+│  │ ●  ●  ●  ○  ●  ●  ●   │  │  ← Calendar heatmap
+│  │ ●  ●  ○  ●  ●  ●  ○   │  │
+│  │ ...                   │  │
+│  └───────────────────────┘  │
+│                             │
+│  Recent Activity            │
+│  • Today - Completed        │
+│  • Yesterday - Completed    │
+│  • Dec 23 - Missed          │
+│                             │
+└─────────────────────────────┘
+```
+
+---
+
+## 4. Stats Screen
+
+**Purpose**: Overall progress and insights.
+
+### Layout
+
+```
+┌─────────────────────────────┐
+│  Statistics                 │
+├─────────────────────────────┤
+│  This Week                  │
+│  ┌───────────────────────┐  │
+│  │   Completion Rate     │  │
+│  │        78%            │  │
+│  │    ██████░░░░         │  │
+│  └───────────────────────┘  │
+│                             │
+│  Best Streaks               │
+│  ┌───────────────────────┐  │
+│  │ 🏃 Morning Run   45d  │  │
+│  │ 📚 Reading       23d  │  │
+│  │ 💊 Vitamins      18d  │  │
+│  └───────────────────────┘  │
+│                             │
+│  Monthly Overview           │
+│  ┌───────────────────────┐  │
+│  │    Dec 2024           │  │
+│  │ ●●●○●●●●●○●●●●●○●... │  │
+│  │ 85% complete          │  │
+│  └───────────────────────┘  │
+│                             │
+└─────────────────────────────┘
+```
+
+---
+
+## 5. Settings Screen
+
+**Purpose**: App configuration and account.
+
+### Layout
+
+```
+┌─────────────────────────────┐
+│  Settings                   │
+├─────────────────────────────┤
+│                             │
+│  ACCOUNT                    │
+│  ┌───────────────────────┐  │
+│  │ user@email.com    →   │  │
+│  └───────────────────────┘  │
+│                             │
+│  PREFERENCES                │
+│  ┌───────────────────────┐  │
+│  │ Timezone       PST →  │  │
+│  │ Start of Week  Mon →  │  │
+│  │ Theme          Auto → │  │
+│  └───────────────────────┘  │
+│                             │
+│  NOTIFICATIONS              │
+│  ┌───────────────────────┐  │
+│  │ Daily Reminder   🔘   │  │
+│  │ Reminder Time  8:00 → │  │
+│  └───────────────────────┘  │
+│                             │
+│  ABOUT                      │
+│  ┌───────────────────────┐  │
+│  │ Version        1.0.0  │  │
+│  │ Privacy Policy    →   │  │
+│  │ Terms of Service  →   │  │
+│  └───────────────────────┘  │
+│                             │
+│  ┌───────────────────────┐  │
+│  │       Log Out         │  │
+│  └───────────────────────┘  │
+│                             │
+└─────────────────────────────┘
+```
+
+---
+
+## 6. Login Screen
+
+**Purpose**: User authentication.
+
+### Layout
+
+```
+┌─────────────────────────────┐
+│                             │
+│                             │
+│         ┌─────┐             │
+│         │Logo │             │
+│         └─────┘             │
+│        HabitFlow            │
+│                             │
+│  Email                      │
+│  ┌───────────────────────┐  │
+│  │ user@example.com      │  │
+│  └───────────────────────┘  │
+│                             │
+│  Password                   │
+│  ┌───────────────────────┐  │
+│  │ ••••••••          👁  │  │
+│  └───────────────────────┘  │
+│                             │
+│  ┌───────────────────────┐  │
+│  │       Log In          │  │
+│  └───────────────────────┘  │
+│                             │
+│       Forgot Password?      │
+│                             │
+│  ─────────── or ───────────  │
+│                             │
+│  Don't have an account?     │
+│         Sign Up             │
+│                             │
+└─────────────────────────────┘
+```
+
+---
+
+## Empty States
+
+### No Habits Yet
+
+```
+┌───────────────────────────┐
+│                           │
+│     ┌─────────────┐       │
+│     │  🌱         │       │
+│     │  (plant)    │       │
+│     └─────────────┘       │
+│                           │
+│   Start building habits   │
+│                           │
+│  Create your first habit  │
+│  and watch it grow        │
+│                           │
+│  ┌─────────────────────┐  │
+│  │   Create Habit      │  │
+│  └─────────────────────┘  │
+│                           │
+└───────────────────────────┘
+```
+
+### All Done Today
+
+```
+┌───────────────────────────┐
+│                           │
+│     ┌─────────────┐       │
+│     │  🎉         │       │
+│     │  (party)    │       │
+│     └─────────────┘       │
+│                           │
+│     All done for today!   │
+│                           │
+│   You've completed all    │
+│   your habits. Great job! │
+│                           │
+└───────────────────────────┘
+```
+
+---
+
+## Loading States
+
+### Skeleton Cards
+
+```
+┌───────────────────────────┐
+│  ┌─────────────────────┐  │
+│  │ ░░░░░░░░░░░░░░░░░░  │  │
+│  │ ░░░░░░░░░░         │  │
+│  └─────────────────────┘  │
+│  ┌─────────────────────┐  │
+│  │ ░░░░░░░░░░░░░░░░░░  │  │
+│  │ ░░░░░░░░░░         │  │
+│  └─────────────────────┘  │
+└───────────────────────────┘
+```
+
+Animated shimmer effect from left to right.

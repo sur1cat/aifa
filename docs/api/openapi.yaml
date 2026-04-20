@@ -1,0 +1,583 @@
+openapi: 3.0.3
+info:
+  title: HabitFlow API
+  description: REST API for HabitFlow - habit tracking app
+  version: 1.0.0
+  contact:
+    name: HabitFlow Team
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+  - url: https://api.habitflow.app/api/v1
+    description: Production
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Auth
+    description: Authentication endpoints
+  - name: Habits
+    description: Habit management
+  - name: Sync
+    description: Data synchronization
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /habits:
+    get:
+      tags: [Habits]
+      summary: Get user habits
+      operationId: getHabits
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+          description: Filter by period
+      responses:
+        '200':
+          description: List of habits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HabitsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Habits]
+      summary: Create new habit
+      operationId: createHabit
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHabitRequest'
+      responses:
+        '201':
+          description: Habit created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HabitResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /habits/{id}:
+    get:
+      tags: [Habits]
+      summary: Get habit by ID
+      operationId: getHabit
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HabitId'
+      responses:
+        '200':
+          description: Habit details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HabitResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Habits]
+      summary: Update habit
+      operationId: updateHabit
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HabitId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHabitRequest'
+      responses:
+        '200':
+          description: Habit updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HabitResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Habits]
+      summary: Delete habit
+      operationId: deleteHabit
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HabitId'
+      responses:
+        '204':
+          description: Habit deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /habits/{id}/complete:
+    post:
+      tags: [Habits]
+      summary: Complete habit for a date
+      operationId: completeHabit
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HabitId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteHabitRequest'
+      responses:
+        '200':
+          description: Habit completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HabitResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /habits/{id}/uncomplete:
+    post:
+      tags: [Habits]
+      summary: Uncomplete habit for a date
+      operationId: uncompleteHabit
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HabitId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UncompleteHabitRequest'
+      responses:
+        '200':
+          description: Habit uncompleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HabitResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /sync:
+    get:
+      tags: [Sync]
+      summary: Get changes since timestamp
+      operationId: sync
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: since
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: ISO 8601 timestamp
+      responses:
+        '200':
+          description: Sync data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    HabitId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid email format
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          minLength: 8
+          example: securepass123
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            access_token:
+              type: string
+            refresh_token:
+              type: string
+            expires_in:
+              type: integer
+              description: Seconds until access token expires
+            user:
+              $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        timezone:
+          type: string
+          example: America/New_York
+        created_at:
+          type: string
+          format: date-time
+
+    Habit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 50
+        icon:
+          type: string
+        color:
+          type: string
+        period:
+          type: string
+          enum: [daily, weekly, monthly]
+        target_per_period:
+          type: integer
+          minimum: 1
+        sort_order:
+          type: integer
+        current_streak:
+          type: integer
+        longest_streak:
+          type: integer
+        completed_today:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateHabitRequest:
+      type: object
+      required: [title, icon, color, period]
+      properties:
+        title:
+          type: string
+          maxLength: 50
+        icon:
+          type: string
+        color:
+          type: string
+        period:
+          type: string
+          enum: [daily, weekly, monthly]
+        target_per_period:
+          type: integer
+          minimum: 1
+          default: 1
+
+    UpdateHabitRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 50
+        icon:
+          type: string
+        color:
+          type: string
+        period:
+          type: string
+          enum: [daily, weekly, monthly]
+        target_per_period:
+          type: integer
+          minimum: 1
+        sort_order:
+          type: integer
+
+    CompleteHabitRequest:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2024-01-15"
+        value:
+          type: integer
+          minimum: 1
+          default: 1
+
+    UncompleteHabitRequest:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+
+    HabitResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Habit'
+
+    HabitsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Habit'
+
+    HabitCompletion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        habit_id:
+          type: string
+          format: uuid
+        completion_date:
+          type: string
+          format: date
+        value:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    SyncResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            habits:
+              type: object
+              properties:
+                updated:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Habit'
+                deleted:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+            completions:
+              type: object
+              properties:
+                updated:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/HabitCompletion'
+                deleted:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+            sync_token:
+              type: string
+              format: date-time

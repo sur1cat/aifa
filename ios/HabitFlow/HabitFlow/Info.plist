@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+	<key>CFBundleDisplayName</key>
+	<string>Atoma</string>
+	<key>CFBundleName</key>
+	<string>Atoma</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+					<string>com.googleusercontent.apps.938361844013-2ik558sn1qgui650jmftsoiq3r4g0lt0</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.azamatbigali.habitflow</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>atoma</string>
+			</array>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+		<string>938361844013-2ik558sn1qgui650jmftsoiq3r4g0lt0.apps.googleusercontent.com</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Atoma uses speech recognition to add expenses by voice input.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Atoma needs microphone access for voice input to add expenses.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Atoma needs camera access to scan receipts and add expenses.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Atoma needs photo library access to select receipt images.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+</dict>
+</plist>
