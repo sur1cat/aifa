@@ -96,4 +96,36 @@ services:
       - redis
       - nats
 
-  # ---- Services are appended below in subsequent commits ----
+  # ---- auth-service ----
+  auth-service:
+    build: ./services/auth
+    image: aifa/auth-service:dev
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      DEBUG: "${DEBUG:-true}"
+      DATABASE_URL: postgres://${POSTGRES_USER:-aifa}:${POSTGRES_PASSWORD:-aifa}@postgres:5432/${POSTGRES_DB:-aifa}?sslmode=disable&search_path=auth,public
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      NATS_URL: nats://nats:4222
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TTL_HOURS: ${JWT_ACCESS_TTL_HOURS:-720}
+      JWT_REFRESH_TTL_HOURS: ${JWT_REFRESH_TTL_HOURS:-8760}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-app.aifa.ios}
+    ports:
+      - "8001:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks: [aifa]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`)
+      - traefik.http.routers.auth.entrypoints=web
+      - traefik.http.routers.auth.middlewares=strip-api-prefix@file,ratelimit-auth@file,cors@file
+      - traefik.http.services.auth.loadbalancer.server.port=8080
