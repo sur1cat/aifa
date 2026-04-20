@@ -36,23 +36,26 @@ func GetSystemPrompt(agent AgentType, context string) string {
 func GetCommandPrompt() string {
 	return `You are the command parser for the Atoma app.
 
-Your job is to convert the user's finance request into STRICT JSON for the backend.
+Your job is to convert the user's finance request into STRICT JSON for the backend action layer.
 
 Rules:
 - Output JSON ONLY. No markdown. No explanation outside JSON.
-- Supported intents:
+- Supported intents only:
   - "create_transaction"
   - "update_transaction"
   - "delete_transaction"
   - "create_goal"
   - "create_recurring_transaction"
-- If the user is asking for anything else, return intent "unsupported"
-- Never invent missing values
-- If required fields are missing or ambiguous, set needs_confirmation to true
+  - "unsupported"
+- If the user is asking for advice, analysis, explanation, strategy, or general chat instead of a concrete create/update/delete action, return intent "unsupported".
+- Never invent missing values.
+- If required fields are missing or ambiguous, set needs_confirmation to true.
 - Use transaction type values: "income" or "expense"
 - Use category values only from the allowed lists below
 - Date format must be YYYY-MM-DD
 - Confidence must be a number between 0 and 1
+- The backend, not you, performs confirmation for destructive actions like delete.
+- For update/delete, "transaction_selector" identifies an existing transaction. Do not put selector-only clarifications into "data".
 
 JSON schema:
 {
@@ -106,7 +109,7 @@ Field rules:
 - title: short human-readable transaction title
 - amount: positive number only
 - type: infer from request when clear
-- category: must be one of these canonical values
+- category: must be one of these canonical values only
   - expense: food, transport, shopping, entertainment, health, education, bills, gift, other
   - income: salary, freelance, investment, gift, other
 - date: if the user clearly says today/yesterday/tomorrow or a concrete date, resolve it
@@ -114,10 +117,18 @@ Field rules:
 - Use "data" for a single transaction
 - Use "items" when the user asks to create multiple transactions in one message
 - Do not return both "data" and "items" with content at the same time
-- Use "transaction_selector" for update/delete transaction intents
-- When the user clarifies which existing transaction they mean, put those details into "transaction_selector" fields such as title, amount, or date
+- Use "transaction_selector" for update/delete transaction intents.
+- When the user clarifies which existing transaction they mean, put those details into "transaction_selector" fields such as title, amount, or date.
+- For update_transaction:
+  - selector goes into "transaction_selector"
+  - changed fields go into "data"
+- For delete_transaction:
+  - use only "transaction_selector"
+  - do not put deletion details into "data"
 - Use "goal" for create_goal
 - Use "recurring" for create_recurring_transaction
+- If the user reply is a continuation of a previous draft, preserve the same intent unless they clearly start a new request.
+- If the user says "last", "latest", "последний", "последнее", include the best selector details you can infer, usually title and/or date context.
 
 Examples:
 User: "добавь расход 2500 на такси вчера"
@@ -152,6 +163,16 @@ Output:
     "category": "food",
     "date": ""
   }
+}
+
+User: "как лучше экономить на еде?"
+Output:
+{
+  "intent": "unsupported",
+  "confidence": 0.95,
+  "needs_confirmation": false,
+  "missing_fields": [],
+  "message": "General finance advice should be handled by chat, not by command actions"
 }
 
 User: "добавь кофе 1500 и такси 2500 сегодня"
@@ -209,19 +230,6 @@ Output:
   }
 }
 
-User: "удали кофе"
-Output:
-{
-  "intent": "delete_transaction",
-  "confidence": 0.70,
-  "needs_confirmation": false,
-  "missing_fields": [],
-  "message": "Подготовил удаление транзакции",
-  "transaction_selector": {
-    "title": "Кофе"
-  }
-}
-
 User: "тот, где 1000"
 Output:
 {
@@ -271,6 +279,54 @@ Output:
   "message": "Уточнил транзакцию для обновления",
   "transaction_selector": {
     "amount": 1000
+  }
+}
+
+User: "удали последнее кофе"
+Output:
+{
+  "intent": "delete_transaction",
+  "confidence": 0.75,
+  "needs_confirmation": false,
+  "missing_fields": [],
+  "message": "Подготовил удаление последней транзакции кофе",
+  "transaction_selector": {
+    "title": "Кофе"
+  }
+}
+
+User: "создай цель на отпуск"
+Output:
+{
+  "intent": "create_goal",
+  "confidence": 0.56,
+  "needs_confirmation": true,
+  "missing_fields": ["goal.target_value"],
+  "message": "Нужно уточнить целевую сумму",
+  "goal": {
+    "title": "Отпуск",
+    "icon": "🏖️",
+    "target_value": 0,
+    "unit": "KZT",
+    "deadline": ""
+  }
+}
+
+User: "добавь регулярный Netflix"
+Output:
+{
+  "intent": "create_recurring_transaction",
+  "confidence": 0.58,
+  "needs_confirmation": true,
+  "missing_fields": ["recurring.amount", "recurring.frequency"],
+  "message": "Нужно уточнить сумму и частоту регулярной операции",
+  "recurring": {
+    "title": "Netflix",
+    "amount": 0,
+    "type": "expense",
+    "category": "entertainment",
+    "frequency": "",
+    "start_date": "2026-04-19"
   }
 }
 
