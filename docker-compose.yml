@@ -249,3 +249,33 @@ services:
       - traefik.http.routers.task.entrypoints=web
       - traefik.http.routers.task.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
       - traefik.http.services.task.loadbalancer.server.port=8080
+
+  # ---- finance-service (transactions, recurring, savings-goal) ----
+  finance-service:
+    build: ./services/finance
+    image: aifa/finance-service:dev
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      DEBUG: "${DEBUG:-true}"
+      DATABASE_URL: postgres://${POSTGRES_USER:-aifa}:${POSTGRES_PASSWORD:-aifa}@postgres:5432/${POSTGRES_DB:-aifa}?sslmode=disable&search_path=finance,public
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      NATS_URL: nats://nats:4222
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8006:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks: [aifa]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.finance.rule=PathPrefix(`/api/v1/transactions`) || PathPrefix(`/api/v1/recurring-transactions`) || PathPrefix(`/api/v1/savings-goal`)
+      - traefik.http.routers.finance.entrypoints=web
+      - traefik.http.routers.finance.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.finance.loadbalancer.server.port=8080

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: finance-service
+description: AIFA finance-service — transactions, recurring schedules, savings goal
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+icon: https://aifa.app/icon.png
+keywords: [aifa, finance, microservice]
+maintainers:
+  - name: sur1cat
+    email: sur1cat@users.noreply.github.com
