@@ -219,3 +219,33 @@ services:
       - traefik.http.routers.goal.entrypoints=web
       - traefik.http.routers.goal.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
       - traefik.http.services.goal.loadbalancer.server.port=8080
+
+  # ---- task-service ----
+  task-service:
+    build: ./services/task
+    image: aifa/task-service:dev
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      DEBUG: "${DEBUG:-true}"
+      DATABASE_URL: postgres://${POSTGRES_USER:-aifa}:${POSTGRES_PASSWORD:-aifa}@postgres:5432/${POSTGRES_DB:-aifa}?sslmode=disable&search_path=tasks,public
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      NATS_URL: nats://nats:4222
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8005:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks: [aifa]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.task.rule=PathPrefix(`/api/v1/tasks`)
+      - traefik.http.routers.task.entrypoints=web
+      - traefik.http.routers.task.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.task.loadbalancer.server.port=8080

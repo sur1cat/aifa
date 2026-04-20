@@ -1,0 +1,11 @@
+apiVersion: v2
+name: task-service
+description: AIFA task-service — dated tasks with priority
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+icon: https://aifa.app/icon.png
+keywords: [aifa, tasks, microservice]
+maintainers:
+  - name: sur1cat
+    email: sur1cat@users.noreply.github.com
