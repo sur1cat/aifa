@@ -19,6 +19,8 @@ type Config struct {
 	NATSURL string
 
 	JWTSecret string
+
+	DefaultCurrency string
 }
 
 const defaultJWTSecret = "change-me-in-production-min-32-chars-long-secret"
@@ -43,8 +45,9 @@ func Load() (*Config, error) {
 		RedisAddr:     env("REDIS_ADDR", "localhost:6379"),
 		RedisPassword: env("REDIS_PASSWORD", ""),
 		RedisDB:       redisDB,
-		NATSURL:       env("NATS_URL", "nats://localhost:4222"),
-		JWTSecret:     secret,
+		NATSURL:         env("NATS_URL", "nats://localhost:4222"),
+		JWTSecret:       secret,
+		DefaultCurrency: env("DEFAULT_CURRENCY", "USD"),
 	}, nil
 }
 

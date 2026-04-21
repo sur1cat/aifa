@@ -21,20 +21,25 @@ const (
 )
 
 type TaskHandler struct {
-	tasks *repository.TaskRepository
+	tasks           *repository.TaskRepository
+	defaultCurrency string
 }
 
-func NewTaskHandler(r *repository.TaskRepository) *TaskHandler {
-	return &TaskHandler{tasks: r}
+func NewTaskHandler(r *repository.TaskRepository, defaultCurrency string) *TaskHandler {
+	return &TaskHandler{tasks: r, defaultCurrency: defaultCurrency}
 }
 
 type taskDTO struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	IsCompleted bool   `json:"is_completed"`
-	Priority    string `json:"priority"`
-	DueDate     string `json:"due_date"`
-	CreatedAt   string `json:"created_at"`
+	ID          string   `json:"id"`
+	Title       string   `json:"title"`
+	IsCompleted bool     `json:"is_completed"`
+	Priority    string   `json:"priority"`
+	DueDate     string   `json:"due_date"`
+	Kind        string   `json:"kind"`
+	Amount      *float64 `json:"amount,omitempty"`
+	Currency    string   `json:"currency"`
+	Category    *string  `json:"category,omitempty"`
+	CreatedAt   string   `json:"created_at"`
 }
 
 func toDTO(t *domain.Task) taskDTO {
@@ -44,6 +49,10 @@ func toDTO(t *domain.Task) taskDTO {
 		IsCompleted: t.IsCompleted,
 		Priority:    string(t.Priority),
 		DueDate:     t.DueDate,
+		Kind:        string(t.Kind),
+		Amount:      t.Amount,
+		Currency:    t.Currency,
+		Category:    t.Category,
 		CreatedAt:   t.CreatedAt.Format(time.RFC3339),
 	}
 }
@@ -98,9 +107,13 @@ func paginationParams(c *gin.Context, defaultLimit, max int) (int, int) {
 }
 
 type createRequest struct {
-	Title    string `json:"title" binding:"required"`
-	Priority string `json:"priority"`
-	DueDate  string `json:"due_date"`
+	Title    string   `json:"title" binding:"required"`
+	Priority string   `json:"priority"`
+	DueDate  string   `json:"due_date"`
+	Kind     string   `json:"kind"`
+	Amount   *float64 `json:"amount"`
+	Currency string   `json:"currency"`
+	Category *string  `json:"category"`
 }
 
 func (h *TaskHandler) Create(c *gin.Context) {
@@ -120,12 +133,27 @@ func (h *TaskHandler) Create(c *gin.Context) {
 	if dueDate == "" {
 		dueDate = time.Now().Format("2006-01-02")
 	}
+	kind := domain.Kind(req.Kind)
+	if kind == "" {
+		kind = domain.KindTodo
+	} else if !kind.Valid() {
+		respondError(c, http.StatusBadRequest, codeValidation, "invalid kind (todo|bill|income)")
+		return
+	}
+	currency := req.Currency
+	if currency == "" {
+		currency = h.defaultCurrency
+	}
 
 	t := &domain.Task{
 		UserID:   userID,
 		Title:    req.Title,
 		Priority: priority,
 		DueDate:  dueDate,
+		Kind:     kind,
+		Amount:   req.Amount,
+		Currency: currency,
+		Category: req.Category,
 	}
 	if err := h.tasks.Create(c.Request.Context(), t); err != nil {
 		slog.Error("create task", "err", err, "user_id", userID)
@@ -156,10 +184,14 @@ func (h *TaskHandler) Get(c *gin.Context) {
 }
 
 type updateRequest struct {
-	Title       string `json:"title"`
-	IsCompleted *bool  `json:"is_completed"`
-	Priority    string `json:"priority"`
-	DueDate     string `json:"due_date"`
+	Title       string   `json:"title"`
+	IsCompleted *bool    `json:"is_completed"`
+	Priority    string   `json:"priority"`
+	DueDate     string   `json:"due_date"`
+	Kind        string   `json:"kind"`
+	Amount      *float64 `json:"amount"`
+	Currency    string   `json:"currency"`
+	Category    *string  `json:"category"`
 }
 
 func (h *TaskHandler) Update(c *gin.Context) {
@@ -186,7 +218,10 @@ func (h *TaskHandler) Update(c *gin.Context) {
 		return
 	}
 
-	applyUpdate(t, req)
+	if err := applyUpdate(t, req); err != nil {
+		respondError(c, http.StatusBadRequest, codeValidation, err.Error())
+		return
+	}
 	if err := h.tasks.Update(c.Request.Context(), t); err != nil {
 		slog.Error("update task", "err", err, "task_id", t.ID)
 		respondError(c, http.StatusInternalServerError, codeInternal, "Failed to update task")
@@ -195,7 +230,7 @@ func (h *TaskHandler) Update(c *gin.Context) {
 	respondOK(c, toDTO(t))
 }
 
-func applyUpdate(t *domain.Task, req updateRequest) {
+func applyUpdate(t *domain.Task, req updateRequest) error {
 	if req.Title != "" {
 		t.Title = req.Title
 	}
@@ -208,6 +243,27 @@ func applyUpdate(t *domain.Task, req updateRequest) {
 	if req.DueDate != "" {
 		t.DueDate = req.DueDate
 	}
+	if req.Kind != "" {
+		k := domain.Kind(req.Kind)
+		if !k.Valid() {
+			return errors.New("invalid kind")
+		}
+		t.Kind = k
+	}
+	if req.Amount != nil {
+		t.Amount = req.Amount
+	}
+	if req.Currency != "" {
+		t.Currency = req.Currency
+	}
+	if req.Category != nil {
+		if *req.Category == "" {
+			t.Category = nil
+		} else {
+			t.Category = req.Category
+		}
+	}
+	return nil
 }
 
 func (h *TaskHandler) Delete(c *gin.Context) {

@@ -22,7 +22,7 @@ func NewTaskRepository(pool *pgxpool.Pool) *TaskRepository {
 }
 
 const (
-	taskColumns = `id, user_id, title, is_completed, priority, due_date, created_at, updated_at`
+	taskColumns = `id, user_id, title, is_completed, priority, due_date, kind, amount, currency, category, created_at, updated_at`
 	// DATE columns come back as time.Time; we format back to ISO in scanTask.
 	// ORDER BY priority uses a CASE so we don't rely on lexical order of the enum.
 	priorityOrder = `
@@ -38,7 +38,8 @@ func scanTask(row pgx.Row, t *domain.Task) error {
 	var due time.Time
 	if err := row.Scan(
 		&t.ID, &t.UserID, &t.Title, &t.IsCompleted, &t.Priority,
-		&due, &t.CreatedAt, &t.UpdatedAt,
+		&due, &t.Kind, &t.Amount, &t.Currency, &t.Category,
+		&t.CreatedAt, &t.UpdatedAt,
 	); err != nil {
 		return err
 	}
@@ -52,11 +53,15 @@ func (r *TaskRepository) Create(ctx context.Context, t *domain.Task) error {
 	t.UpdatedAt = t.CreatedAt
 
 	const q = `
-		INSERT INTO tasks (id, user_id, title, is_completed, priority, due_date, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO tasks (
+			id, user_id, title, is_completed, priority, due_date,
+			kind, amount, currency, category, created_at, updated_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 	_, err := r.pool.Exec(ctx, q,
-		t.ID, t.UserID, t.Title, t.IsCompleted, t.Priority, t.DueDate, t.CreatedAt, t.UpdatedAt,
+		t.ID, t.UserID, t.Title, t.IsCompleted, t.Priority, t.DueDate,
+		t.Kind, t.Amount, t.Currency, t.Category, t.CreatedAt, t.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("insert task: %w", err)
@@ -132,10 +137,14 @@ func (r *TaskRepository) Update(ctx context.Context, t *domain.Task) error {
 	t.UpdatedAt = time.Now()
 	const q = `
 		UPDATE tasks
-		SET title = $2, is_completed = $3, priority = $4, due_date = $5, updated_at = $6
+		SET title = $2, is_completed = $3, priority = $4, due_date = $5,
+		    kind = $6, amount = $7, currency = $8, category = $9, updated_at = $10
 		WHERE id = $1
 	`
-	_, err := r.pool.Exec(ctx, q, t.ID, t.Title, t.IsCompleted, t.Priority, t.DueDate, t.UpdatedAt)
+	_, err := r.pool.Exec(ctx, q,
+		t.ID, t.Title, t.IsCompleted, t.Priority, t.DueDate,
+		t.Kind, t.Amount, t.Currency, t.Category, t.UpdatedAt,
+	)
 	if err != nil {
 		return fmt.Errorf("update task: %w", err)
 	}

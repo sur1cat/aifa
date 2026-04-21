@@ -68,7 +68,7 @@ func main() {
 	defer sub.Unsubscribe()
 
 	authMW := middleware.NewAuth(validator, blacklist)
-	taskHandler := handler.NewTaskHandler(taskRepo)
+	taskHandler := handler.NewTaskHandler(taskRepo, cfg.DefaultCurrency)
 
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.RequestLogger(log))
