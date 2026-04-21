@@ -1,2 +1,0 @@
-DROP INDEX IF EXISTS idx_habits_goal;
-ALTER TABLE habits DROP COLUMN IF EXISTS goal_id;
