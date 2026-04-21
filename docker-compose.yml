@@ -305,3 +305,38 @@ services:
       - traefik.http.routers.ai.entrypoints=web
       - traefik.http.routers.ai.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
       - traefik.http.services.ai.loadbalancer.server.port=8080
+
+  # ---- notification-service ----
+  notification-service:
+    build: ./services/notification
+    image: aifa/notification-service:dev
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      DEBUG: "${DEBUG:-true}"
+      DATABASE_URL: postgres://${POSTGRES_USER:-aifa}:${POSTGRES_PASSWORD:-aifa}@postgres:5432/${POSTGRES_DB:-aifa}?sslmode=disable&search_path=notifications,public
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      NATS_URL: nats://nats:4222
+      JWT_SECRET: ${JWT_SECRET}
+      APNS_KEY_PATH: ${APNS_KEY_PATH:-}
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+      APNS_BUNDLE_ID: ${APNS_BUNDLE_ID:-app.aifa.ios}
+      APNS_PRODUCTION: ${APNS_PRODUCTION:-false}
+    ports:
+      - "8008:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks: [aifa]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.notification.rule=PathPrefix(`/api/v1/push`)
+      - traefik.http.routers.notification.entrypoints=web
+      - traefik.http.routers.notification.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.notification.loadbalancer.server.port=8080

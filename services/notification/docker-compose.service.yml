@@ -1,0 +1,25 @@
+networks:
+  aifa:
+    external: true
+    name: aifa_aifa
+
+services:
+  notification-service:
+    build: .
+    image: aifa/notification-service:dev
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      DEBUG: "true"
+      DATABASE_URL: postgres://aifa:aifa@postgres:5432/aifa?sslmode=disable&search_path=notifications,public
+      REDIS_ADDR: redis:6379
+      NATS_URL: nats://nats:4222
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-min-32-chars-long-secret}
+      APNS_KEY_PATH: ${APNS_KEY_PATH:-}
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+      APNS_BUNDLE_ID: ${APNS_BUNDLE_ID:-app.aifa.ios}
+      APNS_PRODUCTION: ${APNS_PRODUCTION:-false}
+    ports:
+      - "8008:8080"
+    networks: [aifa]
