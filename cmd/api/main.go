@@ -99,7 +99,7 @@ func main() {
 		c.Next()
 	})
 
-	r.GET("/health", handler.Health)
+	r.GET("/health", handler.HealthWithDB(pool))
 
 	generalRateLimit := middleware.RateLimit(100, time.Minute)
 	strictRateLimit := middleware.StrictRateLimit(10, time.Minute)
@@ -107,7 +107,7 @@ func main() {
 	v1 := r.Group("/api/v1")
 	v1.Use(generalRateLimit)
 	{
-		v1.GET("/health", handler.Health)
+		v1.GET("/health", handler.HealthWithDB(pool))
 
 		authGroup := v1.Group("/auth")
 		authGroup.Use(strictRateLimit)
