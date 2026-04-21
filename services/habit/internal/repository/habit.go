@@ -22,11 +22,12 @@ func NewHabitRepository(pool *pgxpool.Pool) *HabitRepository {
 	return &HabitRepository{pool: pool}
 }
 
-const habitColumns = `id, user_id, goal_id, title, icon, color, period, target_value, unit, created_at, updated_at, archived_at`
+const habitColumns = `id, user_id, goal_id, title, icon, color, period, kind, currency, financial_category, expected_amount, target_value, unit, created_at, updated_at, archived_at`
 
 func scanHabit(row pgx.Row, h *domain.Habit) error {
 	return row.Scan(
 		&h.ID, &h.UserID, &h.GoalID, &h.Title, &h.Icon, &h.Color, &h.Period,
+		&h.Kind, &h.Currency, &h.FinancialCategory, &h.ExpectedAmount,
 		&h.TargetValue, &h.Unit, &h.CreatedAt, &h.UpdatedAt, &h.ArchivedAt,
 	)
 }
@@ -37,11 +38,16 @@ func (r *HabitRepository) Create(ctx context.Context, h *domain.Habit) error {
 	h.UpdatedAt = h.CreatedAt
 
 	const q = `
-		INSERT INTO habits (id, user_id, goal_id, title, icon, color, period, target_value, unit, created_at, updated_at, archived_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		INSERT INTO habits (
+			id, user_id, goal_id, title, icon, color, period,
+			kind, currency, financial_category, expected_amount,
+			target_value, unit, created_at, updated_at, archived_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 	`
 	_, err := r.pool.Exec(ctx, q,
 		h.ID, h.UserID, h.GoalID, h.Title, h.Icon, h.Color, h.Period,
+		h.Kind, h.Currency, h.FinancialCategory, h.ExpectedAmount,
 		h.TargetValue, h.Unit, h.CreatedAt, h.UpdatedAt, h.ArchivedAt,
 	)
 	if err != nil {
@@ -113,11 +119,13 @@ func (r *HabitRepository) Update(ctx context.Context, h *domain.Habit) error {
 	const q = `
 		UPDATE habits
 		SET goal_id = $2, title = $3, icon = $4, color = $5, period = $6,
-		    target_value = $7, unit = $8, archived_at = $9, updated_at = $10
+		    kind = $7, currency = $8, financial_category = $9, expected_amount = $10,
+		    target_value = $11, unit = $12, archived_at = $13, updated_at = $14
 		WHERE id = $1
 	`
 	_, err := r.pool.Exec(ctx, q,
 		h.ID, h.GoalID, h.Title, h.Icon, h.Color, h.Period,
+		h.Kind, h.Currency, h.FinancialCategory, h.ExpectedAmount,
 		h.TargetValue, h.Unit, h.ArchivedAt, h.UpdatedAt,
 	)
 	if err != nil {

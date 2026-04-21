@@ -15,27 +15,32 @@ import (
 )
 
 type HabitHandler struct {
-	habits *repository.HabitRepository
+	habits          *repository.HabitRepository
+	defaultCurrency string
 }
 
-func NewHabitHandler(r *repository.HabitRepository) *HabitHandler {
-	return &HabitHandler{habits: r}
+func NewHabitHandler(r *repository.HabitRepository, defaultCurrency string) *HabitHandler {
+	return &HabitHandler{habits: r, defaultCurrency: defaultCurrency}
 }
 
 type habitDTO struct {
-	ID             string         `json:"id"`
-	GoalID         *string        `json:"goal_id,omitempty"`
-	Title          string         `json:"title"`
-	Icon           string         `json:"icon"`
-	Color          string         `json:"color"`
-	Period         string         `json:"period"`
-	CompletedDates []string       `json:"completed_dates"`
-	TargetValue    *int           `json:"target_value,omitempty"`
-	Unit           *string        `json:"unit,omitempty"`
-	ProgressValues map[string]int `json:"progress_values"`
-	Streak         int            `json:"streak"`
-	CreatedAt      string         `json:"created_at"`
-	ArchivedAt     *string        `json:"archived_at,omitempty"`
+	ID                string         `json:"id"`
+	GoalID            *string        `json:"goal_id,omitempty"`
+	Title             string         `json:"title"`
+	Icon              string         `json:"icon"`
+	Color             string         `json:"color"`
+	Period            string         `json:"period"`
+	Kind              string         `json:"kind"`
+	Currency          string         `json:"currency"`
+	FinancialCategory *string        `json:"financial_category,omitempty"`
+	ExpectedAmount    *float64       `json:"expected_amount,omitempty"`
+	CompletedDates    []string       `json:"completed_dates"`
+	TargetValue       *int           `json:"target_value,omitempty"`
+	Unit              *string        `json:"unit,omitempty"`
+	ProgressValues    map[string]int `json:"progress_values"`
+	Streak            int            `json:"streak"`
+	CreatedAt         string         `json:"created_at"`
+	ArchivedAt        *string        `json:"archived_at,omitempty"`
 }
 
 func toDTO(h *domain.Habit) habitDTO {
@@ -60,19 +65,23 @@ func toDTO(h *domain.Habit) habitDTO {
 	}
 
 	return habitDTO{
-		ID:             h.ID.String(),
-		GoalID:         goalID,
-		Title:          h.Title,
-		Icon:           h.Icon,
-		Color:          h.Color,
-		Period:         string(h.Period),
-		CompletedDates: completed,
-		TargetValue:    h.TargetValue,
-		Unit:           h.Unit,
-		ProgressValues: progress,
-		Streak:         calculateStreak(h, time.Now()),
-		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
-		ArchivedAt:     archivedAt,
+		ID:                h.ID.String(),
+		GoalID:            goalID,
+		Title:             h.Title,
+		Icon:              h.Icon,
+		Color:             h.Color,
+		Period:            string(h.Period),
+		Kind:              string(h.Kind),
+		Currency:          h.Currency,
+		FinancialCategory: h.FinancialCategory,
+		ExpectedAmount:    h.ExpectedAmount,
+		CompletedDates:    completed,
+		TargetValue:       h.TargetValue,
+		Unit:              h.Unit,
+		ProgressValues:    progress,
+		Streak:            calculateStreak(h, time.Now()),
+		CreatedAt:         h.CreatedAt.Format(time.RFC3339),
+		ArchivedAt:        archivedAt,
 	}
 }
 
@@ -108,13 +117,17 @@ func (h *HabitHandler) List(c *gin.Context) {
 }
 
 type createRequest struct {
-	Title       string  `json:"title" binding:"required"`
-	GoalID      *string `json:"goal_id"`
-	Icon        string  `json:"icon"`
-	Color       string  `json:"color"`
-	Period      string  `json:"period"`
-	TargetValue *int    `json:"target_value"`
-	Unit        *string `json:"unit"`
+	Title             string   `json:"title" binding:"required"`
+	GoalID            *string  `json:"goal_id"`
+	Icon              string   `json:"icon"`
+	Color             string   `json:"color"`
+	Period            string   `json:"period"`
+	Kind              string   `json:"kind"`
+	Currency          string   `json:"currency"`
+	FinancialCategory *string  `json:"financial_category"`
+	ExpectedAmount    *float64 `json:"expected_amount"`
+	TargetValue       *int     `json:"target_value"`
+	Unit              *string  `json:"unit"`
 }
 
 func (h *HabitHandler) Create(c *gin.Context) {
@@ -144,16 +157,31 @@ func (h *HabitHandler) Create(c *gin.Context) {
 	if period == "" {
 		period = domain.PeriodDaily
 	}
+	kind := domain.Kind(req.Kind)
+	if kind == "" {
+		kind = domain.KindTracking
+	} else if !kind.Valid() {
+		respondError(c, http.StatusBadRequest, codeValidation, "invalid kind (tracking|saving|spending)")
+		return
+	}
+	currency := req.Currency
+	if currency == "" {
+		currency = h.defaultCurrency
+	}
 
 	habit := &domain.Habit{
-		UserID:      userID,
-		GoalID:      goalID,
-		Title:       req.Title,
-		Icon:        icon,
-		Color:       color,
-		Period:      period,
-		TargetValue: req.TargetValue,
-		Unit:        req.Unit,
+		UserID:            userID,
+		GoalID:            goalID,
+		Title:             req.Title,
+		Icon:              icon,
+		Color:             color,
+		Period:            period,
+		Kind:              kind,
+		Currency:          currency,
+		FinancialCategory: req.FinancialCategory,
+		ExpectedAmount:    req.ExpectedAmount,
+		TargetValue:       req.TargetValue,
+		Unit:              req.Unit,
 	}
 	if err := h.habits.Create(c.Request.Context(), habit); err != nil {
 		slog.Error("create habit", "err", err, "user_id", userID)
@@ -184,14 +212,18 @@ func (h *HabitHandler) Get(c *gin.Context) {
 }
 
 type updateRequest struct {
-	Title       string  `json:"title"`
-	GoalID      *string `json:"goal_id"`
-	Icon        string  `json:"icon"`
-	Color       string  `json:"color"`
-	Period      string  `json:"period"`
-	TargetValue *int    `json:"target_value"`
-	Unit        *string `json:"unit"`
-	ArchivedAt  *string `json:"archived_at"`
+	Title             string   `json:"title"`
+	GoalID            *string  `json:"goal_id"`
+	Icon              string   `json:"icon"`
+	Color             string   `json:"color"`
+	Period            string   `json:"period"`
+	Kind              string   `json:"kind"`
+	Currency          string   `json:"currency"`
+	FinancialCategory *string  `json:"financial_category"`
+	ExpectedAmount    *float64 `json:"expected_amount"`
+	TargetValue       *int     `json:"target_value"`
+	Unit              *string  `json:"unit"`
+	ArchivedAt        *string  `json:"archived_at"`
 }
 
 func (h *HabitHandler) Update(c *gin.Context) {
@@ -242,6 +274,26 @@ func applyUpdate(h *domain.Habit, req updateRequest) error {
 	}
 	if req.Period != "" {
 		h.Period = domain.Period(req.Period)
+	}
+	if req.Kind != "" {
+		k := domain.Kind(req.Kind)
+		if !k.Valid() {
+			return errors.New("invalid kind")
+		}
+		h.Kind = k
+	}
+	if req.Currency != "" {
+		h.Currency = req.Currency
+	}
+	if req.FinancialCategory != nil {
+		if *req.FinancialCategory == "" {
+			h.FinancialCategory = nil
+		} else {
+			h.FinancialCategory = req.FinancialCategory
+		}
+	}
+	if req.ExpectedAmount != nil {
+		h.ExpectedAmount = req.ExpectedAmount
 	}
 	if req.TargetValue != nil {
 		h.TargetValue = req.TargetValue

@@ -1,7 +1,19 @@
 # habit-service
 
-Owns habit tracking: periodic habits, target-value progress, and streak
-calculation.
+Owns **financial habits** — repeating behaviors with a budgetary impact.
+Three kinds:
+
+- `tracking` — improves financial awareness ("Log every expense"). No
+  direct money flow attached.
+- `saving`  — completion is a deposit toward savings ("Skip Starbucks
+  today: +$5"). `expected_amount` is the per-completion contribution.
+- `spending` — the user keeps within a category cap ("Stay under
+  $30/day on food"). `expected_amount` is the cap; staying under for
+  the period counts as a completion.
+
+Boolean toggle, target-value progress, and streak calculation work as
+before. New columns are additive: existing rows still load and behave
+identically.
 
 ## Endpoints
 
@@ -10,36 +22,41 @@ Mount point: `/api/v1/habits/*`.
 | Method | Path | Description |
 |---|---|---|
 | GET | `/habits` | List caller's habits |
-| POST | `/habits` | Create habit |
+| POST | `/habits` | Create — `kind` defaults to `tracking`, `currency` to `DEFAULT_CURRENCY` env |
 | GET | `/habits/:id` | Get habit |
-| PUT | `/habits/:id` | Update habit (partial — empty fields ignored) |
-| DELETE | `/habits/:id` | Delete habit |
-| POST | `/habits/:id/toggle` | Add/remove completion for a date; or set progress value |
+| PUT | `/habits/:id` | Partial update |
+| DELETE | `/habits/:id` | Delete |
+| POST | `/habits/:id/toggle` | Add/remove completion or set progress value |
 | GET | `/health` | Liveness |
 
-Toggle body:
+Create body example (saving habit):
 ```json
-{ "date": "2026-04-21", "value": 5 }   // progress habit: sets value=5, marks complete if value >= target
-{ "date": "2026-04-21" }               // boolean habit: flips completion state
+{
+  "title": "Pack lunch",
+  "kind": "saving",
+  "currency": "USD",
+  "financial_category": "Food",
+  "expected_amount": 12.50,
+  "period": "daily",
+  "icon": "🥪"
+}
 ```
 
 ## Events
 
-Subscribes to NATS:
-- `user.deleted` — deletes all habits for the user (cascades to completions + progress).
-- `goal.deleted` — nulls out `goal_id` on any habit pointing at the deleted goal.
-
-Publishing: none (for now).
+Subscribes:
+- `user.deleted` — purge all habits for the user.
+- `goal.deleted` — null out `goal_id` on any linked habits.
 
 ## Storage
 
 Postgres schema `habits`:
-- `habits (id, user_id, goal_id?, title, icon, color, period, target_value?, unit?, archived_at?, timestamps)`
-- `habit_completions (habit_id, completed_date)` — daily boolean marks
-- `habit_progress (habit_id, progress_date, progress_value)` — for habits with a target
+- `habits` — adds `kind`, `currency`, `financial_category`, `expected_amount`
+- `habit_completions`, `habit_progress` — unchanged
 
-No cross-schema foreign keys. `user_id` and `goal_id` are plain UUIDs;
-referential integrity is maintained via NATS events.
+`financial_category` aligns with `transactions.category` from
+finance-service so the AI agent can correlate habit completions with
+actual spending.
 
 ## Run
 
@@ -48,7 +65,4 @@ cp .env.example .env
 make tidy && make run
 ```
 
-Via root compose:
-```bash
-cd ../.. && docker compose up habit-service
-```
+Via root compose: `cd ../.. && docker compose up habit-service`.

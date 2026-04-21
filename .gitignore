@@ -34,6 +34,9 @@ coverage.out
 *.swo
 .DS_Store
 
+# Local Claude Code state
+.claude/
+
 # Logs
 *.log
 logs/
