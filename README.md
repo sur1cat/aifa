@@ -13,7 +13,7 @@ iOS / Web → Traefik (:8080) → one of:
   /api/v1/goals/*         → goal-service
   /api/v1/tasks/*         → task-service
   /api/v1/transactions/*  → finance-service
-  /api/v1/recurring-*     → finance-service
+  /api/v1/recurring-transactions/* → finance-service
   /api/v1/savings-goal    → finance-service
   /api/v1/ai/*            → ai-service
   /api/v1/push/*          → notification-service

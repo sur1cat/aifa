@@ -27,5 +27,8 @@ fmt:
 vet:
 	go vet ./...
 
+lint:
+	go vet ./...
+
 clean:
 	rm -rf bin
