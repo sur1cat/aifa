@@ -340,3 +340,19 @@ services:
       - traefik.http.routers.notification.entrypoints=web
       - traefik.http.routers.notification.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
       - traefik.http.services.notification.loadbalancer.server.port=8080
+
+  # ---- scheduler-worker (cron NATS publisher; not exposed via Traefik) ----
+  scheduler-worker:
+    build: ./services/scheduler
+    image: aifa/scheduler-worker:dev
+    restart: unless-stopped
+    environment:
+      DEBUG: "${DEBUG:-true}"
+      NATS_URL: nats://nats:4222
+      CRON_RECURRING: ${CRON_RECURRING:-*/5 * * * *}
+      CRON_REMINDERS: ${CRON_REMINDERS:-0 9 * * *}
+      HEALTH_ADDR: ":8080"
+    depends_on:
+      nats:
+        condition: service_healthy
+    networks: [aifa]

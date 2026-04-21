@@ -1,0 +1,17 @@
+networks:
+  aifa:
+    external: true
+    name: aifa_aifa
+
+services:
+  scheduler-worker:
+    build: .
+    image: aifa/scheduler-worker:dev
+    restart: unless-stopped
+    environment:
+      DEBUG: "true"
+      NATS_URL: nats://nats:4222
+      CRON_RECURRING: "*/5 * * * *"
+      CRON_REMINDERS: "0 9 * * *"
+      HEALTH_ADDR: ":8080"
+    networks: [aifa]
