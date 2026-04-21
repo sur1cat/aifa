@@ -1,0 +1,17 @@
+bin/
+*.out
+*.html
+*.log
+coverage.*
+.env
+.env.*
+.git
+.gitignore
+.dockerignore
+.github/
+.idea/
+*.iml
+docker-compose.yml
+Makefile
+docs/
+*.md

@@ -34,7 +34,7 @@ servers:
 
 tags:
   - name: Auth
-    description: Authentication endpoints (Google, Apple, OTP)
+    description: Authentication endpoints (Google, Apple)
   - name: Habits
     description: Habit tracking and completion management
   - name: Tasks
@@ -103,60 +103,6 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '201':
           description: New user created and authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /auth/otp/send:
-    post:
-      tags: [Auth]
-      summary: Send OTP
-      description: Send OTP code to phone number
-      operationId: sendOTP
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SendOTPRequest'
-      responses:
-        '200':
-          description: OTP sent successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        example: OTP sent successfully
-                      expires_at:
-                        type: string
-                        format: date-time
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /auth/otp/verify:
-    post:
-      tags: [Auth]
-      summary: Verify OTP
-      description: Verify OTP code and authenticate user
-      operationId: verifyOTP
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerifyOTPRequest'
-      responses:
-        '200':
-          description: OTP verified, user authenticated
           content:
             application/json:
               schema:
@@ -1111,6 +1057,60 @@ paths:
                   data:
                     $ref: '#/components/schemas/ExpenseAnalysisResponse'
 
+  /ai/goal-to-habits:
+    post:
+      tags: [AI]
+      summary: Generate Habits from Goal
+      description: AI generates a list of daily habits to achieve a given goal
+      operationId: goalToHabits
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalToHabitsRequest'
+      responses:
+        '200':
+          description: Generated habits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GoalToHabitsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /ai/goal-clarify:
+    post:
+      tags: [AI]
+      summary: Clarify Goal
+      description: AI generates clarifying questions to help define a goal better
+      operationId: goalClarify
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalClarifyRequest'
+      responses:
+        '200':
+          description: Clarifying questions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GoalClarifyResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
   # ==================== PUSH ====================
   /push/register:
     post:
@@ -1289,25 +1289,6 @@ components:
           type: string
           description: User info JSON (only on first sign-in)
 
-    SendOTPRequest:
-      type: object
-      required: [phone]
-      properties:
-        phone:
-          type: string
-          example: "+77001234567"
-
-    VerifyOTPRequest:
-      type: object
-      required: [phone, code]
-      properties:
-        phone:
-          type: string
-        code:
-          type: string
-          minLength: 6
-          maxLength: 6
-
     RefreshRequest:
       type: object
       required: [refresh_token]
@@ -1365,7 +1346,7 @@ components:
           format: uri
         auth_provider:
           type: string
-          enum: [google, apple, phone]
+          enum: [google, apple]
         created_at:
           type: string
           format: date-time
@@ -1960,6 +1941,64 @@ components:
         difficulty:
           type: string
           enum: [easy, medium, hard]
+
+    GoalToHabitsRequest:
+      type: object
+      required: [goal]
+      properties:
+        goal:
+          type: string
+          description: Goal description
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+              answer:
+                type: string
+
+    GoalToHabitsResponse:
+      type: object
+      properties:
+        habits:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              icon:
+                type: string
+              period:
+                type: string
+                enum: [daily, weekly, monthly]
+              reason:
+                type: string
+
+    GoalClarifyRequest:
+      type: object
+      required: [goal]
+      properties:
+        goal:
+          type: string
+          description: Goal description
+
+    GoalClarifyResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+              options:
+                type: array
+                items:
+                  type: string
 
     # ==================== PUSH ====================
     RegisterTokenRequest:
