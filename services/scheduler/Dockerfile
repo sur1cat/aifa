@@ -20,10 +20,11 @@ RUN apk add --no-cache ca-certificates tzdata wget && \
 WORKDIR /app
 COPY --from=builder /out/worker /app/worker
 
+ENV HEALTH_ADDR=:8080
 USER appuser
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost${HEALTH_ADDR}/health || exit 1
 
 ENTRYPOINT ["/app/worker"]

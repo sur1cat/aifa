@@ -1,3 +1,4 @@
+# Reads env from a sibling .env (see .env.example).
 networks:
   aifa:
     external: true
@@ -8,13 +9,16 @@ services:
     build: .
     image: aifa/ai-service:dev
     restart: unless-stopped
+    env_file: .env
     environment:
-      PORT: "8080"
-      DEBUG: "true"
-      REDIS_ADDR: redis:6379
+      PORT: ${PORT:-8080}
+      DEBUG: ${DEBUG:-true}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-min-32-chars-long-secret}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
     ports:
-      - "8007:8080"
+      - "${HOST_PORT:-8007}:${PORT:-8080}"
     networks: [aifa]

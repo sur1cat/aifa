@@ -1,6 +1,8 @@
 # Run auth-service alone, expecting postgres/redis/nats already running
 # (e.g. from root `docker compose up -d postgres redis nats`).
 #
+# Reads env from a sibling .env (see .env.example).
+#
 #   docker compose -f docker-compose.service.yml up --build
 
 networks:
@@ -13,17 +15,20 @@ services:
     build: .
     image: aifa/auth-service:dev
     restart: unless-stopped
+    env_file: .env
     environment:
-      PORT: "8080"
-      DEBUG: "true"
-      DATABASE_URL: postgres://aifa:aifa@postgres:5432/aifa?sslmode=disable&search_path=auth,public
-      REDIS_ADDR: redis:6379
-      NATS_URL: nats://nats:4222
+      PORT: ${PORT:-8080}
+      DEBUG: ${DEBUG:-true}
+      DATABASE_URL: ${DATABASE_URL:-postgres://aifa:aifa@postgres:5432/aifa?sslmode=disable&search_path=auth,public}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-min-32-chars-long-secret}
-      JWT_ACCESS_TTL_HOURS: "720"
-      JWT_REFRESH_TTL_HOURS: "8760"
+      JWT_ACCESS_TTL_HOURS: ${JWT_ACCESS_TTL_HOURS:-720}
+      JWT_REFRESH_TTL_HOURS: ${JWT_REFRESH_TTL_HOURS:-8760}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-app.aifa.ios}
     ports:
-      - "8001:8080"
+      - "${HOST_PORT:-8001}:${PORT:-8080}"
     networks: [aifa]

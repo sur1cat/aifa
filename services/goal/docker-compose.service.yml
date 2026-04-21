@@ -1,3 +1,4 @@
+# Reads env from a sibling .env (see .env.example).
 networks:
   aifa:
     external: true
@@ -8,13 +9,17 @@ services:
     build: .
     image: aifa/goal-service:dev
     restart: unless-stopped
+    env_file: .env
     environment:
-      PORT: "8080"
-      DEBUG: "true"
-      DATABASE_URL: postgres://aifa:aifa@postgres:5432/aifa?sslmode=disable&search_path=goals,public
-      REDIS_ADDR: redis:6379
-      NATS_URL: nats://nats:4222
+      PORT: ${PORT:-8080}
+      DEBUG: ${DEBUG:-true}
+      DATABASE_URL: ${DATABASE_URL:-postgres://aifa:aifa@postgres:5432/aifa?sslmode=disable&search_path=goals,public}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-min-32-chars-long-secret}
+      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-USD}
     ports:
-      - "8004:8080"
+      - "${HOST_PORT:-8004}:${PORT:-8080}"
     networks: [aifa]
