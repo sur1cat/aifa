@@ -45,7 +45,23 @@ func (r *TokenRepository) CleanupExpired(ctx context.Context) error {
 	return err
 }
 
-func (r *TokenRepository) InvalidateAllUserTokens(ctx context.Context, userID uuid.UUID) error {
+func userSentinel(userID uuid.UUID) string {
+	return "user_invalidated:" + userID.String()
+}
 
-	return nil
+func (r *TokenRepository) InvalidateAllUserTokens(ctx context.Context, userID uuid.UUID) error {
+	query := `
+		INSERT INTO invalidated_tokens (token_hash, user_id, expires_at)
+		VALUES ($1, $2, NOW() + INTERVAL '365 days')
+		ON CONFLICT (token_hash) DO NOTHING
+	`
+	_, err := r.pool.Exec(ctx, query, userSentinel(userID), userID)
+	return err
+}
+
+func (r *TokenRepository) IsUserInvalidated(ctx context.Context, userID uuid.UUID) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM invalidated_tokens WHERE token_hash = $1 AND expires_at > NOW())`
+	var exists bool
+	err := r.pool.QueryRow(ctx, query, userSentinel(userID)).Scan(&exists)
+	return exists, err
 }

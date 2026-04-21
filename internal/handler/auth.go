@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"log"
+
 	"habitflow/internal/domain"
 	"habitflow/internal/repository"
 	"habitflow/pkg/auth"
@@ -191,9 +193,20 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	tokens, err := h.jwtManager.RefreshAccessToken(req.RefreshToken)
+	claims, err := h.jwtManager.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		respondUnauthorized(c, "Invalid or expired refresh token")
+		return
+	}
+
+	if invalidated, _ := h.tokenRepo.IsUserInvalidated(c.Request.Context(), claims.UserID); invalidated {
+		respondUnauthorized(c, "Token has been revoked")
+		return
+	}
+
+	tokens, err := h.jwtManager.GenerateTokenPair(claims.UserID)
+	if err != nil {
+		respondInternalError(c, "Failed to generate tokens")
 		return
 	}
 
@@ -245,7 +258,13 @@ func (h *AuthHandler) DeleteAccount(c *gin.Context) {
 		return
 	}
 
-	if err := h.userRepo.Delete(c.Request.Context(), userID.(uuid.UUID)); err != nil {
+	uid := userID.(uuid.UUID)
+
+	if err := h.tokenRepo.InvalidateAllUserTokens(c.Request.Context(), uid); err != nil {
+		log.Printf("failed to invalidate tokens for user %s: %v", uid, err)
+	}
+
+	if err := h.userRepo.Delete(c.Request.Context(), uid); err != nil {
 		respondInternalError(c, "Failed to delete account")
 		return
 	}
