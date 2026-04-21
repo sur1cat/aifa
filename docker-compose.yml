@@ -279,3 +279,29 @@ services:
       - traefik.http.routers.finance.entrypoints=web
       - traefik.http.routers.finance.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
       - traefik.http.services.finance.loadbalancer.server.port=8080
+
+  # ---- ai-service ----
+  ai-service:
+    build: ./services/ai
+    image: aifa/ai-service:dev
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      DEBUG: "${DEBUG:-true}"
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+    ports:
+      - "8007:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [aifa]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ai.rule=PathPrefix(`/api/v1/ai`)
+      - traefik.http.routers.ai.entrypoints=web
+      - traefik.http.routers.ai.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.ai.loadbalancer.server.port=8080
