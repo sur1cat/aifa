@@ -11,6 +11,8 @@ Mount point at the gateway: `/api/v1/auth/*` (Traefik strips the prefix).
 |---|---|---|---|
 | POST | `/auth/google` | — | Exchange Google ID token for AIFA token pair |
 | POST | `/auth/apple` | — | Exchange Apple ID token for AIFA token pair |
+| POST | `/auth/otp/send` | — | Send OTP code to phone number |
+| POST | `/auth/otp/verify` | — | Verify OTP code and authenticate |
 | POST | `/auth/refresh` | — | Rotate an access token using a refresh token |
 | POST | `/auth/logout` | Bearer | Revoke current access + passed refresh token |
 | GET | `/auth/me` | Bearer | Identity record (id, provider, created_at) |
@@ -38,6 +40,7 @@ Published to NATS:
 
 - **Postgres** (schema `auth`): one table `users(id, auth_provider, provider_id, created_at)`.
 - **Redis** (`auth:blacklist:<jti>`): revoked JWT IDs with TTL = remaining token lifetime.
+- **Redis** (`auth:otp:<phone>`): OTP codes with 5-minute TTL, max 5 verification attempts.
 
 ## Run
 

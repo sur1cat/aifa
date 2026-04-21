@@ -17,6 +17,7 @@ import (
 	"github.com/sur1cat/aifa/auth-service/internal/middleware"
 	"github.com/sur1cat/aifa/auth-service/internal/migrate"
 	"github.com/sur1cat/aifa/auth-service/internal/oauth"
+	"github.com/sur1cat/aifa/auth-service/internal/otp"
 	"github.com/sur1cat/aifa/auth-service/internal/repository"
 
 	"github.com/gin-gonic/gin"
@@ -70,12 +71,17 @@ func main() {
 		pub,
 	)
 
+	otpStore := otp.NewStore(rdb)
+	otpHandler := handler.NewOTPHandler(authHandler, otpStore, cfg.Debug)
+
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.RequestLogger(log))
 
 	r.GET("/health", handler.Health)
 	r.POST("/auth/google", authHandler.GoogleSignIn)
 	r.POST("/auth/apple", authHandler.AppleSignIn)
+	r.POST("/auth/otp/send", otpHandler.SendOTP)
+	r.POST("/auth/otp/verify", otpHandler.VerifyOTP)
 	r.POST("/auth/refresh", authHandler.RefreshToken)
 
 	protected := r.Group("", authMW.RequireAuth())

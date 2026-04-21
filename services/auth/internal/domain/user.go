@@ -11,6 +11,7 @@ type AuthProvider string
 const (
 	ProviderGoogle AuthProvider = "google"
 	ProviderApple  AuthProvider = "apple"
+	ProviderPhone  AuthProvider = "phone"
 )
 
 // User is the minimal identity record owned by auth-service.
