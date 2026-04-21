@@ -69,7 +69,7 @@ func main() {
 	defer sub.Unsubscribe()
 
 	authMW := middleware.NewAuth(validator, blacklist)
-	goalHandler := handler.NewGoalHandler(goalRepo, publisher)
+	goalHandler := handler.NewGoalHandler(goalRepo, publisher, cfg.DefaultCurrency)
 
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.RequestLogger(log))

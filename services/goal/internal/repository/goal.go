@@ -21,11 +21,12 @@ func NewGoalRepository(pool *pgxpool.Pool) *GoalRepository {
 	return &GoalRepository{pool: pool}
 }
 
-const goalColumns = `id, user_id, title, icon, target_value, unit, deadline, archived_at, created_at, updated_at`
+const goalColumns = `id, user_id, title, icon, goal_type, target_amount, current_amount, currency, deadline, archived_at, created_at, updated_at`
 
 func scanGoal(row pgx.Row, g *domain.Goal) error {
 	return row.Scan(
-		&g.ID, &g.UserID, &g.Title, &g.Icon, &g.TargetValue, &g.Unit,
+		&g.ID, &g.UserID, &g.Title, &g.Icon, &g.GoalType,
+		&g.TargetAmount, &g.CurrentAmount, &g.Currency,
 		&g.Deadline, &g.ArchivedAt, &g.CreatedAt, &g.UpdatedAt,
 	)
 }
@@ -36,11 +37,16 @@ func (r *GoalRepository) Create(ctx context.Context, g *domain.Goal) error {
 	g.UpdatedAt = g.CreatedAt
 
 	const q = `
-		INSERT INTO goals (id, user_id, title, icon, target_value, unit, deadline, archived_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO goals (
+			id, user_id, title, icon, goal_type,
+			target_amount, current_amount, currency,
+			deadline, archived_at, created_at, updated_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 	_, err := r.pool.Exec(ctx, q,
-		g.ID, g.UserID, g.Title, g.Icon, g.TargetValue, g.Unit,
+		g.ID, g.UserID, g.Title, g.Icon, g.GoalType,
+		g.TargetAmount, g.CurrentAmount, g.Currency,
 		g.Deadline, g.ArchivedAt, g.CreatedAt, g.UpdatedAt,
 	)
 	if err != nil {
@@ -87,12 +93,14 @@ func (r *GoalRepository) Update(ctx context.Context, g *domain.Goal) error {
 	g.UpdatedAt = time.Now()
 	const q = `
 		UPDATE goals
-		SET title = $2, icon = $3, target_value = $4, unit = $5,
-		    deadline = $6, archived_at = $7, updated_at = $8
+		SET title = $2, icon = $3, goal_type = $4,
+		    target_amount = $5, current_amount = $6, currency = $7,
+		    deadline = $8, archived_at = $9, updated_at = $10
 		WHERE id = $1
 	`
 	_, err := r.pool.Exec(ctx, q,
-		g.ID, g.Title, g.Icon, g.TargetValue, g.Unit,
+		g.ID, g.Title, g.Icon, g.GoalType,
+		g.TargetAmount, g.CurrentAmount, g.Currency,
 		g.Deadline, g.ArchivedAt, g.UpdatedAt,
 	)
 	if err != nil {

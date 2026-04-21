@@ -16,27 +16,31 @@ import (
 )
 
 type GoalHandler struct {
-	goals     *repository.GoalRepository
-	publisher *events.Publisher
+	goals           *repository.GoalRepository
+	publisher       *events.Publisher
+	defaultCurrency string
 }
 
-func NewGoalHandler(r *repository.GoalRepository, pub *events.Publisher) *GoalHandler {
-	return &GoalHandler{goals: r, publisher: pub}
+func NewGoalHandler(r *repository.GoalRepository, pub *events.Publisher, defaultCurrency string) *GoalHandler {
+	return &GoalHandler{goals: r, publisher: pub, defaultCurrency: defaultCurrency}
 }
 
 type goalDTO struct {
-	ID          string  `json:"id"`
-	Title       string  `json:"title"`
-	Icon        string  `json:"icon"`
-	TargetValue *int    `json:"target_value,omitempty"`
-	Unit        *string `json:"unit,omitempty"`
-	Deadline    *string `json:"deadline,omitempty"`
-	ArchivedAt  *string `json:"archived_at,omitempty"`
-	CreatedAt   string  `json:"created_at"`
+	ID            string   `json:"id"`
+	Title         string   `json:"title"`
+	Icon          string   `json:"icon"`
+	GoalType      string   `json:"goal_type"`
+	TargetAmount  *float64 `json:"target_amount,omitempty"`
+	CurrentAmount float64  `json:"current_amount"`
+	Currency      string   `json:"currency"`
+	Progress      float64  `json:"progress"`
+	Deadline      *string  `json:"deadline,omitempty"`
+	ArchivedAt    *string  `json:"archived_at,omitempty"`
+	CreatedAt     string   `json:"created_at"`
 }
 
 func toDTO(g *domain.Goal) goalDTO {
-	fmt := func(t *time.Time) *string {
+	fmtTime := func(t *time.Time) *string {
 		if t == nil {
 			return nil
 		}
@@ -44,14 +48,17 @@ func toDTO(g *domain.Goal) goalDTO {
 		return &s
 	}
 	return goalDTO{
-		ID:          g.ID.String(),
-		Title:       g.Title,
-		Icon:        g.Icon,
-		TargetValue: g.TargetValue,
-		Unit:        g.Unit,
-		Deadline:    fmt(g.Deadline),
-		ArchivedAt:  fmt(g.ArchivedAt),
-		CreatedAt:   g.CreatedAt.Format(time.RFC3339),
+		ID:            g.ID.String(),
+		Title:         g.Title,
+		Icon:          g.Icon,
+		GoalType:      string(g.GoalType),
+		TargetAmount:  g.TargetAmount,
+		CurrentAmount: g.CurrentAmount,
+		Currency:      g.Currency,
+		Progress:      g.Progress(),
+		Deadline:      fmtTime(g.Deadline),
+		ArchivedAt:    fmtTime(g.ArchivedAt),
+		CreatedAt:     g.CreatedAt.Format(time.RFC3339),
 	}
 }
 
@@ -71,11 +78,13 @@ func (h *GoalHandler) List(c *gin.Context) {
 }
 
 type createRequest struct {
-	Title       string  `json:"title" binding:"required"`
-	Icon        string  `json:"icon"`
-	TargetValue *int    `json:"target_value"`
-	Unit        *string `json:"unit"`
-	Deadline    *string `json:"deadline"`
+	Title         string   `json:"title" binding:"required"`
+	Icon          string   `json:"icon"`
+	GoalType      string   `json:"goal_type"`
+	TargetAmount  *float64 `json:"target_amount"`
+	CurrentAmount *float64 `json:"current_amount"`
+	Currency      string   `json:"currency"`
+	Deadline      *string  `json:"deadline"`
 }
 
 func (h *GoalHandler) Create(c *gin.Context) {
@@ -97,14 +106,31 @@ func (h *GoalHandler) Create(c *gin.Context) {
 	if icon == "" {
 		icon = "🎯"
 	}
+	goalType := domain.GoalType(req.GoalType)
+	if goalType == "" {
+		goalType = domain.GoalSavings
+	} else if !goalType.Valid() {
+		respondError(c, http.StatusBadRequest, codeValidation, "invalid goal_type (savings|debt|purchase|investment)")
+		return
+	}
+	currency := req.Currency
+	if currency == "" {
+		currency = h.defaultCurrency
+	}
+	current := 0.0
+	if req.CurrentAmount != nil {
+		current = *req.CurrentAmount
+	}
 
 	g := &domain.Goal{
-		UserID:      userID,
-		Title:       req.Title,
-		Icon:        icon,
-		TargetValue: req.TargetValue,
-		Unit:        req.Unit,
-		Deadline:    deadline,
+		UserID:        userID,
+		Title:         req.Title,
+		Icon:          icon,
+		GoalType:      goalType,
+		TargetAmount:  req.TargetAmount,
+		CurrentAmount: current,
+		Currency:      currency,
+		Deadline:      deadline,
 	}
 	if err := h.goals.Create(c.Request.Context(), g); err != nil {
 		slog.Error("create goal", "err", err, "user_id", userID)
@@ -135,12 +161,14 @@ func (h *GoalHandler) Get(c *gin.Context) {
 }
 
 type updateRequest struct {
-	Title       string  `json:"title"`
-	Icon        string  `json:"icon"`
-	TargetValue *int    `json:"target_value"`
-	Unit        *string `json:"unit"`
-	Deadline    *string `json:"deadline"`
-	ArchivedAt  *string `json:"archived_at"`
+	Title         string   `json:"title"`
+	Icon          string   `json:"icon"`
+	GoalType      string   `json:"goal_type"`
+	TargetAmount  *float64 `json:"target_amount"`
+	CurrentAmount *float64 `json:"current_amount"`
+	Currency      string   `json:"currency"`
+	Deadline      *string  `json:"deadline"`
+	ArchivedAt    *string  `json:"archived_at"`
 }
 
 func (h *GoalHandler) Update(c *gin.Context) {
@@ -186,11 +214,21 @@ func applyUpdate(g *domain.Goal, req updateRequest) error {
 	if req.Icon != "" {
 		g.Icon = req.Icon
 	}
-	if req.TargetValue != nil {
-		g.TargetValue = req.TargetValue
+	if req.GoalType != "" {
+		gt := domain.GoalType(req.GoalType)
+		if !gt.Valid() {
+			return errors.New("invalid goal_type")
+		}
+		g.GoalType = gt
 	}
-	if req.Unit != nil {
-		g.Unit = req.Unit
+	if req.TargetAmount != nil {
+		g.TargetAmount = req.TargetAmount
+	}
+	if req.CurrentAmount != nil {
+		g.CurrentAmount = *req.CurrentAmount
+	}
+	if req.Currency != "" {
+		g.Currency = req.Currency
 	}
 	if req.Deadline != nil {
 		d, err := parseOptionalTime(req.Deadline)
