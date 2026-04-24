@@ -1,6 +1,7 @@
 # AIFA — local orchestration. All values come from .env (see .env.example).
 # Run:   docker compose up -d
 # Logs:  docker compose logs -f <service>
+#DEPLOY TEST (REMOVE THIS COMMENT AFTER TESTS)
 
 networks:
   aifa:
