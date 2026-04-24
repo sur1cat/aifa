@@ -57,7 +57,9 @@ func main() {
 
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.RequestLogger(log))
+	r.HEAD("/health", handler.Health)
 	r.GET("/health", handler.Health)
+	
 
 	p := r.Group("", authMW.RequireAuth())
 	p.POST("/ai/chat", aiHandler.Chat)
