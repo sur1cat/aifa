@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.vscode
+.env
+.env.*
+!.env.example
+*.md
+docs/
+helm/
+bin/
+dist/
+coverage.*
+*.log
+docker-compose.service.yml

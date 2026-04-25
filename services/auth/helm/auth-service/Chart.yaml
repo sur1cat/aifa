@@ -1,0 +1,14 @@
+apiVersion: v2
+name: auth-service
+description: AIFA auth-service — OAuth sign-in and JWT issuance
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+icon: https://aifa.app/icon.png
+keywords:
+  - aifa
+  - auth
+  - microservice
+maintainers:
+  - name: sur1cat
+    email: sur1cat@users.noreply.github.com

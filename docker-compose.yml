@@ -1,0 +1,352 @@
+# AIFA — local orchestration. All values come from .env (see .env.example).
+# Run:   docker compose up -d
+# Logs:  docker compose logs -f <service>
+
+networks:
+  aifa:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  nats-data:
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks: [aifa]
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    nats:
+      condition: service_healthy
+
+services:
+  # ---- Postgres: one instance, schema-per-service ----
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    networks: [aifa]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---- Redis: rate limits, JWT blacklist, caches ----
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis-data:/data
+    networks: [aifa]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---- NATS: cross-service events ----
+  nats:
+    image: nats:2.10-alpine
+    restart: unless-stopped
+    command: ["-js", "-sd", "/data", "-m", "8222"]
+    ports:
+      - "${NATS_CLIENT_PORT}:4222"
+      - "${NATS_HTTP_PORT}:8222"
+    volumes:
+      - nats-data:/data
+    networks: [aifa]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- Traefik: api-gateway ----
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.traefik.address=:8090
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --log.level=INFO
+      - --accesslog=true
+    ports:
+      - "${GATEWAY_HTTP_PORT}:80"
+      - "${TRAEFIK_DASHBOARD_PORT}:8090"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./gateway/traefik/dynamic:/etc/traefik/dynamic:ro
+    networks: [aifa]
+    depends_on:
+      - postgres
+      - redis
+      - nats
+
+  # ---- Swagger UI: combined API documentation ----
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.17.14
+    restart: unless-stopped
+    environment:
+      SWAGGER_JSON: /docs/openapi.yaml
+      BASE_URL: /
+    ports:
+      - "${SWAGGER_UI_PORT}:8080"
+    volumes:
+      - ./docs:/docs:ro
+    networks: [aifa]
+
+  # ---- auth-service ----
+  auth-service:
+    <<: *service-defaults
+    build: ./services/auth
+    image: aifa/auth-service:dev
+    environment:
+      PORT: ${SERVICE_PORT}
+      DEBUG: ${DEBUG}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable&search_path=${SCHEMA_AUTH},public
+      REDIS_ADDR: ${REDIS_HOST}:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      NATS_URL: ${NATS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TTL_HOURS: ${JWT_ACCESS_TTL_HOURS}
+      JWT_REFRESH_TTL_HOURS: ${JWT_REFRESH_TTL_HOURS}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID}
+    ports:
+      - "${AUTH_PORT}:${SERVICE_PORT}"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`)
+      - traefik.http.routers.auth.entrypoints=web
+      - traefik.http.routers.auth.middlewares=strip-api-prefix@file,ratelimit-auth@file,cors@file
+      - traefik.http.services.auth.loadbalancer.server.port=${SERVICE_PORT}
+
+  # ---- user-service ----
+  user-service:
+    <<: *service-defaults
+    build: ./services/user
+    image: aifa/user-service:dev
+    environment:
+      PORT: ${SERVICE_PORT}
+      DEBUG: ${DEBUG}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable&search_path=${SCHEMA_USERS},public
+      REDIS_ADDR: ${REDIS_HOST}:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      NATS_URL: ${NATS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${USER_PORT}:${SERVICE_PORT}"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.user.rule=PathPrefix(`/api/v1/users`)
+      - traefik.http.routers.user.entrypoints=web
+      - traefik.http.routers.user.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.user.loadbalancer.server.port=${SERVICE_PORT}
+
+  # ---- habit-service ----
+  habit-service:
+    <<: *service-defaults
+    build: ./services/habit
+    image: aifa/habit-service:dev
+    environment:
+      PORT: ${SERVICE_PORT}
+      DEBUG: ${DEBUG}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable&search_path=${SCHEMA_HABITS},public
+      REDIS_ADDR: ${REDIS_HOST}:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      NATS_URL: ${NATS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY}
+    ports:
+      - "${HABIT_PORT}:${SERVICE_PORT}"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.habit.rule=PathPrefix(`/api/v1/habits`)
+      - traefik.http.routers.habit.entrypoints=web
+      - traefik.http.routers.habit.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.habit.loadbalancer.server.port=${SERVICE_PORT}
+
+  # ---- goal-service ----
+  goal-service:
+    <<: *service-defaults
+    build: ./services/goal
+    image: aifa/goal-service:dev
+    environment:
+      PORT: ${SERVICE_PORT}
+      DEBUG: ${DEBUG}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable&search_path=${SCHEMA_GOALS},public
+      REDIS_ADDR: ${REDIS_HOST}:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      NATS_URL: ${NATS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY}
+    ports:
+      - "${GOAL_PORT}:${SERVICE_PORT}"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.goal.rule=PathPrefix(`/api/v1/goals`)
+      - traefik.http.routers.goal.entrypoints=web
+      - traefik.http.routers.goal.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.goal.loadbalancer.server.port=${SERVICE_PORT}
+
+  # ---- task-service ----
+  task-service:
+    <<: *service-defaults
+    build: ./services/task
+    image: aifa/task-service:dev
+    environment:
+      PORT: ${SERVICE_PORT}
+      DEBUG: ${DEBUG}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable&search_path=${SCHEMA_TASKS},public
+      REDIS_ADDR: ${REDIS_HOST}:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      NATS_URL: ${NATS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY}
+    ports:
+      - "${TASK_PORT}:${SERVICE_PORT}"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.task.rule=PathPrefix(`/api/v1/tasks`)
+      - traefik.http.routers.task.entrypoints=web
+      - traefik.http.routers.task.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.task.loadbalancer.server.port=${SERVICE_PORT}
+
+  # ---- finance-service ----
+  finance-service:
+    <<: *service-defaults
+    build: ./services/finance
+    image: aifa/finance-service:dev
+    environment:
+      PORT: ${SERVICE_PORT}
+      DEBUG: ${DEBUG}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable&search_path=${SCHEMA_FINANCE},public
+      REDIS_ADDR: ${REDIS_HOST}:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      NATS_URL: ${NATS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY}
+      AI_LOCAL_URL: http://ai-local-service:8000
+    ports:
+      - "${FINANCE_PORT}:${SERVICE_PORT}"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.finance.rule=PathPrefix(`/api/v1/transactions`) || PathPrefix(`/api/v1/recurring-transactions`) || PathPrefix(`/api/v1/savings-goal`)
+      - traefik.http.routers.finance.entrypoints=web
+      - traefik.http.routers.finance.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.finance.loadbalancer.server.port=${SERVICE_PORT}
+
+  # ---- ai-service ----
+  ai-service:
+    restart: unless-stopped
+    networks: [aifa]
+    depends_on:
+      redis:
+        condition: service_healthy
+    build: ./services/ai
+    image: aifa/ai-service:dev
+    environment:
+      PORT: ${SERVICE_PORT}
+      DEBUG: ${DEBUG}
+      REDIS_ADDR: ${REDIS_HOST}:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL}
+      AI_LOCAL_URL: http://ai-local-service:8000
+    ports:
+      - "${AI_PORT}:${SERVICE_PORT}"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ai.rule=PathPrefix(`/api/v1/ai`)
+      - traefik.http.routers.ai.entrypoints=web
+      - traefik.http.routers.ai.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.ai.loadbalancer.server.port=${SERVICE_PORT}
+
+  # ---- ai-local-service (локальная ML модель) ----
+  ai-local-service:
+    restart: unless-stopped
+    networks: [aifa]
+    build: ./services/ai-local
+    image: aifa/ai-local-service:dev
+    ports:
+      - "${AI_LOCAL_PORT:-8010}:8000"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- notification-service ----
+  notification-service:
+    <<: *service-defaults
+    build: ./services/notification
+    image: aifa/notification-service:dev
+    environment:
+      PORT: ${SERVICE_PORT}
+      DEBUG: ${DEBUG}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable&search_path=${SCHEMA_NOTIFICATIONS},public
+      REDIS_ADDR: ${REDIS_HOST}:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      NATS_URL: ${NATS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      APNS_KEY_PATH: ${APNS_KEY_PATH}
+      APNS_KEY_ID: ${APNS_KEY_ID}
+      APNS_TEAM_ID: ${APNS_TEAM_ID}
+      APNS_BUNDLE_ID: ${APNS_BUNDLE_ID}
+      APNS_PRODUCTION: ${APNS_PRODUCTION}
+    ports:
+      - "${NOTIFICATION_PORT}:${SERVICE_PORT}"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.notification.rule=PathPrefix(`/api/v1/push`)
+      - traefik.http.routers.notification.entrypoints=web
+      - traefik.http.routers.notification.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
+      - traefik.http.services.notification.loadbalancer.server.port=${SERVICE_PORT}
+
+  # ---- scheduler-worker (no Traefik exposure) ----
+  scheduler-worker:
+    restart: unless-stopped
+    networks: [aifa]
+    depends_on:
+      nats:
+        condition: service_healthy
+    build: ./services/scheduler
+    image: aifa/scheduler-worker:dev
+    environment:
+      DEBUG: ${DEBUG}
+      NATS_URL: ${NATS_URL}
+      CRON_RECURRING: ${CRON_RECURRING}
+      CRON_REMINDERS: ${CRON_REMINDERS}
+      HEALTH_ADDR: :${SERVICE_PORT}
+    ports:
+      - "${SCHEDULER_HEALTH_PORT}:${SERVICE_PORT}"

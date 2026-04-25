@@ -1,0 +1,28 @@
+{
+  "categories": [
+    "food",
+    "cafe",
+    "transport",
+    "health",
+    "entertainment",
+    "utilities",
+    "shopping",
+    "education",
+    "travel",
+    "transfer"
+  ],
+  "labels_ru": {
+    "food": "Продукты",
+    "cafe": "Кафе и рестораны",
+    "transport": "Транспорт",
+    "health": "Здоровье",
+    "entertainment": "Развлечения",
+    "utilities": "Коммунальные услуги",
+    "shopping": "Покупки",
+    "education": "Образование",
+    "travel": "Путешествия",
+    "transfer": "Переводы"
+  },
+  "n_training_samples": 286,
+  "cv_accuracy": 0.47537810042347245
+}

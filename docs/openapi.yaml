@@ -1,0 +1,2799 @@
+openapi: 3.1.0
+info:
+  title: Aifa API
+  description: |
+    REST API for Aifa - a minimalist iOS app for habit tracking, task management, and budget control.
+
+    **Tagline**: habits, tasks, money - in one flow
+
+    ## Authentication
+    All endpoints (except auth) require a valid JWT access token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+
+    ## Response Format
+    All successful responses follow this format:
+    ```json
+    { "data": { ... } }
+    ```
+
+    Error responses:
+    ```json
+    { "error": { "code": "ERROR_CODE", "message": "..." } }
+    ```
+  version: 1.0.0
+  contact:
+    name: Aifa Support
+  license:
+    name: Private
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Authentication endpoints (Google, Apple, OTP)
+  - name: Habits
+    description: Habit tracking and completion management
+  - name: Tasks
+    description: Daily task management
+  - name: Transactions
+    description: Budget transactions (income/expense)
+  - name: Recurring Transactions
+    description: Recurring payments and subscriptions
+  - name: Goals
+    description: Long-term goal management
+  - name: Savings
+    description: Monthly savings goals
+  - name: Budgets
+    description: Monthly category spending limits with NATS-driven push alerts
+  - name: AI
+    description: AI-powered insights and chat
+  - name: Users
+    description: User profile management
+  - name: Push
+    description: Push notification token management
+
+paths:
+  # ==================== AUTH ====================
+  /auth/google:
+    post:
+      tags: [Auth]
+      summary: Google Sign-In
+      description: Authenticate with Google ID token
+      operationId: googleSignIn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleSignInRequest'
+      responses:
+        '200':
+          description: Existing user authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '201':
+          description: New user created and authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/apple:
+    post:
+      tags: [Auth]
+      summary: Apple Sign-In
+      description: Authenticate with Apple ID token
+      operationId: appleSignIn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppleSignInRequest'
+      responses:
+        '200':
+          description: Existing user authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '201':
+          description: New user created and authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/otp/send:
+    post:
+      tags: [Auth]
+      summary: Send OTP
+      description: Send OTP code to phone number
+      operationId: sendOTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendOTPRequest'
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: OTP sent successfully
+                      expires_at:
+                        type: string
+                        format: date-time
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verify OTP
+      description: Verify OTP code and authenticate user
+      operationId: verifyOTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOTPRequest'
+      responses:
+        '200':
+          description: OTP verified, user authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh Token
+      description: Get new access token using refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPairResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get Current User
+      description: Get authenticated user profile
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      description: Invalidate refresh token
+      operationId: logout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/account:
+    delete:
+      tags: [Auth]
+      summary: Delete Account
+      description: Permanently delete user account and all data
+      operationId: deleteAccount
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ==================== HABITS ====================
+  /habits:
+    get:
+      tags: [Habits]
+      summary: List Habits
+      description: Get all habits for the authenticated user
+      operationId: listHabits
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of habits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Habit'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Habits]
+      summary: Create Habit
+      description: Create a new habit
+      operationId: createHabit
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHabitRequest'
+      responses:
+        '201':
+          description: Habit created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Habit'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /habits/{id}:
+    get:
+      tags: [Habits]
+      summary: Get Habit
+      description: Get a single habit by ID
+      operationId: getHabit
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Habit details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Habit'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Habits]
+      summary: Update Habit
+      description: Update an existing habit
+      operationId: updateHabit
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHabitRequest'
+      responses:
+        '200':
+          description: Habit updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Habit'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Habits]
+      summary: Delete Habit
+      description: Delete a habit
+      operationId: deleteHabit
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Habit deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /habits/{id}/toggle:
+    post:
+      tags: [Habits]
+      summary: Toggle Completion
+      description: Toggle habit completion for a specific date
+      operationId: toggleHabitCompletion
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleCompletionRequest'
+      responses:
+        '200':
+          description: Completion toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Habit'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== TASKS ====================
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: List Tasks
+      description: Get all tasks, optionally filtered by date
+      operationId: listTasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          description: Filter by date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTasksResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Tasks]
+      summary: Create Task
+      description: Create a new task
+      operationId: createTask
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /tasks/{id}:
+    get:
+      tags: [Tasks]
+      summary: Get Task
+      description: Get a single task by ID
+      operationId: getTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Tasks]
+      summary: Update Task
+      description: Update an existing task
+      operationId: updateTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Tasks]
+      summary: Delete Task
+      description: Delete a task
+      operationId: deleteTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Task deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /tasks/{id}/toggle:
+    post:
+      tags: [Tasks]
+      summary: Toggle Task
+      description: Toggle task completion status
+      operationId: toggleTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Task toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== TRANSACTIONS ====================
+  /transactions:
+    get:
+      tags: [Transactions]
+      summary: List Transactions
+      description: Get all transactions, optionally filtered by month
+      operationId: listTransactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: query
+          description: Filter by year
+          schema:
+            type: integer
+            example: 2024
+        - name: month
+          in: query
+          description: Filter by month (1-12)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+      responses:
+        '200':
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionsResponse'
+
+    post:
+      tags: [Transactions]
+      summary: Create Transaction
+      description: Create a new income or expense transaction
+      operationId: createTransaction
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /transactions/summary:
+    get:
+      tags: [Transactions]
+      summary: Get Summary
+      description: Get income/expense summary for a month
+      operationId: getTransactionSummary
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: year
+          in: query
+          description: Year (defaults to current)
+          schema:
+            type: integer
+        - name: month
+          in: query
+          description: Month 1-12 (defaults to current)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Monthly summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SummaryResponse'
+
+  /transactions/{id}:
+    get:
+      tags: [Transactions]
+      summary: Get Transaction
+      description: Get a single transaction by ID
+      operationId: getTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Transaction details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Transactions]
+      summary: Update Transaction
+      description: Update an existing transaction
+      operationId: updateTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+      responses:
+        '200':
+          description: Transaction updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Transactions]
+      summary: Delete Transaction
+      description: Delete a transaction
+      operationId: deleteTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Transaction deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== RECURRING TRANSACTIONS ====================
+  /recurring-transactions:
+    get:
+      tags: [Recurring Transactions]
+      summary: List Recurring Transactions
+      description: Get all recurring transactions
+      operationId: listRecurringTransactions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of recurring transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RecurringTransaction'
+
+    post:
+      tags: [Recurring Transactions]
+      summary: Create Recurring Transaction
+      description: Create a new recurring transaction
+      operationId: createRecurringTransaction
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecurringRequest'
+      responses:
+        '201':
+          description: Recurring transaction created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RecurringTransaction'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /recurring-transactions/projection:
+    get:
+      tags: [Recurring Transactions]
+      summary: Get Projection
+      description: Get monthly projection for recurring transactions
+      operationId: getRecurringProjection
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Monthly projection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProjectionResponse'
+
+  /recurring-transactions/process:
+    post:
+      tags: [Recurring Transactions]
+      summary: Process Recurring
+      description: Process due recurring transactions and create actual transactions
+      operationId: processRecurringTransactions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Processing result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      processed:
+                        type: integer
+                      transactions_created:
+                        type: integer
+
+  /recurring-transactions/{id}:
+    get:
+      tags: [Recurring Transactions]
+      summary: Get Recurring Transaction
+      operationId: getRecurringTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Recurring transaction details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RecurringTransaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Recurring Transactions]
+      summary: Update Recurring Transaction
+      operationId: updateRecurringTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRecurringRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RecurringTransaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Recurring Transactions]
+      summary: Delete Recurring Transaction
+      operationId: deleteRecurringTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== GOALS ====================
+  /goals:
+    get:
+      tags: [Goals]
+      summary: List Goals
+      description: Get all long-term goals
+      operationId: listGoals
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of goals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Goal'
+
+    post:
+      tags: [Goals]
+      summary: Create Goal
+      operationId: createGoal
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGoalRequest'
+      responses:
+        '201':
+          description: Goal created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Goal'
+
+  /goals/{id}:
+    get:
+      tags: [Goals]
+      summary: Get Goal
+      operationId: getGoal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Goal details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Goal'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Goals]
+      summary: Update Goal
+      operationId: updateGoal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGoalRequest'
+      responses:
+        '200':
+          description: Goal updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Goal'
+
+    delete:
+      tags: [Goals]
+      summary: Delete Goal
+      operationId: deleteGoal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Goal deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ==================== SAVINGS GOAL ====================
+  /savings-goal:
+    get:
+      tags: [Savings]
+      summary: Get Savings Goal
+      description: Get user's monthly savings goal with progress
+      operationId: getSavingsGoal
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Savings goal with progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SavingsGoalWithProgress'
+
+    post:
+      tags: [Savings]
+      summary: Set Savings Goal
+      description: Create or update monthly savings goal
+      operationId: setSavingsGoal
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetSavingsGoalRequest'
+      responses:
+        '200':
+          description: Savings goal set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SavingsGoalWithProgress'
+
+    delete:
+      tags: [Savings]
+      summary: Delete Savings Goal
+      operationId: deleteSavingsGoal
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Savings goal deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      deleted:
+                        type: boolean
+
+  # ==================== BUDGETS ====================
+  /budgets:
+    get:
+      tags: [Budgets]
+      summary: List Budgets
+      description: Get all monthly category budgets for the authenticated user
+      operationId: listBudgets
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of budgets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Budget'
+
+    post:
+      tags: [Budgets]
+      summary: Set Budget
+      description: |
+        Create or update a monthly spending limit for a category.
+        If a budget for this category already exists it is updated (upsert).
+        When the monthly spend exceeds the limit after any new transaction,
+        a `budget.exceeded` event is published via NATS and an APNS push
+        notification is delivered to the user's registered iOS devices.
+      operationId: upsertBudget
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertBudgetRequest'
+      responses:
+        '201':
+          description: Budget created or updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /budgets/{id}:
+    put:
+      tags: [Budgets]
+      summary: Update Budget Limit
+      description: Update the monthly limit of an existing budget
+      operationId: updateBudget
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [monthly_limit]
+              properties:
+                monthly_limit:
+                  type: number
+                  minimum: 0.01
+                  example: 7000
+      responses:
+        '200':
+          description: Budget updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      updated:
+                        type: boolean
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Budgets]
+      summary: Delete Budget
+      operationId: deleteBudget
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Budget deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      deleted:
+                        type: boolean
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== AI ====================
+  /ai/chat:
+    post:
+      tags: [AI]
+      summary: AI Chat
+      description: Chat with AI agents (habit coach, task assistant, finance advisor, life coach)
+      operationId: aiChat
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessageRequest'
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ChatMessageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /ai/insights:
+    post:
+      tags: [AI]
+      summary: Generate Insights
+      description: Generate AI insights for habits, tasks, budget, or weekly review
+      operationId: generateInsights
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InsightRequest'
+      responses:
+        '200':
+          description: Generated insights
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InsightResponse'
+
+  /ai/expense-analysis:
+    post:
+      tags: [AI]
+      summary: Expense Analysis
+      description: Get detailed AI analysis of spending patterns
+      operationId: expenseAnalysis
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseAnalysisRequest'
+      responses:
+        '200':
+          description: Expense analysis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExpenseAnalysisResponse'
+
+  /ai/goal-to-habits:
+    post:
+      tags: [AI]
+      summary: Generate Habits from Goal
+      description: AI generates a list of daily habits to achieve a given goal
+      operationId: goalToHabits
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [goal]
+              properties:
+                goal:
+                  type: string
+                answers:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      question:
+                        type: string
+                      answer:
+                        type: string
+      responses:
+        '200':
+          description: Generated habits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      habits:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            title:
+                              type: string
+                            icon:
+                              type: string
+                            period:
+                              type: string
+                            reason:
+                              type: string
+                      explanation:
+                        type: string
+
+  /ai/goal-clarify:
+    post:
+      tags: [AI]
+      summary: Clarify Goal
+      description: AI generates clarifying questions to help define a goal better
+      operationId: goalClarify
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [goal]
+              properties:
+                goal:
+                  type: string
+      responses:
+        '200':
+          description: Clarifying questions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      questions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            question:
+                              type: string
+                            options:
+                              type: array
+                              items:
+                                type: string
+
+  /ai/command:
+    post:
+      tags: [AI]
+      summary: AI Command
+      description: Parse a natural language command into a structured action (create transaction, set goal, etc.)
+      operationId: aiCommand
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                  example: "потратил 1500 на такси"
+      responses:
+        '200':
+          description: Parsed command
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /ai/categorize:
+    post:
+      tags: [AI]
+      summary: Categorize Expense (Local ML)
+      description: |
+        Classify a transaction description into a spending category using a local
+        SentenceTransformer + LogisticRegression model. Falls back to GPT-4 if
+        model confidence is below the per-category threshold.
+      operationId: categorizeExpense
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  example: "Яндекс Такси"
+      responses:
+        '200':
+          description: Category result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CategorizeResult'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /ai/categorize/batch:
+    post:
+      tags: [AI]
+      summary: Batch Categorize Expenses (Local ML)
+      description: Classify up to 100 transaction descriptions in a single request.
+      operationId: batchCategorizeExpenses
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [texts]
+              properties:
+                texts:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    type: string
+                  example: ["Пятёрочка", "Яндекс Такси", "Кино Октябрь"]
+      responses:
+        '200':
+          description: List of category results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CategorizeResult'
+
+  /ai/forecast:
+    post:
+      tags: [AI]
+      summary: Forecast Expenses (Local ML)
+      description: |
+        Predict future spending per category using Holt-Winters ExponentialSmoothing
+        (statsmodels). Falls back to weighted moving average or simple mean for sparse data.
+        Returns daily predicted values with 95% confidence intervals.
+      operationId: forecastExpenses
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transactions]
+              properties:
+                transactions:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/TransactionInput'
+                horizon_days:
+                  type: integer
+                  minimum: 1
+                  maximum: 365
+                  default: 30
+                  example: 30
+                ref_date:
+                  type: string
+                  format: date
+                  description: Reference date (default today)
+                  example: "2026-04-24"
+      responses:
+        '200':
+          description: Forecast per category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ForecastResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /ai/anomalies:
+    post:
+      tags: [AI]
+      summary: Detect Spending Anomalies (Local ML)
+      description: |
+        Detect anomalous transactions using Modified Z-score (MAD-based, robust to outliers)
+        per category, and IsolationForest for unusual total daily spending patterns.
+        Sensitivity controls the detection threshold: low=3.0σ, medium=2.5σ, high=2.0σ.
+      operationId: detectAnomalies
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transactions]
+              properties:
+                transactions:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: '#/components/schemas/TransactionInput'
+                sensitivity:
+                  type: string
+                  enum: [low, medium, high]
+                  default: medium
+                  example: medium
+      responses:
+        '200':
+          description: Detected anomalies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AnomalyResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /ai/receipt/scan:
+    post:
+      tags: [AI]
+      summary: Scan Receipt (OCR via GPT-4 Vision)
+      description: |
+        Extract transaction data from a receipt image using GPT-4 Vision.
+        Supports JPEG, PNG, WEBP, GIF. Max file size 10 MB.
+      operationId: scanReceipt
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Extracted receipt data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      amount:
+                        type: number
+                      currency:
+                        type: string
+                      date:
+                        type: string
+                      merchant:
+                        type: string
+                      category:
+                        type: string
+                      items:
+                        type: array
+                        items:
+                          type: string
+                      confidence:
+                        type: number
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /ai/voice/transcribe:
+    post:
+      tags: [AI]
+      summary: Transcribe Voice (Whisper + GPT-4 parse)
+      description: |
+        Transcribe an audio recording using OpenAI Whisper, then parse the transcript
+        into a structured transaction via GPT-4. Supports MP3, MP4, WAV, M4A, WEBM.
+        Max file size 25 MB.
+      operationId: transcribeVoice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [audio]
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                language:
+                  type: string
+                  default: ru
+                  example: ru
+      responses:
+        '200':
+          description: Parsed voice transaction
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      transcript:
+                        type: string
+                      amount:
+                        type: number
+                        nullable: true
+                      currency:
+                        type: string
+                        nullable: true
+                      category:
+                        type: string
+                        nullable: true
+                      description:
+                        type: string
+                        nullable: true
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  # ==================== USERS ====================
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get Profile
+      description: Get authenticated user's full profile (from user-service)
+      operationId: getProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Users]
+      summary: Update Profile
+      description: Update authenticated user's profile
+      operationId: updateProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                avatar_url:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+
+  # ==================== PUSH ====================
+  /push/register:
+    post:
+      tags: [Push]
+      summary: Register Token
+      description: Register device token for push notifications
+      operationId: registerPushToken
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterTokenRequest'
+      responses:
+        '200':
+          description: Token registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: registered
+
+  /push/unregister:
+    post:
+      tags: [Push]
+      summary: Unregister Token
+      description: Remove device token
+      operationId: unregisterPushToken
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterTokenRequest'
+      responses:
+        '200':
+          description: Token unregistered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: unregistered
+
+  # ==================== HEALTH ====================
+  /health:
+    get:
+      summary: Health Check
+      description: Check API health status
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token
+
+  parameters:
+    idParam:
+      name: id
+      in: path
+      required: true
+      description: Resource UUID
+      schema:
+        type: string
+        format: uuid
+
+    limitParam:
+      name: limit
+      in: query
+      description: Number of items per page (max 100)
+      schema:
+        type: integer
+        default: 50
+        maximum: 100
+
+    offsetParam:
+      name: offset
+      in: query
+      description: Number of items to skip
+      schema:
+        type: integer
+        default: 0
+
+  responses:
+    Unauthorized:
+      description: Authentication required or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Invalid or expired token
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: NOT_FOUND
+              message: Resource not found
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Title is required
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: Something went wrong
+
+    ServiceUnavailable:
+      description: Downstream service unavailable (e.g. OpenAI key not configured or ai-local-service down)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: AI_ERROR
+              message: OpenAI API key is not configured
+
+  schemas:
+    # ==================== AUTH ====================
+    GoogleSignInRequest:
+      type: object
+      required: [id_token]
+      properties:
+        id_token:
+          type: string
+          description: Google ID token from Sign-In
+
+    AppleSignInRequest:
+      type: object
+      required: [id_token]
+      properties:
+        id_token:
+          type: string
+          description: Apple ID token
+        user:
+          type: string
+          description: User info JSON (only on first sign-in)
+
+    SendOTPRequest:
+      type: object
+      required: [phone]
+      properties:
+        phone:
+          type: string
+          example: "+77001234567"
+
+    VerifyOTPRequest:
+      type: object
+      required: [phone, code]
+      properties:
+        phone:
+          type: string
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+
+    LogoutRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            tokens:
+              $ref: '#/components/schemas/TokenPair'
+            is_new_user:
+              type: boolean
+
+    UserResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+
+    TokenPairResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TokenPair'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        name:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+        auth_provider:
+          type: string
+          enum: [google, apple, phone]
+        created_at:
+          type: string
+          format: date-time
+
+    TokenPair:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    # ==================== HABITS ====================
+    CreateHabitRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        goal_id:
+          type: string
+          format: uuid
+        icon:
+          type: string
+          default: "🎯"
+        color:
+          type: string
+          default: green
+        period:
+          type: string
+          enum: [daily, weekly, monthly]
+          default: daily
+        target_value:
+          type: integer
+          description: Target for measurable habits
+        unit:
+          type: string
+          description: Unit for target (e.g., pages, minutes)
+
+    UpdateHabitRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        goal_id:
+          type: string
+          format: uuid
+        icon:
+          type: string
+        color:
+          type: string
+        period:
+          type: string
+          enum: [daily, weekly, monthly]
+        target_value:
+          type: integer
+        unit:
+          type: string
+        archived_at:
+          type: string
+          format: date-time
+          description: Set to archive, empty string to unarchive
+
+    ToggleCompletionRequest:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date in YYYY-MM-DD format
+        value:
+          type: integer
+          description: Progress value for measurable habits
+
+    Habit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        goal_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+        period:
+          type: string
+          enum: [daily, weekly, monthly]
+        completed_dates:
+          type: array
+          items:
+            type: string
+            format: date
+        target_value:
+          type: integer
+        unit:
+          type: string
+        progress_values:
+          type: object
+          additionalProperties:
+            type: integer
+        streak:
+          type: integer
+          description: Current streak (calculated by backend)
+        created_at:
+          type: string
+          format: date-time
+        archived_at:
+          type: string
+          format: date-time
+
+    # ==================== TASKS ====================
+    CreateTaskRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          maxLength: 500
+        priority:
+          type: string
+          enum: [low, medium, high]
+          default: medium
+        due_date:
+          type: string
+          format: date
+          description: Defaults to today
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        is_completed:
+          type: boolean
+        priority:
+          type: string
+          enum: [low, medium, high]
+        due_date:
+          type: string
+          format: date
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        is_completed:
+          type: boolean
+        priority:
+          type: string
+          enum: [low, medium, high]
+        due_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+
+    PaginatedTasksResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # ==================== TRANSACTIONS ====================
+    CreateTransactionRequest:
+      type: object
+      required: [title, amount, type]
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+        type:
+          type: string
+          enum: [income, expense]
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+          description: Defaults to today
+
+    UpdateTransactionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        amount:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [income, expense]
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        amount:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [income, expense]
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+
+    SummaryResponse:
+      type: object
+      properties:
+        income:
+          type: number
+          format: double
+        expense:
+          type: number
+          format: double
+        balance:
+          type: number
+          format: double
+
+    PaginatedTransactionsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # ==================== RECURRING TRANSACTIONS ====================
+    CreateRecurringRequest:
+      type: object
+      required: [title, amount, type, frequency]
+      properties:
+        title:
+          type: string
+        amount:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [income, expense]
+        category:
+          type: string
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        remaining_payments:
+          type: integer
+
+    UpdateRecurringRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        amount:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [income, expense]
+        category:
+          type: string
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        start_date:
+          type: string
+          format: date
+        next_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        remaining_payments:
+          type: integer
+        is_active:
+          type: boolean
+
+    RecurringTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        amount:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [income, expense]
+        category:
+          type: string
+        frequency:
+          type: string
+          enum: [weekly, biweekly, monthly, quarterly, yearly]
+        start_date:
+          type: string
+          format: date
+        next_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        remaining_payments:
+          type: integer
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    ProjectionResponse:
+      type: object
+      properties:
+        monthly_income:
+          type: number
+          format: double
+        monthly_expense:
+          type: number
+          format: double
+        monthly_net:
+          type: number
+          format: double
+
+    # ==================== GOALS ====================
+    CreateGoalRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        icon:
+          type: string
+          default: "🎯"
+        target_value:
+          type: integer
+        unit:
+          type: string
+        deadline:
+          type: string
+          format: date-time
+
+    UpdateGoalRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        icon:
+          type: string
+        target_value:
+          type: integer
+        unit:
+          type: string
+        deadline:
+          type: string
+          format: date-time
+        archived_at:
+          type: string
+          format: date-time
+
+    Goal:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        icon:
+          type: string
+        target_value:
+          type: integer
+        unit:
+          type: string
+        deadline:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        archived_at:
+          type: string
+          format: date-time
+
+    # ==================== SAVINGS ====================
+    SetSavingsGoalRequest:
+      type: object
+      required: [monthlyTarget]
+      properties:
+        monthlyTarget:
+          type: number
+          format: double
+          minimum: 0.01
+
+    SavingsGoalWithProgress:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        monthly_target:
+          type: number
+          format: double
+        current_savings:
+          type: number
+          format: double
+        monthly_income:
+          type: number
+          format: double
+        monthly_expenses:
+          type: number
+          format: double
+        progress:
+          type: number
+          format: double
+          description: Progress 0-1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # ==================== AI ====================
+    ChatMessageRequest:
+      type: object
+      required: [agent, message]
+      properties:
+        agent:
+          type: string
+          enum: [habit_coach, task_assistant, finance_advisor, life_coach]
+        message:
+          type: string
+        context:
+          type: string
+          description: Additional context (JSON string)
+
+    ChatMessageResponse:
+      type: object
+      properties:
+        response:
+          type: string
+
+    InsightRequest:
+      type: object
+      required: [type, data]
+      properties:
+        type:
+          type: string
+          enum: [habits, tasks, budget, weekly]
+        data:
+          type: string
+          description: JSON string with user data
+
+    InsightResponse:
+      type: object
+      properties:
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsightItem'
+
+    InsightItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [positive, warning, suggestion]
+        title:
+          type: string
+        message:
+          type: string
+
+    ExpenseAnalysisRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: string
+          description: JSON with detailed expense data
+
+    ExpenseAnalysisResponse:
+      type: object
+      properties:
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpenseInsightItem'
+        questionableTransactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionableTransaction'
+        savingsSuggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavingsSuggestion'
+
+    ExpenseInsightItem:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        amount:
+          type: number
+          format: double
+        category:
+          type: string
+        priority:
+          type: integer
+
+    QuestionableTransaction:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        reason:
+          type: string
+        category:
+          type: string
+        potentialSavings:
+          type: number
+          format: double
+
+    SavingsSuggestion:
+      type: object
+      properties:
+        category:
+          type: string
+        currentSpending:
+          type: number
+          format: double
+        suggestedBudget:
+          type: number
+          format: double
+        potentialSavings:
+          type: number
+          format: double
+        reason:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+
+    # ==================== PUSH ====================
+    RegisterTokenRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+        platform:
+          type: string
+          default: ios
+          enum: [ios, android]
+
+    # ==================== USERS ====================
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+        auth_provider:
+          type: string
+          enum: [google, apple, phone]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # ==================== COMMON ====================
+    MessageResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer
+        total:
+          type: integer
+
+    # ==================== BUDGETS ====================
+    Budget:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        category:
+          type: string
+          example: food
+        label_ru:
+          type: string
+          example: Продукты
+        monthly_limit:
+          type: number
+          example: 5000
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UpsertBudgetRequest:
+      type: object
+      required: [category, monthly_limit]
+      properties:
+        category:
+          type: string
+          example: food
+        monthly_limit:
+          type: number
+          minimum: 0.01
+          example: 5000
+
+    # ==================== AI LOCAL ====================
+    TransactionInput:
+      type: object
+      required: [date, amount, category]
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-04-01"
+        amount:
+          type: number
+          minimum: 0.01
+          example: 1200.00
+        category:
+          type: string
+          example: food
+
+    CategorizeResult:
+      type: object
+      properties:
+        text:
+          type: string
+        category:
+          type: string
+          example: food
+        label_ru:
+          type: string
+          example: Продукты
+        label_kz:
+          type: string
+          example: Азық-түлік
+        confidence:
+          type: number
+          format: float
+          example: 0.92
+        confident:
+          type: boolean
+          example: true
+        source:
+          type: string
+          enum: [local, gpt4]
+          example: local
+
+    ForecastPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        predicted:
+          type: number
+        lower:
+          type: number
+        upper:
+          type: number
+
+    CategoryForecast:
+      type: object
+      properties:
+        category:
+          type: string
+        label_ru:
+          type: string
+        label_kz:
+          type: string
+        horizon_days:
+          type: integer
+        total_predicted:
+          type: number
+        daily:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastPoint'
+        method:
+          type: string
+          enum: [holt_winters, moving_avg, mean]
+        confidence:
+          type: number
+          format: float
+
+    ForecastResponse:
+      type: object
+      properties:
+        forecasts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryForecast'
+        horizon_days:
+          type: integer
+        ref_date:
+          type: string
+          format: date
+
+    AnomalyPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        category:
+          type: string
+        label_ru:
+          type: string
+        label_kz:
+          type: string
+        amount:
+          type: number
+        mean:
+          type: number
+        std:
+          type: number
+        z_score:
+          type: number
+        severity:
+          type: string
+          enum: [low, medium, high]
+        source:
+          type: string
+          enum: [zscore, isolation_forest]
+        expected_lower:
+          type: number
+        expected_upper:
+          type: number
+
+    AnomalyResponse:
+      type: object
+      properties:
+        anomalies:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnomalyPoint'
+        total_anomalies:
+          type: integer
+        sensitivity:
+          type: string
+        z_threshold:
+          type: number
+        method:
+          type: string
+        stats:
+          type: object
+          additionalProperties:
+            type: object
