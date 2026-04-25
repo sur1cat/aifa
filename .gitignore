@@ -1,33 +1,4 @@
 # Binaries
-<<<<<<< HEAD
-bin/
-dist/
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-
-# Go
-vendor/
-coverage.txt
-coverage.out
-*.prof
-
-# Env
-.env
-.env.local
-.env.*.local
-!.env.example
-
-# Secrets
-*.p8
-*.pem
-*.key
-!**/testdata/*.pem
-=======
 *.exe
 *.dll
 *.so
@@ -61,33 +32,11 @@ services/ai-local/models/*.joblib
 # OS
 .DS_Store
 Thumbs.db
->>>>>>> feature/diploma-final
 
 # IDE
 .idea/
 .vscode/
 *.swp
-<<<<<<< HEAD
-*.swo
-.DS_Store
-
-# Local Claude Code state
-.claude/
 
 # Logs
 *.log
-logs/
-
-# Docker / k8s local state
-.volumes/
-postgres-data/
-redis-data/
-nats-data/
-
-# Helm
-charts/*.tgz
-=======
-
-# Logs
-*.log
->>>>>>> feature/diploma-final

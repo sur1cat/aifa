@@ -43,17 +43,11 @@ payload:
 | Субъект | Издатель | Подписчики | Назначение |
 |---|---|---|---|
 | `user.deleted` | auth / user | habit, goal, task, finance, notification | Каскадное удаление данных пользователя |
-<<<<<<< HEAD
-| `transaction.created` | finance | ai (для инсайтов) | Прогрев кэша, триггер пересчётов |
-| `reminder.due` | scheduler | notification | Отправка push |
-| `recurring.processed` | finance | — | Аудит |
-=======
 | `goal.deleted` | goal | habit | Отвязать привычки от удалённой цели |
 | `cron.recurring.tick` | scheduler (каждые 5 мин) | finance | Обработать due recurring-транзакции |
 | `cron.reminder.tick` | scheduler (09:00 ежедневно) | habit | Фанаут на reminder.due по активным юзерам |
 | `reminder.due` | habit (per-user) | notification | Push «Привычки на сегодня» |
 | `budget.exceeded` | finance | notification, task | Push-алерт + авто-задача «Проверь расходы» |
->>>>>>> feature/diploma-final
 
 Стримы конфигурируются при старте сервиса (idempotent JetStream ensure-stream).
 
