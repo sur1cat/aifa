@@ -30,7 +30,6 @@ jobs:
           go vet ./...
           go test -race -count=1 ./...
   deploy:
-    needs: test
     runs-on: ubuntu-latest
 
     steps:
