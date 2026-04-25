@@ -1,7 +1,6 @@
 # AIFA — local orchestration. All values come from .env (see .env.example).
 # Run:   docker compose up -d
 # Logs:  docker compose logs -f <service>
-#DEPLOY TEST (REMOVE THIS COMMENT AFTER TESTS)
 
 networks:
   aifa:
@@ -267,6 +266,7 @@ services:
       NATS_URL: ${NATS_URL}
       JWT_SECRET: ${JWT_SECRET}
       DEFAULT_CURRENCY: ${DEFAULT_CURRENCY}
+      AI_LOCAL_URL: http://ai-local-service:8000
     ports:
       - "${FINANCE_PORT}:${SERVICE_PORT}"
     labels:
@@ -294,6 +294,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL}
+      AI_LOCAL_URL: http://ai-local-service:8000
     ports:
       - "${AI_PORT}:${SERVICE_PORT}"
     labels:
@@ -302,6 +303,20 @@ services:
       - traefik.http.routers.ai.entrypoints=web
       - traefik.http.routers.ai.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
       - traefik.http.services.ai.loadbalancer.server.port=${SERVICE_PORT}
+
+  # ---- ai-local-service (локальная ML модель) ----
+  ai-local-service:
+    restart: unless-stopped
+    networks: [aifa]
+    build: ./services/ai-local
+    image: aifa/ai-local-service:dev
+    ports:
+      - "${AI_LOCAL_PORT:-8010}:8000"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ---- notification-service ----
   notification-service:

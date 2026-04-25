@@ -19,6 +19,8 @@ type Config struct {
 
 	OpenAIAPIKey string
 	OpenAIModel  string
+
+	AILocalURL string
 }
 
 const defaultJWTSecret = "change-me-in-production-min-32-chars-long-secret"
@@ -45,6 +47,7 @@ func Load() (*Config, error) {
 		JWTSecret:     secret,
 		OpenAIAPIKey:  env("OPENAI_API_KEY", ""),
 		OpenAIModel:   env("OPENAI_MODEL", "gpt-4o-mini"),
+		AILocalURL:    env("AI_LOCAL_URL", "http://ai-local-service:8000"),
 	}, nil
 }
 

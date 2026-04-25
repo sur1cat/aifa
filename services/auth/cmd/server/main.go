@@ -74,8 +74,11 @@ func main() {
 	otpStore := otp.NewStore(rdb)
 	otpHandler := handler.NewOTPHandler(authHandler, otpStore, cfg.Debug)
 
+	// 60 запросов в минуту с одного IP — защита от брутфорса
+	rateLimiter := middleware.NewRateLimiter(60, time.Minute)
+
 	r := gin.New()
-	r.Use(gin.Recovery(), middleware.RequestLogger(log))
+	r.Use(gin.Recovery(), middleware.RequestLogger(log), rateLimiter.Limit())
 
 	r.GET("/health", handler.Health)
 	r.POST("/auth/google", authHandler.GoogleSignIn)

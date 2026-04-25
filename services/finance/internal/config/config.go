@@ -20,6 +20,8 @@ type Config struct {
 
 	JWTSecret       string
 	DefaultCurrency string
+
+	AILocalURL string
 }
 
 const defaultJWTSecret = "change-me-in-production-min-32-chars-long-secret"
@@ -47,6 +49,7 @@ func Load() (*Config, error) {
 		NATSURL:       env("NATS_URL", "nats://localhost:4222"),
 		JWTSecret:       secret,
 		DefaultCurrency: env("DEFAULT_CURRENCY", "USD"),
+		AILocalURL:      env("AI_LOCAL_URL", "http://ai-local-service:8000"),
 	}, nil
 }
 

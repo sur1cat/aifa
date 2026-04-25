@@ -14,6 +14,7 @@ import (
 	"github.com/sur1cat/aifa/finance-service/internal/events"
 	"github.com/sur1cat/aifa/finance-service/internal/handler"
 	"github.com/sur1cat/aifa/finance-service/internal/jwt"
+	"github.com/sur1cat/aifa/finance-service/internal/localai"
 	"github.com/sur1cat/aifa/finance-service/internal/middleware"
 	"github.com/sur1cat/aifa/finance-service/internal/migrate"
 	"github.com/sur1cat/aifa/finance-service/internal/repository"
@@ -61,18 +62,27 @@ func main() {
 	txRepo := repository.NewTransactionRepository(pool)
 	recurringRepo := repository.NewRecurringRepository(pool)
 	savingsRepo := repository.NewSavingsRepository(pool)
+	budgetRepo := repository.NewBudgetRepository(pool)
+	debtRepo := repository.NewDebtRepository(pool)
+	savingsRuleRepo := repository.NewSavingsRuleRepository(pool)
 
-	sub, err := events.NewSubscriber(nc, txRepo, recurringRepo, savingsRepo)
+	pub := events.NewPublisher(nc)
+
+	sub, err := events.NewSubscriber(nc, txRepo, recurringRepo, savingsRepo, savingsRuleRepo, pub)
 	if err != nil {
 		log.Error("events subscribe failed", "err", err)
 		os.Exit(1)
 	}
 	defer sub.Unsubscribe()
+	localAI := localai.NewClient(cfg.AILocalURL)
 
 	authMW := middleware.NewAuth(validator, blacklist)
-	txHandler := handler.NewTransactionHandler(txRepo)
+	txHandler := handler.NewTransactionHandler(txRepo, localAI, budgetRepo, pub)
 	recurringHandler := handler.NewRecurringHandler(recurringRepo, txRepo)
 	savingsHandler := handler.NewSavingsHandler(savingsRepo, txRepo)
+	budgetHandler := handler.NewBudgetHandler(budgetRepo, pub)
+	debtHandler := handler.NewDebtHandler(debtRepo)
+	savingsRuleHandler := handler.NewSavingsRuleHandler(savingsRuleRepo)
 
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.RequestLogger(log))
@@ -97,6 +107,22 @@ func main() {
 	p.GET("/savings-goal", savingsHandler.Get)
 	p.POST("/savings-goal", savingsHandler.Set)
 	p.DELETE("/savings-goal", savingsHandler.Delete)
+
+	p.GET("/budgets", budgetHandler.List)
+	p.POST("/budgets", budgetHandler.Upsert)
+	p.PUT("/budgets/:id", budgetHandler.Update)
+	p.DELETE("/budgets/:id", budgetHandler.Delete)
+
+	p.GET("/debts", debtHandler.List)
+	p.POST("/debts", debtHandler.Create)
+	p.PATCH("/debts/:id", debtHandler.Patch)
+	p.DELETE("/debts/:id", debtHandler.Delete)
+
+	p.GET("/savings-rules", savingsRuleHandler.List)
+	p.POST("/savings-rules", savingsRuleHandler.Create)
+	p.PATCH("/savings-rules/:id/deactivate", savingsRuleHandler.Deactivate)
+	p.DELETE("/savings-rules/:id", savingsRuleHandler.Delete)
+	p.GET("/spending/daily", savingsRuleHandler.DailySpent)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

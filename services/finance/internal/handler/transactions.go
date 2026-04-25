@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 	"time"
 
 	"github.com/sur1cat/aifa/finance-service/internal/domain"
+	"github.com/sur1cat/aifa/finance-service/internal/events"
+	"github.com/sur1cat/aifa/finance-service/internal/localai"
 	"github.com/sur1cat/aifa/finance-service/internal/middleware"
 	"github.com/sur1cat/aifa/finance-service/internal/repository"
 
@@ -16,11 +19,14 @@ import (
 )
 
 type TransactionHandler struct {
-	tx *repository.TransactionRepository
+	tx      *repository.TransactionRepository
+	localAI *localai.Client
+	budgets *repository.BudgetRepository
+	pub     *events.Publisher
 }
 
-func NewTransactionHandler(r *repository.TransactionRepository) *TransactionHandler {
-	return &TransactionHandler{tx: r}
+func NewTransactionHandler(r *repository.TransactionRepository, ai *localai.Client, b *repository.BudgetRepository, pub *events.Publisher) *TransactionHandler {
+	return &TransactionHandler{tx: r, localAI: ai, budgets: b, pub: pub}
 }
 
 type txDTO struct {
@@ -110,12 +116,20 @@ func (h *TransactionHandler) Create(c *gin.Context) {
 		date = time.Now().Format("2006-01-02")
 	}
 
+	category := req.Category
+	if category == "" && req.Type == "expense" {
+		if cat, ok := h.localAI.CategorizeExpense(c.Request.Context(), req.Title); ok {
+			category = cat
+			slog.Info("auto-categorized transaction", "title", req.Title, "category", category)
+		}
+	}
+
 	t := &domain.Transaction{
 		UserID:   userID,
 		Title:    req.Title,
 		Amount:   req.Amount,
 		Type:     domain.TransactionType(req.Type),
-		Category: req.Category,
+		Category: category,
 		Date:     date,
 	}
 	if err := h.tx.Create(c.Request.Context(), t); err != nil {
@@ -123,6 +137,22 @@ func (h *TransactionHandler) Create(c *gin.Context) {
 		respondError(c, http.StatusInternalServerError, codeInternal, "Failed to create transaction")
 		return
 	}
+
+	// Проверяем бюджет асинхронно — не блокируем ответ клиенту.
+	if t.Type == domain.TypeExpense && t.Category != "" && h.budgets != nil && h.pub != nil {
+		go h.checkBudget(userID, t.Category)
+	}
+
+	if h.pub != nil {
+		_ = h.pub.Publish("transaction.created", map[string]any{
+			"user_id":  userID.String(),
+			"tx_id":    t.ID.String(),
+			"type":     string(t.Type),
+			"amount":   t.Amount,
+			"category": t.Category,
+		})
+	}
+
 	respondCreated(c, toTxDTO(t))
 }
 
@@ -249,4 +279,40 @@ func (h *TransactionHandler) Summary(c *gin.Context) {
 		return
 	}
 	respondOK(c, summaryDTO{Income: income, Expense: expense, Balance: income - expense})
+}
+
+func (h *TransactionHandler) checkBudget(userID uuid.UUID, category string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	budget, err := h.budgets.GetByCategory(ctx, userID, category)
+	if err != nil {
+		return // бюджет не установлен — ничего не делаем
+	}
+
+	spent, err := h.budgets.MonthlySpent(ctx, userID, category)
+	if err != nil {
+		slog.Error("monthly spent query", "err", err, "user_id", userID, "category", category)
+		return
+	}
+
+	if spent >= budget.MonthlyLimit {
+		label := labelsRu[category]
+		if label == "" {
+			label = category
+		}
+		if err := h.pub.PublishBudgetExceeded(events.BudgetExceededPayload{
+			UserID:       userID.String(),
+			Category:     category,
+			LabelRu:      label,
+			MonthlyLimit: budget.MonthlyLimit,
+			Spent:        spent,
+		}); err != nil {
+			slog.Error("publish budget.exceeded", "err", err, "user_id", userID)
+		} else {
+			slog.Info("budget exceeded — event published",
+				"user_id", userID, "category", category,
+				"limit", budget.MonthlyLimit, "spent", spent)
+		}
+	}
 }

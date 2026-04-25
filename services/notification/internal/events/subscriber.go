@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -14,9 +15,10 @@ import (
 )
 
 const (
-	SubjectUserDeleted = "user.deleted"
-	SubjectReminderDue = "reminder.due"
-	handlerTimeout     = 10 * time.Second
+	SubjectUserDeleted    = "user.deleted"
+	SubjectReminderDue    = "reminder.due"
+	SubjectBudgetExceeded = "budget.exceeded"
+	handlerTimeout        = 10 * time.Second
 )
 
 // Subscriber wires NATS subjects to handler methods. Push delivery is
@@ -36,6 +38,7 @@ func NewSubscriber(nc *nats.Conn, tokens *repository.DeviceTokenRepository, clie
 	}{
 		{SubjectUserDeleted, s.onUserDeleted},
 		{SubjectReminderDue, s.onReminderDue},
+		{SubjectBudgetExceeded, s.onBudgetExceeded},
 	} {
 		sub, err := nc.Subscribe(b.subject, b.handler)
 		if err != nil {
@@ -91,7 +94,7 @@ type reminderDuePayload struct {
 
 func (s *Subscriber) onReminderDue(msg *nats.Msg) {
 	if s.apns == nil {
-		// APNS not configured — drop silently in dev. Scheduler still ticks.
+		slog.Info("reminder.due received (APNS not configured — push skipped)")
 		return
 	}
 	var p reminderDuePayload
@@ -125,4 +128,62 @@ func (s *Subscriber) onReminderDue(msg *nats.Msg) {
 		}
 	}
 	slog.Info("reminder delivered", "user_id", uid, "tokens", len(tokens))
+}
+
+type budgetExceededPayload struct {
+	UserID       string  `json:"user_id"`
+	Category     string  `json:"category"`
+	LabelRu      string  `json:"label_ru"`
+	MonthlyLimit float64 `json:"monthly_limit"`
+	Spent        float64 `json:"spent"`
+}
+
+func (s *Subscriber) onBudgetExceeded(msg *nats.Msg) {
+	if s.apns == nil {
+		slog.Info("budget.exceeded received (APNS not configured — push skipped)")
+		return
+	}
+	var p budgetExceededPayload
+	if err := json.Unmarshal(msg.Data, &p); err != nil {
+		slog.Error("decode budget.exceeded", "err", err)
+		return
+	}
+	uid, err := uuid.Parse(p.UserID)
+	if err != nil {
+		slog.Error("parse user id in budget.exceeded", "err", err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), handlerTimeout)
+	defer cancel()
+
+	tokens, err := s.tokens.ListByUser(ctx, uid)
+	if err != nil {
+		slog.Error("list tokens for budget alert", "err", err, "user_id", uid)
+		return
+	}
+
+	label := p.LabelRu
+	if label == "" {
+		label = p.Category
+	}
+	title := "Бюджет превышен"
+	body := fmt.Sprintf("%s: потрачено %.0f ₸ из %.0f ₸", label, p.Spent, p.MonthlyLimit)
+
+	for _, t := range tokens {
+		if err := s.apns.Send(ctx, &apns.Notification{
+			DeviceToken: t.Token,
+			Title:       title,
+			Body:        body,
+			Data: map[string]any{
+				"type":          "budget_exceeded",
+				"category":      p.Category,
+				"monthly_limit": p.MonthlyLimit,
+				"spent":         p.Spent,
+			},
+		}); err != nil {
+			slog.Warn("apns send failed for budget alert", "err", err, "user_id", uid)
+		}
+	}
+	slog.Info("budget alert delivered", "user_id", uid, "category", p.Category, "tokens", len(tokens))
 }

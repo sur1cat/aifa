@@ -154,6 +154,26 @@ func (r *HabitRepository) DeleteByUser(ctx context.Context, userID uuid.UUID) er
 	return nil
 }
 
+// ListActiveUserIDs returns distinct user IDs that have at least one non-archived habit.
+// Used by the cron.reminder.tick handler to fan out per-user reminder.due events.
+func (r *HabitRepository) ListActiveUserIDs(ctx context.Context) ([]uuid.UUID, error) {
+	rows, err := r.pool.Query(ctx, `SELECT DISTINCT user_id FROM habits WHERE archived_at IS NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("list active user ids: %w", err)
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
 // ClearGoalRef is called from the goal.deleted NATS handler.
 func (r *HabitRepository) ClearGoalRef(ctx context.Context, goalID uuid.UUID) error {
 	_, err := r.pool.Exec(ctx, `UPDATE habits SET goal_id = NULL WHERE goal_id = $1`, goalID)

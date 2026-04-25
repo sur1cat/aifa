@@ -1,4 +1,5 @@
 # Binaries
+<<<<<<< HEAD
 bin/
 dist/
 *.exe
@@ -26,11 +27,47 @@ coverage.out
 *.pem
 *.key
 !**/testdata/*.pem
+=======
+*.exe
+*.dll
+*.so
+*.dylib
+/out/
+
+# Go
+vendor/
+*.test
+*.out
+go.sum
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Models (large files)
+services/ai-local/models/*.joblib
+
+# Docker
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+>>>>>>> feature/diploma-final
 
 # IDE
 .idea/
 .vscode/
 *.swp
+<<<<<<< HEAD
 *.swo
 .DS_Store
 
@@ -49,3 +86,8 @@ nats-data/
 
 # Helm
 charts/*.tgz
+=======
+
+# Logs
+*.log
+>>>>>>> feature/diploma-final
