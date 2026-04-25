@@ -1,4 +1,4 @@
-name: CI (all services)
+name: CI
 
 on:
   push:
