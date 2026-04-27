@@ -352,15 +352,85 @@ type commandTransaction struct {
 	Date          string  `json:"date"`
 }
 
+// commandResponse is what we send back to the Flutter client.
+//
+// `status` and `message` are added on top of the OpenAI-emitted shape so the
+// client can route the response without re-parsing the LLM intent string.
+// `message` mirrors `response` for backward-compatibility with older clients.
 type commandResponse struct {
-	Intent      string              `json:"intent"`
-	Response    string              `json:"response"`
-	Transaction *commandTransaction `json:"transaction,omitempty"`
-	Habit       *commandHabit       `json:"habit,omitempty"`
-	Task        *commandTask        `json:"task,omitempty"`
-	Tasks       []commandTask       `json:"tasks,omitempty"`
-	Plan        *commandPlan        `json:"plan,omitempty"`
-	Advice      string              `json:"advice,omitempty"`
+	Status         string              `json:"status"`
+	Message        string              `json:"message"`
+	MissingFields  []string            `json:"missing_fields,omitempty"`
+	Intent         string              `json:"intent"`
+	Response       string              `json:"response"`
+	Transaction    *commandTransaction `json:"transaction,omitempty"`
+	Habit          *commandHabit       `json:"habit,omitempty"`
+	Task           *commandTask        `json:"task,omitempty"`
+	Tasks          []commandTask       `json:"tasks,omitempty"`
+	Plan           *commandPlan        `json:"plan,omitempty"`
+	Advice         string              `json:"advice,omitempty"`
+}
+
+const (
+	cmdStatusCompleted          = "completed"
+	cmdStatusNeedsClarification = "needs_clarification"
+	cmdStatusNeedsConfirmation  = "needs_confirmation"
+	cmdStatusUnsupported        = "unsupported"
+)
+
+// deriveCommandStatus turns the LLM-emitted `intent` + payload completeness
+// into the four-state status the Flutter chat controller understands. Any
+// intent that doesn't actually act on user data ("chat", "advice",
+// "unsupported", or anything unknown) gets `unsupported` so the client can
+// render `message` as a free-form reply without a second OpenAI call.
+func deriveCommandStatus(body *commandResponse) []string {
+	missing := []string{}
+	switch body.Intent {
+	case "create_transaction":
+		if body.Transaction == nil {
+			body.Status = cmdStatusNeedsClarification
+			missing = append(missing, "transaction")
+			return missing
+		}
+		if body.Transaction.Amount <= 0 {
+			missing = append(missing, "amount")
+		}
+		if strings.TrimSpace(body.Transaction.Title) == "" {
+			missing = append(missing, "title")
+		}
+		if len(missing) > 0 {
+			body.Status = cmdStatusNeedsClarification
+			return missing
+		}
+		body.Status = cmdStatusCompleted
+	case "create_habit":
+		if body.Habit == nil || strings.TrimSpace(body.Habit.Title) == "" {
+			body.Status = cmdStatusNeedsClarification
+			missing = append(missing, "habit")
+			return missing
+		}
+		body.Status = cmdStatusNeedsConfirmation
+	case "create_task":
+		if body.Task == nil || strings.TrimSpace(body.Task.Title) == "" {
+			body.Status = cmdStatusNeedsClarification
+			missing = append(missing, "task")
+			return missing
+		}
+		body.Status = cmdStatusNeedsConfirmation
+	case "create_plan":
+		if body.Plan == nil || strings.TrimSpace(body.Plan.Goal.Title) == "" {
+			body.Status = cmdStatusNeedsClarification
+			missing = append(missing, "plan")
+			return missing
+		}
+		body.Status = cmdStatusNeedsConfirmation
+	default:
+		// "chat", "advice", "unsupported", or unknown — surface the
+		// model's `response` text but let the client know there's no
+		// structured action to apply.
+		body.Status = cmdStatusUnsupported
+	}
+	return missing
 }
 
 func (h *AIHandler) Command(c *gin.Context) {
@@ -381,7 +451,24 @@ func (h *AIHandler) Command(c *gin.Context) {
 	}
 
 	var body commandResponse
-	respondJSONOrRaw(c, raw, &body)
+	if err := json.Unmarshal([]byte(raw), &body); err != nil {
+		// Model didn't produce JSON — degrade gracefully so the client
+		// can still display the text.
+		respondOK(c, commandResponse{
+			Status:  cmdStatusUnsupported,
+			Message: strings.TrimSpace(raw),
+			Intent:  "chat",
+		})
+		return
+	}
+	body.MissingFields = deriveCommandStatus(&body)
+	if body.Message == "" {
+		body.Message = body.Response
+	}
+	if body.Advice != "" && body.Message == "" {
+		body.Message = body.Advice
+	}
+	respondOK(c, body)
 }
 
 // ---------------- local AI: message parser ----------------
