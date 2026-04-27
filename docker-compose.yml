@@ -14,6 +14,11 @@ volumes:
 x-service-defaults: &service-defaults
   restart: unless-stopped
   networks: [aifa]
+  healthcheck:
+        test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
   depends_on:
     postgres:
       condition: service_healthy
@@ -78,8 +83,10 @@ services:
 
   # ---- Traefik: api-gateway ----
   traefik:
-    image: traefik:v3.1
+    image: traefik:v3.6.1
     restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.41
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
@@ -109,12 +116,17 @@ services:
     restart: unless-stopped
     environment:
       SWAGGER_JSON: /docs/openapi.yaml
-      BASE_URL: /
+      BASE_URL: /docs
     ports:
       - "${SWAGGER_UI_PORT}:8080"
     volumes:
       - ./docs:/docs:ro
     networks: [aifa]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.swagger.rule=PathPrefix(`/docs`)
+      - traefik.http.routers.swagger.entrypoints=web
+      - traefik.http.services.swagger.loadbalancer.server.port=8080
 
   # ---- auth-service ----
   auth-service:
