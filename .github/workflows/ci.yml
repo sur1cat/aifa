@@ -2,7 +2,7 @@ name: CI (all services)
 
 on:
   push:
-    branches: [main, refactor/microservices-split]
+    branches: [main, feature/diploma-final]
   pull_request:
     branches: [main]
   workflow_dispatch:
