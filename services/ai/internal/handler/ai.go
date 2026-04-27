@@ -186,11 +186,20 @@ func (h *AIHandler) GenerateExpenseAnalysis(c *gin.Context) {
 
 // ---------------- goal → habits ----------------
 
+type goalAnswerPair struct {
+	Question string `json:"question"`
+	Answer   string `json:"answer"`
+}
+
+// goalToHabitsRequest accepts both the new Flutter contract (`goal` + `answers`)
+// and the legacy fields (`goalTitle`, `goalDeadline`, `targetValue`, `context`).
 type goalToHabitsRequest struct {
-	GoalTitle    string  `json:"goalTitle" binding:"required"`
-	GoalDeadline *string `json:"goalDeadline,omitempty"`
-	TargetValue  *string `json:"targetValue,omitempty"`
-	Context      *string `json:"context,omitempty"`
+	Goal         string           `json:"goal,omitempty"`
+	GoalTitle    string           `json:"goalTitle,omitempty"`
+	GoalDeadline *string          `json:"goalDeadline,omitempty"`
+	TargetValue  *string          `json:"targetValue,omitempty"`
+	Context      *string          `json:"context,omitempty"`
+	Answers      []goalAnswerPair `json:"answers,omitempty"`
 }
 
 type suggestedHabit struct {
@@ -213,7 +222,17 @@ func (h *AIHandler) GenerateHabitsFromGoal(c *gin.Context) {
 		return
 	}
 
-	msg := "Convert this outcome goal into process habits:\n\nGoal: " + req.GoalTitle + "\n"
+	title := req.Goal
+	if title == "" {
+		title = req.GoalTitle
+	}
+	title = strings.TrimSpace(title)
+	if title == "" {
+		respondError(c, http.StatusBadRequest, codeValidation, "goal is required")
+		return
+	}
+
+	msg := "Convert this outcome goal into process habits:\n\nGoal: " + title + "\n"
 	if req.GoalDeadline != nil && *req.GoalDeadline != "" {
 		msg += "Deadline: " + *req.GoalDeadline + "\n"
 	}
@@ -222,6 +241,17 @@ func (h *AIHandler) GenerateHabitsFromGoal(c *gin.Context) {
 	}
 	if req.Context != nil && *req.Context != "" {
 		msg += "Context: " + *req.Context + "\n"
+	}
+	if len(req.Answers) > 0 {
+		msg += "\nClarifying answers:\n"
+		for _, a := range req.Answers {
+			q := strings.TrimSpace(a.Question)
+			ans := strings.TrimSpace(a.Answer)
+			if q == "" || ans == "" {
+				continue
+			}
+			msg += "- " + q + " → " + ans + "\n"
+		}
 	}
 
 	raw, ok := h.chat(c, openai.InsightPrompt(openai.InsightGoalToHabits), msg)
@@ -234,15 +264,19 @@ func (h *AIHandler) GenerateHabitsFromGoal(c *gin.Context) {
 
 // ---------------- goal clarify ----------------
 
+// goalClarifyRequest accepts both the new Flutter contract (`goal`) and the
+// legacy `goalTitle` field.
 type goalClarifyRequest struct {
-	GoalTitle string `json:"goalTitle" binding:"required"`
+	Goal      string `json:"goal,omitempty"`
+	GoalTitle string `json:"goalTitle,omitempty"`
 }
 
 type clarifyQuestion struct {
-	ID          string `json:"id"`
-	Question    string `json:"question"`
-	Placeholder string `json:"placeholder"`
-	Type        string `json:"type"`
+	ID          string   `json:"id"`
+	Question    string   `json:"question"`
+	Placeholder string   `json:"placeholder"`
+	Type        string   `json:"type"`
+	Options     []string `json:"options,omitempty"`
 }
 
 type goalClarifyBody struct {
@@ -256,9 +290,17 @@ func (h *AIHandler) GenerateGoalQuestions(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, codeValidation, err.Error())
 		return
 	}
+	title := strings.TrimSpace(req.Goal)
+	if title == "" {
+		title = strings.TrimSpace(req.GoalTitle)
+	}
+	if title == "" {
+		respondError(c, http.StatusBadRequest, codeValidation, "goal is required")
+		return
+	}
 	raw, ok := h.chat(c,
 		openai.InsightPrompt(openai.InsightGoalClarify),
-		"Generate clarifying questions for this goal:\n\nGoal: "+req.GoalTitle,
+		"Generate clarifying questions for this goal:\n\nGoal: "+title,
 	)
 	if !ok {
 		return
@@ -552,7 +594,15 @@ func (h *AIHandler) TranscribeVoice(c *gin.Context) {
 		return
 	}
 
-	lang := c.DefaultQuery("lang", "") // ?lang=ru / ?lang=kk / пусто = авто
+	// Flutter sends the hint as a multipart `language` field; older clients
+	// pass it as `?lang=`. Accept both.
+	lang := c.PostForm("language")
+	if lang == "" {
+		lang = c.PostForm("lang")
+	}
+	if lang == "" {
+		lang = c.Query("lang")
+	}
 
 	transcript, err := h.client.Transcribe(c.Request.Context(), audioBytes, header.Filename, lang)
 	if err != nil {

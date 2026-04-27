@@ -547,7 +547,8 @@ Analyze the goal and generate 2-4 specific clarifying questions that will help y
       "id": "q1",
       "question": "Question text",
       "placeholder": "Example answer hint",
-      "type": "text"
+      "type": "text",
+      "options": ["Choice A", "Choice B", "Choice C"]
     }
   ],
   "context_hint": "Brief explanation why these questions matter (1 sentence)"
@@ -557,6 +558,10 @@ Analyze the goal and generate 2-4 specific clarifying questions that will help y
 - Generate 2-4 questions (not more)
 - Questions should be SHORT and clear
 - Provide helpful placeholder examples
+- For each question, provide 3-5 short, mutually distinct quick-answer "options"
+  the user can tap. Use the question's own language. If the question is genuinely
+  open-ended (e.g. asking for a number, date, or free-form text), set "type" to
+  "text" and OMIT "options" entirely (do not return an empty array).
 - Output ONLY valid JSON, no other text`
 
 func ReceiptScanPrompt() string  { return promptReceiptScan }

@@ -270,7 +270,7 @@ services:
       - "${FINANCE_PORT}:${SERVICE_PORT}"
     labels:
       - traefik.enable=true
-      - traefik.http.routers.finance.rule=PathPrefix(`/api/v1/transactions`) || PathPrefix(`/api/v1/recurring-transactions`) || PathPrefix(`/api/v1/savings-goal`)
+      - traefik.http.routers.finance.rule=PathPrefix(`/api/v1/transactions`) || PathPrefix(`/api/v1/recurring-transactions`) || PathPrefix(`/api/v1/savings-goal`) || PathPrefix(`/api/v1/budgets`) || PathPrefix(`/api/v1/debts`) || PathPrefix(`/api/v1/savings-rules`) || PathPrefix(`/api/v1/spending`)
       - traefik.http.routers.finance.entrypoints=web
       - traefik.http.routers.finance.middlewares=strip-api-prefix@file,ratelimit-general@file,cors@file
       - traefik.http.services.finance.loadbalancer.server.port=${SERVICE_PORT}
