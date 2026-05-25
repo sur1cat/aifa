@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -16,11 +17,29 @@ import (
 )
 
 type AIHandler struct {
-	client      *openai.Client
-	localClient *localai.Client
+	client      openAIClient
+	localClient localAIClient
 }
 
-func NewAIHandler(c *openai.Client, lc *localai.Client) *AIHandler {
+type openAIClient interface {
+	Chat(ctx context.Context, systemPrompt, userMessage string) (string, error)
+	ChatWithVision(ctx context.Context, systemPrompt, base64Image, mimeType string) (string, error)
+	Transcribe(ctx context.Context, audioData []byte, filename, language string) (string, error)
+}
+
+type localAIClient interface {
+	CategorizeExpense(ctx context.Context, text string) (*localai.CategoryResult, error)
+	BatchCategorizeExpenses(ctx context.Context, texts []string) ([]localai.CategoryResult, error)
+	TranscribeVoice(ctx context.Context, audioData []byte, filename, language string) (*localai.VoiceTranscribeResult, error)
+	ScanReceipt(ctx context.Context, imageData []byte, filename string) (*localai.ReceiptScanResult, error)
+	ParseMessage(ctx context.Context, message string, debtsContext []map[string]any) (*localai.ParseMessageResponse, error)
+	Forecast(ctx context.Context, transactions []localai.ForecastTransaction, horizonDays int, refDate string) (*localai.ForecastResponse, error)
+	DetectAnomalies(ctx context.Context, transactions []localai.ForecastTransaction, sensitivity string) (*localai.AnomalyResponse, error)
+	SpendingSummary(ctx context.Context, transactions []localai.InsightTransaction, periodStart, periodEnd string) (*localai.SummaryResponse, error)
+	BudgetSuggestions(ctx context.Context, transactions []localai.InsightTransaction, lookbackDays int, percentile float64) (*localai.BudgetSuggestResponse, error)
+}
+
+func NewAIHandler(c openAIClient, lc localAIClient) *AIHandler {
 	return &AIHandler{client: c, localClient: lc}
 }
 
@@ -691,6 +710,15 @@ func (h *AIHandler) TranscribeVoice(c *gin.Context) {
 		lang = c.Query("lang")
 	}
 
+	if h.localClient != nil {
+		local, err := h.localClient.TranscribeVoice(c.Request.Context(), audioBytes, header.Filename, lang)
+		if err == nil {
+			respondOK(c, local)
+			return
+		}
+		slog.Warn("local whisper failed, trying OpenAI fallback", "err", err)
+	}
+
 	transcript, err := h.client.Transcribe(c.Request.Context(), audioBytes, header.Filename, lang)
 	if err != nil {
 		status := http.StatusInternalServerError
@@ -769,6 +797,15 @@ func (h *AIHandler) ScanReceipt(c *gin.Context) {
 	mimeType := header.Header.Get("Content-Type")
 	if mimeType == "" || !strings.HasPrefix(mimeType, "image/") {
 		mimeType = "image/jpeg"
+	}
+
+	if h.localClient != nil {
+		local, err := h.localClient.ScanReceipt(c.Request.Context(), imgBytes, header.Filename)
+		if err == nil {
+			respondOK(c, local)
+			return
+		}
+		slog.Warn("local OCR failed, trying OpenAI fallback", "err", err)
 	}
 
 	b64 := base64.StdEncoding.EncodeToString(imgBytes)

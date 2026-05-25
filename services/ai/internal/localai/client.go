@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"time"
 )
@@ -16,11 +17,40 @@ type Client struct {
 	http    *http.Client
 }
 
-func NewClient(baseURL string) *Client {
+func NewClient(baseURL string, timeout time.Duration) *Client {
+	if timeout <= 0 {
+		timeout = 90 * time.Second
+	}
 	return &Client{
 		baseURL: baseURL,
-		http:    &http.Client{Timeout: 30 * time.Second},
+		http:    &http.Client{Timeout: timeout},
 	}
+}
+
+type VoiceTranscribeResult struct {
+	Transcript  string   `json:"transcript"`
+	Amount      *float64 `json:"amount"`
+	Currency    string   `json:"currency"`
+	Description string   `json:"description"`
+	Category    string   `json:"category"`
+	LabelRu     string   `json:"label_ru"`
+	LabelKz     string   `json:"label_kz"`
+	Confidence  float64  `json:"confidence"`
+	Language    string   `json:"language"`
+}
+
+type ReceiptScanResult struct {
+	Amount     *float64 `json:"amount"`
+	Currency   string   `json:"currency"`
+	Date       *string  `json:"date"`
+	Merchant   string   `json:"merchant"`
+	Category   string   `json:"category"`
+	LabelRu    string   `json:"label_ru"`
+	LabelKz    string   `json:"label_kz"`
+	Items      []string `json:"items"`
+	Confidence float64  `json:"confidence"`
+	RawTotal   string   `json:"raw_total"`
+	RawText    string   `json:"raw_text"`
 }
 
 // CategoryResult — ответ от /categorize.
@@ -63,6 +93,18 @@ func (c *Client) CategorizeExpense(ctx context.Context, text string) (*CategoryR
 		return nil, fmt.Errorf("localai: decode response: %w", err)
 	}
 	return &result, nil
+}
+
+func (c *Client) TranscribeVoice(ctx context.Context, audioData []byte, filename, language string) (*VoiceTranscribeResult, error) {
+	fields := map[string]string{}
+	if language != "" {
+		fields["language"] = language
+	}
+	return doMultipart[VoiceTranscribeResult](ctx, c, "/voice/transcribe", "audio", filename, audioData, fields)
+}
+
+func (c *Client) ScanReceipt(ctx context.Context, imageData []byte, filename string) (*ReceiptScanResult, error) {
+	return doMultipart[ReceiptScanResult](ctx, c, "/receipt/scan", "image", filename, imageData, nil)
 }
 
 // BatchCategorizeExpenses классифицирует список транзакций за один запрос.
@@ -186,6 +228,53 @@ func doPost[T any](ctx context.Context, c *Client, path string, payload any) (*T
 		return nil, fmt.Errorf("localai: build request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("localai: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("localai: read body: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("localai: status %d: %s", resp.StatusCode, string(raw))
+	}
+
+	var result T
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return nil, fmt.Errorf("localai: decode response: %w", err)
+	}
+	return &result, nil
+}
+
+func doMultipart[T any](ctx context.Context, c *Client, path, fieldName, filename string, fileData []byte, fields map[string]string) (*T, error) {
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+
+	part, err := writer.CreateFormFile(fieldName, filename)
+	if err != nil {
+		return nil, fmt.Errorf("localai: create form file: %w", err)
+	}
+	if _, err := part.Write(fileData); err != nil {
+		return nil, fmt.Errorf("localai: write file data: %w", err)
+	}
+	for key, value := range fields {
+		if err := writer.WriteField(key, value); err != nil {
+			return nil, fmt.Errorf("localai: write field %s: %w", key, err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return nil, fmt.Errorf("localai: close multipart writer: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+path, &body)
+	if err != nil {
+		return nil, fmt.Errorf("localai: build request: %w", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := c.http.Do(req)
 	if err != nil {

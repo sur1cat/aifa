@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from datetime import date
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.model import get_classifier, CategoryResult, CATEGORY_THRESHOLDS, CONFIDENCE_THRESHOLD
@@ -23,6 +23,8 @@ from app.forecast import forecast_all, ForecastPoint, CategoryForecast
 from app.anomaly import detect_anomalies, AnomalyResult
 from app.message_parser import parse_message
 from app.insights import spending_summary, budget_suggestions
+from app.receipt_ocr import scan_receipt
+from app.stt import transcribe_audio
 
 
 @asynccontextmanager
@@ -262,6 +264,32 @@ class ParseMessageResponse(BaseModel):
     alert_period: Optional[str] = None
 
 
+class VoiceTranscribeResponse(BaseModel):
+    transcript: str
+    amount: Optional[float] = None
+    currency: str = ""
+    description: str = ""
+    category: str = ""
+    label_ru: str = ""
+    label_kz: str = ""
+    confidence: float
+    language: str = ""
+
+
+class ReceiptScanResponse(BaseModel):
+    amount: Optional[float] = None
+    currency: str = ""
+    date: Optional[str] = None
+    merchant: str = ""
+    category: str = ""
+    label_ru: str = ""
+    label_kz: str = ""
+    items: list[str] = Field(default_factory=list)
+    confidence: float
+    raw_total: str = ""
+    raw_text: str = ""
+
+
 @app.post("/parse-message", response_model=ParseMessageResponse)
 def parse_message_endpoint(req: ParseMessageRequest):
     result = parse_message(req.message, debts_context=req.debts_context)
@@ -305,6 +333,66 @@ def parse_message_endpoint(req: ParseMessageRequest):
         savings_period=result.savings_period,
         alert_limit=result.alert_limit,
         alert_period=result.alert_period,
+    )
+
+
+@app.post("/voice/transcribe", response_model=VoiceTranscribeResponse)
+async def voice_transcribe_endpoint(
+    audio: UploadFile = File(...),
+    language: Optional[str] = Form(None),
+    lang: Optional[str] = Form(None),
+):
+    stt = transcribe_audio(await audio.read(), audio.filename or "audio.wav", language or lang)
+    transcript = stt.transcript.strip()
+    if not transcript:
+        return VoiceTranscribeResponse(transcript="", confidence=0, language=stt.language)
+
+    parsed = parse_message(transcript)
+    category = parsed.category or ""
+    label_ru = parsed.category_label or ""
+    label_kz = ""
+    confidence = stt.language_probability or 0.5
+
+    if category:
+        meta = get_classifier().meta
+        label_kz = meta.get("labels_kz", {}).get(category, category)
+        if parsed.tx_type == "expense":
+            predicted = get_classifier().predict(parsed.title or transcript)
+            category = predicted.category
+            label_ru = predicted.label_ru
+            label_kz = predicted.label_kz
+            confidence = max(confidence, predicted.confidence)
+        elif parsed.tx_type == "income":
+            confidence = max(confidence, 0.85)
+
+    return VoiceTranscribeResponse(
+        transcript=transcript,
+        amount=parsed.amount,
+        currency="KZT" if parsed.amount else "",
+        description=parsed.title or "",
+        category=category,
+        label_ru=label_ru,
+        label_kz=label_kz,
+        confidence=round(min(confidence, 0.99), 4),
+        language=stt.language,
+    )
+
+
+@app.post("/receipt/scan", response_model=ReceiptScanResponse)
+async def receipt_scan_endpoint(image: UploadFile = File(...)):
+    result = scan_receipt(await image.read())
+    return ReceiptScanResponse(
+        amount=result.amount,
+        currency=result.currency,
+        date=result.date,
+        merchant=result.merchant,
+        category=result.category,
+        label_ru=result.label_ru,
+        label_kz=result.label_kz,
+        items=result.items,
+        confidence=result.confidence,
+        raw_total=result.raw_total,
+        raw_text=result.raw_text,
     )
 
 

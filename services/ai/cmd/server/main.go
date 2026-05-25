@@ -53,7 +53,7 @@ func main() {
 		log.Warn("OPENAI_API_KEY is empty — /ai/* will return 503")
 	}
 
-	localClient := localai.NewClient(cfg.AILocalURL)
+	localClient := localai.NewClient(cfg.AILocalURL, cfg.AILocalTimeout)
 	if localClient.Healthy(ctx) {
 		log.Info("ai-local-service is available", "url", cfg.AILocalURL)
 	} else {
