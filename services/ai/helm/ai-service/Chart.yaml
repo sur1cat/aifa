@@ -1,0 +1,11 @@
+apiVersion: v2
+name: ai-service
+description: AIFA ai-service — OpenAI wrapper for coach + insight endpoints
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+icon: https://aifa.app/icon.png
+keywords: [aifa, ai, openai, microservice]
+maintainers:
+  - name: sur1cat
+    email: sur1cat@users.noreply.github.com

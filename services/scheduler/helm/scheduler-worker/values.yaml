@@ -1,0 +1,51 @@
+# Single replica — cron schedule must not fire from multiple instances.
+replicaCount: 1
+
+image:
+  repository: ghcr.io/sur1cat/aifa-scheduler-worker
+  tag: latest
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+env:
+  DEBUG: "false"
+  CRON_RECURRING: "*/5 * * * *"
+  CRON_REMINDERS: "0 9 * * *"
+  HEALTH_ADDR: ":8080"
+
+secret:
+  create: true
+  data:
+    NATS_URL: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10

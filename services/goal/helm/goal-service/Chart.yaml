@@ -1,0 +1,11 @@
+apiVersion: v2
+name: goal-service
+description: AIFA goal-service — long-term goals
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+icon: https://aifa.app/icon.png
+keywords: [aifa, goals, microservice]
+maintainers:
+  - name: sur1cat
+    email: sur1cat@users.noreply.github.com

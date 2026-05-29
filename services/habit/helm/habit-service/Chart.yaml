@@ -1,0 +1,14 @@
+apiVersion: v2
+name: habit-service
+description: AIFA habit-service — habit tracking with streak calculation
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+icon: https://aifa.app/icon.png
+keywords:
+  - aifa
+  - habits
+  - microservice
+maintainers:
+  - name: sur1cat
+    email: sur1cat@users.noreply.github.com

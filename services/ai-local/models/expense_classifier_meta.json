@@ -1,0 +1,284 @@
+{
+  "categories": [
+    "food",
+    "cafe",
+    "transport",
+    "health",
+    "entertainment",
+    "utilities",
+    "shopping",
+    "education",
+    "travel",
+    "transfer"
+  ],
+  "labels_ru": {
+    "food": "Продукты",
+    "cafe": "Кафе и рестораны",
+    "transport": "Транспорт",
+    "health": "Здоровье",
+    "entertainment": "Развлечения",
+    "utilities": "Коммунальные услуги",
+    "shopping": "Покупки",
+    "education": "Образование",
+    "travel": "Путешествия",
+    "transfer": "Переводы"
+  },
+  "labels_kz": {
+    "food": "Азық-түлік",
+    "cafe": "Мейрамханалар",
+    "transport": "Көлік",
+    "health": "Денсаулық",
+    "entertainment": "Ойын-сауық",
+    "utilities": "Коммуналдық қызметтер",
+    "shopping": "Сатып алу",
+    "education": "Білім",
+    "travel": "Саяхат",
+    "transfer": "Аударым"
+  },
+  "n_training_samples": 1349,
+  "cv_accuracy": 0.7598237642847309,
+  "cv_std": 0.043143446411035395,
+  "macro_f1": 0.7646,
+  "winner": "SentenceTransformer",
+  "architecture": "SentenceTransformer(paraphrase-multilingual-MiniLM-L12-v2) + LogisticRegression",
+  "model_comparison": {
+    "LogisticRegression": {
+      "cv_accuracy": 0.7265344898802147,
+      "cv_std": 0.05576794063420668
+    },
+    "LinearSVC": {
+      "cv_accuracy": 0.7369213823488916,
+      "cv_std": 0.05763904855277633
+    },
+    "RandomForest": {
+      "cv_accuracy": 0.4441002340630593,
+      "cv_std": 0.058862993240516116
+    },
+    "VotingEnsemble": {
+      "cv_accuracy": 0.735437147184359,
+      "cv_std": 0.05870436704958616
+    },
+    "SentenceTransformer": {
+      "cv_accuracy": 0.7598237642847309,
+      "cv_std": 0.043143446411035395
+    }
+  },
+  "per_category": {
+    "food": {
+      "precision": 0.7405,
+      "recall": 0.75,
+      "f1": 0.7452,
+      "support": 156,
+      "label_ru": "Продукты",
+      "label_kz": "Азық-түлік"
+    },
+    "cafe": {
+      "precision": 0.6977,
+      "recall": 0.7742,
+      "f1": 0.7339,
+      "support": 155,
+      "label_ru": "Кафе и рестораны",
+      "label_kz": "Мейрамханалар"
+    },
+    "transport": {
+      "precision": 0.824,
+      "recall": 0.8374,
+      "f1": 0.8306,
+      "support": 123,
+      "label_ru": "Транспорт",
+      "label_kz": "Көлік"
+    },
+    "health": {
+      "precision": 0.813,
+      "recall": 0.8197,
+      "f1": 0.8163,
+      "support": 122,
+      "label_ru": "Здоровье",
+      "label_kz": "Денсаулық"
+    },
+    "entertainment": {
+      "precision": 0.7863,
+      "recall": 0.7419,
+      "f1": 0.7635,
+      "support": 124,
+      "label_ru": "Развлечения",
+      "label_kz": "Ойын-сауық"
+    },
+    "utilities": {
+      "precision": 0.7282,
+      "recall": 0.6637,
+      "f1": 0.6944,
+      "support": 113,
+      "label_ru": "Коммунальные услуги",
+      "label_kz": "Коммуналдық қызметтер"
+    },
+    "shopping": {
+      "precision": 0.6981,
+      "recall": 0.7115,
+      "f1": 0.7048,
+      "support": 208,
+      "label_ru": "Покупки",
+      "label_kz": "Сатып алу"
+    },
+    "education": {
+      "precision": 0.8091,
+      "recall": 0.7807,
+      "f1": 0.7946,
+      "support": 114,
+      "label_ru": "Образование",
+      "label_kz": "Білім"
+    },
+    "travel": {
+      "precision": 0.8039,
+      "recall": 0.7523,
+      "f1": 0.7773,
+      "support": 109,
+      "label_ru": "Путешествия",
+      "label_kz": "Саяхат"
+    },
+    "transfer": {
+      "precision": 0.7795,
+      "recall": 0.792,
+      "f1": 0.7857,
+      "support": 125,
+      "label_ru": "Переводы",
+      "label_kz": "Аударым"
+    }
+  },
+  "confusion_matrix": {
+    "labels": [
+      "food",
+      "cafe",
+      "transport",
+      "health",
+      "entertainment",
+      "utilities",
+      "shopping",
+      "education",
+      "travel",
+      "transfer"
+    ],
+    "matrix": [
+      [
+        117,
+        18,
+        1,
+        1,
+        0,
+        1,
+        16,
+        0,
+        0,
+        2
+      ],
+      [
+        15,
+        120,
+        1,
+        0,
+        2,
+        2,
+        13,
+        0,
+        0,
+        2
+      ],
+      [
+        0,
+        1,
+        103,
+        3,
+        0,
+        2,
+        2,
+        0,
+        9,
+        3
+      ],
+      [
+        1,
+        4,
+        2,
+        100,
+        3,
+        2,
+        4,
+        2,
+        1,
+        3
+      ],
+      [
+        2,
+        4,
+        2,
+        4,
+        92,
+        1,
+        10,
+        7,
+        1,
+        1
+      ],
+      [
+        2,
+        3,
+        4,
+        1,
+        4,
+        75,
+        9,
+        1,
+        4,
+        10
+      ],
+      [
+        19,
+        9,
+        2,
+        8,
+        7,
+        4,
+        148,
+        7,
+        3,
+        1
+      ],
+      [
+        0,
+        3,
+        1,
+        3,
+        4,
+        3,
+        6,
+        89,
+        2,
+        3
+      ],
+      [
+        0,
+        5,
+        8,
+        2,
+        4,
+        1,
+        2,
+        2,
+        82,
+        3
+      ],
+      [
+        2,
+        5,
+        1,
+        1,
+        1,
+        12,
+        2,
+        2,
+        0,
+        99
+      ]
+    ]
+  }
+}

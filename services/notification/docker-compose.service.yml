@@ -1,0 +1,29 @@
+# Reads env from a sibling .env (see .env.example).
+networks:
+  aifa:
+    external: true
+    name: aifa_aifa
+
+services:
+  notification-service:
+    build: .
+    image: aifa/notification-service:dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: ${PORT:-8080}
+      DEBUG: ${DEBUG:-true}
+      DATABASE_URL: ${DATABASE_URL:-postgres://aifa:aifa@postgres:5432/aifa?sslmode=disable&search_path=notifications,public}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-min-32-chars-long-secret}
+      APNS_KEY_PATH: ${APNS_KEY_PATH:-}
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+      APNS_BUNDLE_ID: ${APNS_BUNDLE_ID:-app.aifa.ios}
+      APNS_PRODUCTION: ${APNS_PRODUCTION:-false}
+    ports:
+      - "${HOST_PORT:-8008}:${PORT:-8080}"
+    networks: [aifa]

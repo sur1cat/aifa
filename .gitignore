@@ -1,0 +1,42 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+/out/
+
+# Go
+vendor/
+*.test
+*.out
+go.sum
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Models (large files)
+services/ai-local/models/*.joblib
+
+# Docker
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log

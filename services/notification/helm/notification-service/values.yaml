@@ -1,0 +1,79 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/sur1cat/aifa-notification-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: traefik
+  host: api.aifa.app
+  path: /api/v1/push
+  pathType: Prefix
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+env:
+  DEBUG: "false"
+  APNS_BUNDLE_ID: app.aifa.ios
+  APNS_PRODUCTION: "true"
+
+secret:
+  create: true
+  data:
+    DATABASE_URL: ""
+    REDIS_ADDR: ""
+    REDIS_PASSWORD: ""
+    NATS_URL: ""
+    JWT_SECRET: ""
+    APNS_KEY_ID: ""
+    APNS_TEAM_ID: ""
+
+# Mount the APNs .p8 key as a Secret + volume; APNS_KEY_PATH points at
+# /secrets/apns.p8 inside the container.
+apnsKey:
+  secretName: ""             # external Secret holding key.p8 under data.apns.p8
+  mountPath: /secrets/apns.p8
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10

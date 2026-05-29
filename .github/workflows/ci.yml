@@ -1,0 +1,61 @@
+name: CI (all services)
+
+on:
+  push:
+    branches: [main, feature/diploma-final]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth, user, habit, goal, task, finance, ai, notification, scheduler]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: services/${{ matrix.service }}/go.sum
+
+      - name: Test ${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
+        run: |
+          go mod download
+          go vet ./...
+          go test -race -count=1 ./...
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.SERVER_PATH }}
+            git pull origin refactor/microservices-split
+            docker compose up -d --build 
+
+  docker:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth, user, habit, goal, task, finance, ai, notification, scheduler]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.service }} image
+        run: docker build -t aifa/${{ matrix.service }}-service services/${{ matrix.service }}

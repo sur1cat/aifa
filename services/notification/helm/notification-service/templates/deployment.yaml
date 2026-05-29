@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "notification-service.fullname" . }}
+  labels: {{- include "notification-service.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "notification-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "notification-service.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: notification-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "notification-service.fullname" . }}
+            - secretRef:
+                name: {{ include "notification-service.fullname" . }}
+          env:
+            {{- if .Values.apnsKey.secretName }}
+            - name: APNS_KEY_PATH
+              value: {{ .Values.apnsKey.mountPath | quote }}
+            {{- end }}
+          {{- if .Values.apnsKey.secretName }}
+          volumeMounts:
+            - name: apns-key
+              mountPath: {{ dir .Values.apnsKey.mountPath }}
+              readOnly: true
+          {{- end }}
+          livenessProbe: {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe: {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.apnsKey.secretName }}
+      volumes:
+        - name: apns-key
+          secret:
+            secretName: {{ .Values.apnsKey.secretName }}
+            items:
+              - key: apns.p8
+                path: {{ base .Values.apnsKey.mountPath }}
+      {{- end }}

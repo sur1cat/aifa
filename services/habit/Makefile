@@ -1,0 +1,34 @@
+.PHONY: run test build docker docker-run tidy fmt vet clean
+
+BIN := bin/habit-service
+IMAGE := aifa/habit-service:dev
+
+run:
+	go run ./cmd/server
+
+test:
+	go test -race -count=1 ./...
+
+build:
+	CGO_ENABLED=0 go build -ldflags="-w -s" -trimpath -o $(BIN) ./cmd/server
+
+docker:
+	docker build -t $(IMAGE) .
+
+docker-run: docker
+	docker run --rm --env-file .env -p 8003:8080 $(IMAGE)
+
+tidy:
+	go mod tidy
+
+fmt:
+	gofmt -s -w .
+
+vet:
+	go vet ./...
+
+lint:
+	go vet ./...
+
+clean:
+	rm -rf bin
