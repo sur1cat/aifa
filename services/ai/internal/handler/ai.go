@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"unicode"
 
 	"github.com/sur1cat/aifa/ai-service/internal/localai"
 	"github.com/sur1cat/aifa/ai-service/internal/openai"
@@ -69,6 +70,48 @@ func respondJSONOrRaw(c *gin.Context, raw string, target any) {
 	respondOK(c, target)
 }
 
+var supportedDomainKeywords = []string{
+	// finance
+	"деньг", "финанс", "бюджет", "расход", "доход", "зарплат", "зп", "потрат", "купил", "купила",
+	"заплат", "перевод", "долг", "накоп", "сбереж", "кредит", "инвест", "expense", "income", "budget",
+	"spent", "spend", "salary", "debt", "save", "saving", "savings", "transaction", "finance", "money",
+	// habits / goals
+	"привыч", "каждый день", "ежеднев", "стрик", "цель", "бег", "читать", "медит", "тренир",
+	"просып", "похуд", "англий", "study", "habit", "daily", "routine", "streak", "goal", "run", "running", "read", "meditat", "wake up", "workout", "exercise",
+	// tasks / planning
+	"задач", "таск", "напом", "сделать", "выполн", "дедлайн", "план", "todo", "task", "remind", "reminder",
+	"complete", "deadline", "plan", "planning",
+}
+
+func containsCyrillic(s string) bool {
+	for _, r := range s {
+		if unicode.In(r, unicode.Cyrillic) {
+			return true
+		}
+	}
+	return false
+}
+
+func unsupportedDomainMessage(message string) string {
+	if containsCyrillic(message) {
+		return "Я могу помогать только с финансами, привычками и задачами в AIFA. Сформулируй запрос в одной из этих тем."
+	}
+	return "I can only help with finances, habits, and tasks in AIFA. Please rephrase your request within one of those areas."
+}
+
+func isSupportedDomainMessage(message string) bool {
+	lower := strings.ToLower(strings.TrimSpace(message))
+	if lower == "" {
+		return false
+	}
+	for _, kw := range supportedDomainKeywords {
+		if strings.Contains(lower, kw) {
+			return true
+		}
+	}
+	return false
+}
+
 // ---------------- chat ----------------
 
 type chatRequest struct {
@@ -92,6 +135,10 @@ func (h *AIHandler) Chat(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, codeBadRequest, "Invalid agent type")
 		return
 	}
+	if !isSupportedDomainMessage(req.Message) {
+		respondOK(c, chatResponseBody{Response: unsupportedDomainMessage(req.Message)})
+		return
+	}
 	resp, ok := h.chat(c, openai.SystemPrompt(agent, req.Context), req.Message)
 	if !ok {
 		return
@@ -102,8 +149,9 @@ func (h *AIHandler) Chat(c *gin.Context) {
 // ---------------- insights ----------------
 
 type insightRequest struct {
-	Type string `json:"type" binding:"required"`
-	Data string `json:"data" binding:"required"`
+	Type   string `json:"type" binding:"required"`
+	Data   string `json:"data" binding:"required"`
+	Locale string `json:"locale,omitempty"`
 }
 
 type insightItem struct {
@@ -119,6 +167,33 @@ type weeklyInsightBody struct {
 	Tip          string   `json:"tip"`
 }
 
+func normalizeInsightLocale(locale string) string {
+	l := strings.ToLower(strings.TrimSpace(locale))
+	switch {
+	case strings.HasPrefix(l, "ru"):
+		return "ru"
+	case strings.HasPrefix(l, "kk"), strings.HasPrefix(l, "kz"):
+		return "kk"
+	case strings.HasPrefix(l, "en"):
+		return "en"
+	default:
+		return ""
+	}
+}
+
+func insightLocaleInstruction(locale string) string {
+	switch normalizeInsightLocale(locale) {
+	case "ru":
+		return "CRITICAL: Respond ENTIRELY in Russian regardless of the language of titles or raw data."
+	case "kk":
+		return "CRITICAL: Respond ENTIRELY in Kazakh regardless of the language of titles or raw data."
+	case "en":
+		return "CRITICAL: Respond ENTIRELY in English regardless of the language of titles or raw data."
+	default:
+		return ""
+	}
+}
+
 func (h *AIHandler) GenerateInsight(c *gin.Context) {
 	var req insightRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -131,7 +206,12 @@ func (h *AIHandler) GenerateInsight(c *gin.Context) {
 		return
 	}
 
-	raw, ok := h.chat(c, openai.InsightPrompt(insight), "Analyze the following data and generate insights:\n\n"+req.Data)
+	userMessage := "Analyze the following data and generate insights:\n\n" + req.Data
+	if instruction := insightLocaleInstruction(req.Locale); instruction != "" {
+		userMessage = instruction + "\n\n" + userMessage
+	}
+
+	raw, ok := h.chat(c, openai.InsightPrompt(insight), userMessage)
 	if !ok {
 		return
 	}
@@ -456,6 +536,16 @@ func (h *AIHandler) Command(c *gin.Context) {
 	var req commandRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, codeValidation, err.Error())
+		return
+	}
+	if !isSupportedDomainMessage(req.Message) {
+		msg := unsupportedDomainMessage(req.Message)
+		respondOK(c, commandResponse{
+			Status:  cmdStatusUnsupported,
+			Message: msg,
+			Intent:  "unsupported",
+			Response: msg,
+		})
 		return
 	}
 
