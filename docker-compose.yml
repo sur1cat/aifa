@@ -368,3 +368,17 @@ services:
       HEALTH_ADDR: :${SERVICE_PORT}
     ports:
       - "${SCHEDULER_HEALTH_PORT}:${SERVICE_PORT}"
+
+  # ---- landing page ----
+  landing:
+    image: nginx:alpine
+    restart: unless-stopped
+    networks: [aifa]
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./demo.html:/usr/share/nginx/html/demo.html:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.landing.rule=Host(`aifafinance.app`)
+      - traefik.http.routers.landing.entrypoints=web
+      - traefik.http.services.landing.loadbalancer.server.port=80
