@@ -42,7 +42,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.SERVER_PATH }}
-            git pull origin refactor/microservices-split
+            git fetch origin
+            git checkout main
+            git pull --no-rebase origin main
             docker compose up -d --build 
 
   docker:
