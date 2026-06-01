@@ -44,7 +44,7 @@ jobs:
             cd ${{ secrets.SERVER_PATH }}
             git fetch origin
             git checkout main
-            git pull --no-rebase origin main
+            git reset --hard origin/main
             docker compose up -d --build 
 
   docker:
