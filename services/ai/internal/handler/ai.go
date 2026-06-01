@@ -115,13 +115,71 @@ func isSupportedDomainMessage(message string) bool {
 // ---------------- chat ----------------
 
 type chatRequest struct {
-	Agent   string `json:"agent" binding:"required"`
-	Message string `json:"message" binding:"required"`
-	Context string `json:"context,omitempty"`
+	Agent   string           `json:"agent" binding:"required"`
+	Message string           `json:"message" binding:"required"`
+	Context string           `json:"context,omitempty"`
+	History []historyMessage `json:"history,omitempty"`
 }
 
 type chatResponseBody struct {
 	Response string `json:"response"`
+}
+
+type historyMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+func formatHistory(history []historyMessage) string {
+	if len(history) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	for _, item := range history {
+		content := strings.TrimSpace(item.Content)
+		if content == "" {
+			continue
+		}
+		role := strings.TrimSpace(item.Role)
+		if role == "" {
+			role = "unknown"
+		}
+		b.WriteString("- ")
+		b.WriteString(role)
+		b.WriteString(": ")
+		b.WriteString(content)
+		b.WriteString("\n")
+	}
+	return strings.TrimSpace(b.String())
+}
+
+func historyContainsSupportedDomain(history []historyMessage) bool {
+	for _, item := range history {
+		if isSupportedDomainMessage(item.Content) {
+			return true
+		}
+	}
+	return false
+}
+
+func isContextualFollowUp(message string, history []historyMessage) bool {
+	if !historyContainsSupportedDomain(history) {
+		return false
+	}
+	lower := strings.ToLower(strings.TrimSpace(message))
+	if lower == "" {
+		return false
+	}
+	followUpSignals := []string{
+		"он", "она", "оно", "это", "стоит", "стоил", "стоила", "стоило",
+		"amount", "сумма", "цена", "цено", "was", "cost", "it", "that",
+	}
+	for _, kw := range followUpSignals {
+		if strings.Contains(lower, kw) {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *AIHandler) Chat(c *gin.Context) {
@@ -135,11 +193,19 @@ func (h *AIHandler) Chat(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, codeBadRequest, "Invalid agent type")
 		return
 	}
-	if !isSupportedDomainMessage(req.Message) {
+	if !isSupportedDomainMessage(req.Message) && !isContextualFollowUp(req.Message, req.History) {
 		respondOK(c, chatResponseBody{Response: unsupportedDomainMessage(req.Message)})
 		return
 	}
-	resp, ok := h.chat(c, openai.SystemPrompt(agent, req.Context), req.Message)
+	context := strings.TrimSpace(req.Context)
+	if history := formatHistory(req.History); history != "" {
+		if context != "" {
+			context += "\n\nConversation History:\n" + history
+		} else {
+			context = "Conversation History:\n" + history
+		}
+	}
+	resp, ok := h.chat(c, openai.SystemPrompt(agent, context), req.Message)
 	if !ok {
 		return
 	}
@@ -411,8 +477,9 @@ func (h *AIHandler) GenerateGoalQuestions(c *gin.Context) {
 // ---------------- universal command ----------------
 
 type commandRequest struct {
-	Message string `json:"message" binding:"required"`
-	Context string `json:"context,omitempty"`
+	Message string           `json:"message" binding:"required"`
+	Context string           `json:"context,omitempty"`
+	History []historyMessage `json:"history,omitempty"`
 }
 
 type commandHabit struct {
@@ -430,10 +497,10 @@ type commandTask struct {
 }
 
 type commandGoal struct {
-	Title        string  `json:"title"`
+	Title        string   `json:"title"`
 	TargetAmount *float64 `json:"target_amount,omitempty"`
 	Deadline     *string  `json:"deadline,omitempty"`
-	Description  string  `json:"description,omitempty"`
+	Description  string   `json:"description,omitempty"`
 }
 
 type commandPlan struct {
@@ -443,7 +510,7 @@ type commandPlan struct {
 }
 
 type commandTransaction struct {
-	Type          string  `json:"type"`           // "expense" | "income"
+	Type          string  `json:"type"` // "expense" | "income"
 	Amount        float64 `json:"amount"`
 	Title         string  `json:"title"`
 	Category      string  `json:"category"`
@@ -457,17 +524,17 @@ type commandTransaction struct {
 // client can route the response without re-parsing the LLM intent string.
 // `message` mirrors `response` for backward-compatibility with older clients.
 type commandResponse struct {
-	Status         string              `json:"status"`
-	Message        string              `json:"message"`
-	MissingFields  []string            `json:"missing_fields,omitempty"`
-	Intent         string              `json:"intent"`
-	Response       string              `json:"response"`
-	Transaction    *commandTransaction `json:"transaction,omitempty"`
-	Habit          *commandHabit       `json:"habit,omitempty"`
-	Task           *commandTask        `json:"task,omitempty"`
-	Tasks          []commandTask       `json:"tasks,omitempty"`
-	Plan           *commandPlan        `json:"plan,omitempty"`
-	Advice         string              `json:"advice,omitempty"`
+	Status        string              `json:"status"`
+	Message       string              `json:"message"`
+	MissingFields []string            `json:"missing_fields,omitempty"`
+	Intent        string              `json:"intent"`
+	Response      string              `json:"response"`
+	Transaction   *commandTransaction `json:"transaction,omitempty"`
+	Habit         *commandHabit       `json:"habit,omitempty"`
+	Task          *commandTask        `json:"task,omitempty"`
+	Tasks         []commandTask       `json:"tasks,omitempty"`
+	Plan          *commandPlan        `json:"plan,omitempty"`
+	Advice        string              `json:"advice,omitempty"`
 }
 
 const (
@@ -538,20 +605,31 @@ func (h *AIHandler) Command(c *gin.Context) {
 		respondError(c, http.StatusBadRequest, codeValidation, err.Error())
 		return
 	}
-	if !isSupportedDomainMessage(req.Message) {
+	if !isSupportedDomainMessage(req.Message) && !isContextualFollowUp(req.Message, req.History) {
 		msg := unsupportedDomainMessage(req.Message)
 		respondOK(c, commandResponse{
-			Status:  cmdStatusUnsupported,
-			Message: msg,
-			Intent:  "unsupported",
+			Status:   cmdStatusUnsupported,
+			Message:  msg,
+			Intent:   "unsupported",
 			Response: msg,
 		})
 		return
 	}
 
 	systemPrompt := openai.CommandPrompt()
-	if req.Context != "" {
-		systemPrompt += "\n\n## User Context:\n" + req.Context
+	var promptContext strings.Builder
+	if strings.TrimSpace(req.Context) != "" {
+		promptContext.WriteString(strings.TrimSpace(req.Context))
+	}
+	if history := formatHistory(req.History); history != "" {
+		if promptContext.Len() > 0 {
+			promptContext.WriteString("\n\n")
+		}
+		promptContext.WriteString("Conversation History:\n")
+		promptContext.WriteString(history)
+	}
+	if promptContext.Len() > 0 {
+		systemPrompt += "\n\n## User Context:\n" + promptContext.String()
 	}
 
 	raw, ok := h.chat(c, systemPrompt, req.Message)
