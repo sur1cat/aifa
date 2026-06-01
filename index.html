@@ -86,31 +86,31 @@
         .webapp-dots { display:flex; gap:6px; }
         .webapp-dots span { width:11px; height:11px; border-radius:50%; }
         .webapp-url { font-family:ui-monospace,'SF Mono',monospace; font-size:13px; color:var(--text-secondary); letter-spacing:0.3px; }
-        .webapp-body { display:grid; grid-template-columns:240px 1fr; min-height:680px; background:#0E0E10; }
-        .webapp-sidebar { background:#0A0A0C; border-right:1px solid var(--border); padding:20px 12px; display:flex; flex-direction:column; gap:16px; }
-        .webapp-nav { display:flex; flex-direction:column; gap:2px; }
+        .webapp-body { display:grid; grid-template-columns:240px 1fr; height:660px; background:#0E0E10; }
+        .webapp-sidebar { background:#0A0A0C; border-right:1px solid var(--border); padding:20px 12px; display:flex; flex-direction:column; gap:16px; justify-content:flex-start; height:660px; overflow:hidden; box-sizing:border-box; flex-shrink:0; }
+        .webapp-nav { display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
         .webapp-nav-item { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:8px; background:none; border:none; color:var(--text-secondary); font-size:14px; font-weight:500; cursor:pointer; transition:all 0.15s; font-family:inherit; text-align:left; width:100%; }
         .webapp-nav-item:hover { background:rgba(255,255,255,0.04); color:var(--text-primary); }
         .webapp-nav-item.active { background:rgba(16,185,129,0.12); color:var(--accent); }
         .webapp-nav-icon { font-size:14px; opacity:0.85; width:16px; display:inline-block; text-align:center; }
         .webapp-nav-item.active .webapp-nav-icon { opacity:1; }
-        .webapp-ai-chat { margin-top:auto; background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.18); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px; max-height:280px; }
-        .webapp-ai-chat-header { display:flex; justify-content:space-between; align-items:center; }
+        .webapp-ai-chat { margin-top:16px; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.22); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:8px; flex-shrink:0; height:280px; box-sizing:border-box; }
+        .webapp-ai-chat-header { display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
         .webapp-ai-chat-title { font-size:12px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px; }
         .webapp-ai-chat-status { color:var(--accent); font-size:8px; }
-        .webapp-ai-chat-body { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; max-height:140px; padding-right:4px; }
+        .webapp-ai-chat-body { overflow-y:auto; display:flex; flex-direction:column; gap:6px; flex:1; min-height:0; padding-right:4px; }
         .webapp-ai-chat-body::-webkit-scrollbar { width:3px; }
         .webapp-ai-chat-body::-webkit-scrollbar-thumb { background:rgba(16,185,129,0.3); border-radius:2px; }
-        .webapp-ai-msg { background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.15); border-radius:8px; padding:8px 10px; font-size:11.5px; color:var(--text-secondary); line-height:1.5; }
+        .webapp-ai-msg { background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.15); border-radius:8px; padding:8px 10px; font-size:11.5px; color:var(--text-secondary); line-height:1.5; flex-shrink:0; }
         .webapp-ai-msg.user { background:var(--surface-2); border-color:var(--border); color:var(--text-primary); align-self:flex-end; max-width:85%; }
-        .webapp-ai-input-wrap { display:flex; gap:6px; }
+        .webapp-ai-input-wrap { display:flex; gap:6px; flex-shrink:0; }
         .webapp-ai-input-wrap input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:7px 10px; color:var(--text-primary); font-size:11.5px; font-family:inherit; outline:none; transition:border-color 0.2s; }
         .webapp-ai-input-wrap input:focus { border-color:var(--accent); }
-        .webapp-ai-send { width:30px; height:30px; border-radius:8px; background:var(--accent); border:none; color:#000; font-size:13px; cursor:pointer; transition:all 0.15s; }
+        .webapp-ai-send { width:30px; height:30px; border-radius:8px; background:var(--accent); border:none; color:#000; font-size:13px; cursor:pointer; transition:all 0.15s; flex-shrink:0; }
         .webapp-ai-send:hover { background:var(--accent-light); }
-        .webapp-main { padding:36px 40px; overflow-y:auto; max-height:680px; }
+        .webapp-main { padding:36px 40px; overflow-y:auto; height:660px; box-sizing:border-box; }
         .webapp-view { display:block; animation:webappFade 0.3s ease-out; }
-        .webapp-view.hidden { display:none; }
+        .webapp-view.hidden { display:none !important; }
         @keyframes webappFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
         .webapp-header-row { display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin-bottom:32px; flex-wrap:wrap; }
         .webapp-greeting { font-size:30px; font-weight:700; letter-spacing:-0.5px; line-height:1.2; }
@@ -189,7 +189,7 @@
         }
 
 /* DEMO */
-        .demo-section { background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+        .demo-section { background:linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%); border-top:1px solid var(--border); border-bottom:1px solid var(--border); overflow:visible; }
         .demo-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:64px; flex-wrap:wrap; gap:24px; }
         .demo-layout { display:flex; align-items:flex-start; justify-content:center; gap:80px; flex-wrap:wrap; }
         .phone-frame { width:290px; height:600px; background:#000; border-radius:44px; border:3px solid rgba(255,255,255,0.1); overflow:hidden; position:relative; box-shadow:0 32px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.05); flex-shrink:0; }
@@ -197,7 +197,7 @@
         .phone-screen { width:100%; height:100%; overflow:hidden; background:var(--bg); position:relative; }
         .phone-status-bar { display:flex; justify-content:space-between; align-items:center; padding:32px 20px 8px; font-size:12px; font-weight:600; }
         .phone-status-icons { display:flex; gap:4px; align-items:center; }
-        .app-view { height:calc(100% - 72px); overflow-y:auto; display:block; padding-bottom:64px; }
+        .app-view { height:calc(100% - 72px); overflow-y:auto; display:block; padding-bottom:64px; position:relative; }
         .app-view.hidden { display:none !important; }
         .app-topbar { display:flex; justify-content:space-between; align-items:center; padding:8px 16px; }
         .app-topbar-title { font-size:20px; font-weight:700; }
@@ -350,8 +350,13 @@
         .modal-select { width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-primary);font-size:15px;font-family:inherit;outline:none;margin-top:8px;cursor:pointer; }
         .modal-row { display:flex;gap:10px;margin-top:20px; }
         /* PHONE DEMO WRAPPER */
-        .phone-demo-wrap { margin-top:56px;display:flex;flex-direction:column;align-items:center;gap:16px; }
+        .phone-demo-wrap { display:flex;flex-direction:column;align-items:center;gap:16px; }
         .phone-demo-label { font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted); }
+        /* Hide desktop demo on mobile */
+        @media(max-width:768px){
+            .webapp-shell { display:none !important; }
+            .phone-demo-wrap { margin-top:0; }
+        }
         /* LIGHT THEME */
         .phone-frame.light-theme { --bg:#F5F5F7; --bg-2:#EBEBED; --surface:#FFFFFF; --surface-2:#E8E8EA; --border:rgba(0,0,0,0.1); --text-primary:#1A1A1F; --text-secondary:#4A4A56; --text-muted:#8A8A96; background:#F5F5F7; }
         .phone-frame.light-theme .phone-screen { background:#F5F5F7; }
@@ -372,7 +377,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
             <button class="lang-btn active" data-lang="en" onclick="setLang('en')">EN</button>
-            <button class="lang-btn" data-lang="kk" onclick="setLang('kk')">Қазақша</button>
+            <button class="lang-btn" data-lang="kk" onclick="setLang('kk')">KZ</button>
             <button class="lang-btn" data-lang="ru" onclick="setLang('ru')">RU</button>
             <a href="https://play.google.com" class="nav-cta" target="_blank" data-i18n="nav_download">Download App</a>
         </div>
@@ -392,7 +397,7 @@
     </div>
     <div class="hero-stores">
         <a href="https://play.google.com" class="store-btn" target="_blank">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.37.21.81.21 1.2 0l10.56-6.1L3.18.24c-.37-.21-.81-.21-1.2 0-.38.22-.38.57 0 .79l10.74 6.2-10.74 6.2c-.38.22-.38.57 0 .79v.01zm-.8-1.87l.8-.46v-9.7l-.8-.46V21.89zm11.2 0l.8.46V12.73l-.8.46v9.7z"/></svg>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.18 1.07A1.5 1.5 0 0 0 2 2.5v19a1.5 1.5 0 0 0 1.18 1.43l10.63-10.92L3.18 1.07z" fill="#4CAF50"/><path d="M20.36 10.56l-2.94-1.7-3.32 3.14 3.32 3.14 2.94-1.7A1.5 1.5 0 0 0 20.36 10.56z" fill="#FFD600"/><path d="M3.18 1.07l10.63 10.02L17.13 7.9 5.27.51A1.5 1.5 0 0 0 3.18 1.07z" fill="#EA4335"/><path d="M3.18 22.93A1.5 1.5 0 0 0 5.27 23.49L17.13 16.1l-3.32-3.19-10.63 10.02z" fill="#1565C0"/></svg>
             <div class="store-btn-text"><small data-i18n="hero_google_sm">Get it on</small><span data-i18n="hero_google">Google Play</span></div>
         </a>
     </div>
@@ -451,16 +456,15 @@
 </section>
 
 <!-- DEMO -->
-<section class="section demo-section" id="demo">
-    <div class="demo-header animate-on-scroll">
-        <div>
-            <div class="section-label" data-i18n="demo_label">Live Demo</div>
-            <h2 class="section-title" data-i18n="demo_title">Try it right here,<br>right now</h2>
-            <p class="section-desc" data-i18n="demo_sub">No sign-up needed. Play with the full web experience — synced across all your devices.</p>
-        </div>
+<section class="section demo-section" id="demo" style="max-width:none; overflow:visible;">
+    <div class="animate-on-scroll" style="max-width:1200px; margin:0 auto 64px; padding:0 32px;">
+        <div class="section-label" data-i18n="demo_label">Live Demo</div>
+        <h2 class="section-title" data-i18n="demo_title">Try it right here,<br>right now</h2>
+        <p class="section-desc" data-i18n="demo_sub">No sign-up needed. Play with the full web experience — synced across all your devices.</p>
     </div>
 
-    <div class="webapp-shell animate-on-scroll">
+    <div style="display:flex; align-items:center; justify-content:center; gap:40px; overflow:visible;">
+    <div class="webapp-shell animate-on-scroll" style="flex-shrink:0; width:min(1100px, calc(100vw - 380px));">
         <!-- Browser chrome -->
         <div class="webapp-chrome">
             <div class="webapp-dots">
@@ -497,7 +501,7 @@
                     </button>
                     <button class="webapp-nav-item" data-view="recurring" onclick="switchWebView('recurring')">
                         <span class="webapp-nav-icon">↻</span>
-                        <span>Recurring</span>
+                        <span data-i18n="web_recurring">Recurring</span>
                     </button>
                     <button class="webapp-nav-item" data-view="habits" onclick="switchWebView('habits')">
                         <span class="webapp-nav-icon">✓</span>
@@ -505,11 +509,7 @@
                     </button>
                     <button class="webapp-nav-item" data-view="tasks" onclick="switchWebView('tasks')">
                         <span class="webapp-nav-icon">📋</span>
-                        <span>Tasks</span>
-                    </button>
-                    <button class="webapp-nav-item" data-view="ai" onclick="switchWebView('ai')">
-                        <span class="webapp-nav-icon">✦</span>
-                        <span data-i18n="web_ai_advisor">AI Advisor</span>
+                        <span data-i18n="web_tasks">Tasks</span>
                     </button>
                 </nav>
 
@@ -545,8 +545,8 @@
                         </div>
                         <div class="webapp-balance-card">
                             <div class="webapp-balance-label" data-i18n="web_total_balance">TOTAL BALANCE</div>
-                            <div class="webapp-balance-value" id="webOverviewBalance">$24,380</div>
-                            <div class="webapp-balance-delta" id="webOverviewDelta">▲ +$840 <span data-i18n="web_this_month">this month</span></div>
+                            <div class="webapp-balance-value" id="webOverviewBalance">3 450 000 ₸</div>
+                            <div class="webapp-balance-delta" id="webOverviewDelta">▲ +₸840 <span data-i18n="web_this_month">this month</span></div>
                         </div>
                     </div>
 
@@ -554,13 +554,13 @@
                     <div class="webapp-kpis">
                         <div class="webapp-kpi">
                             <div class="webapp-kpi-label" data-i18n="web_income">INCOME</div>
-                            <div class="webapp-kpi-value" id="webOverviewIncome">$5,200</div>
-                            <div class="webapp-kpi-delta up">▲ +$200 <span data-i18n="web_vs_last_month">vs last month</span></div>
+                            <div class="webapp-kpi-value" id="webOverviewIncome">450 000 ₸</div>
+                            <div class="webapp-kpi-delta up">▲ +₸200 <span data-i18n="web_vs_last_month">vs last month</span></div>
                         </div>
                         <div class="webapp-kpi">
                             <div class="webapp-kpi-label" data-i18n="web_expenses">EXPENSES</div>
-                            <div class="webapp-kpi-value" id="webOverviewExpenses">$3,180</div>
-                            <div class="webapp-kpi-delta down">▼ +$120 <span data-i18n="web_vs_last_month">vs last month</span></div>
+                            <div class="webapp-kpi-value" id="webOverviewExpenses">203 000 ₸</div>
+                            <div class="webapp-kpi-delta down">▼ +₸120 <span data-i18n="web_vs_last_month">vs last month</span></div>
                         </div>
                         <div class="webapp-kpi">
                             <div class="webapp-kpi-label" data-i18n="web_savings_rate">SAVINGS RATE</div>
@@ -612,8 +612,8 @@
                     <div class="webapp-kpis" style="margin-top:24px;">
                         <div class="webapp-kpi">
                             <div class="webapp-kpi-label" data-i18n="web_total_debt">TOTAL DEBT</div>
-                            <div class="webapp-kpi-value" style="color:#FF6B6B;">$12,450</div>
-                            <div class="webapp-kpi-delta up">▼ -$320 <span data-i18n="web_this_month">this month</span></div>
+                            <div class="webapp-kpi-value" style="color:#FF6B6B;">₸12,450</div>
+                            <div class="webapp-kpi-delta up">▼ -₸320 <span data-i18n="web_this_month">this month</span></div>
                         </div>
                         <div class="webapp-kpi">
                             <div class="webapp-kpi-label" data-i18n="web_avg_rate">AVG INTEREST RATE</div>
@@ -729,120 +729,373 @@
     </div>
 
     <!-- PHONE FRAME DEMO -->
-    <div class="phone-demo-wrap animate-on-scroll">
+    <div class="phone-demo-wrap animate-on-scroll" style="flex-shrink:0; align-self:center;">
         <p class="phone-demo-label">Mobile app</p>
         <div class="phone-frame">
             <div class="phone-notch"></div>
             <div class="phone-screen">
                 <div class="phone-status-bar">
                     <span>9:41</span>
-                    <div class="phone-status-icons"><span>▲▲▲</span><span style="margin-left:4px;">🔋</span></div>
+                    <div class="phone-status-icons">
+                        <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" style="opacity:0.85"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="1" width="3" height="11" rx="1"/><rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/></svg>
+                        <svg width="14" height="12" viewBox="0 0 14 12" fill="none" style="margin-left:3px;opacity:0.85"><rect x="0.5" y="2.5" width="11" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="4" width="7" height="4" rx="0.8" fill="currentColor"/><path d="M12.5 5v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                    </div>
                 </div>
 
-                <!-- HABITS VIEW -->
-                <div id="view-habits" class="app-view">
-                    <div class="app-topbar">
-                        <span class="app-topbar-title" data-i18n="app_today">Today</span>
-                        <button class="app-add-btn" onclick="document.getElementById('addModal').style.display='flex'">+</button>
-                    </div>
-                    <div class="app-seg">
-                        <button class="app-seg-btn active" data-i18n="app_today_tab" onclick="switchHabitTab('today',this)">Today</button>
-                        <button class="app-seg-btn" data-i18n="app_week_tab" onclick="switchHabitTab('week',this)">Week</button>
-                        <button class="app-seg-btn" data-i18n="app_month_tab" onclick="switchHabitTab('month',this)">Month</button>
-                    </div>
-                    <div class="app-date" id="demoDate">Monday, May 26</div>
-                    <div id="habitsList"></div>
-                    <div class="app-progress">
-                        <div class="app-progress-header">
-                            <span class="app-progress-label" data-i18n="app_progress">Today's progress</span>
-                            <span class="app-progress-pct" id="progressPct">0%</span>
+                <!-- ── DASHBOARD VIEW ── -->
+                <div id="view-dashboard" class="app-view">
+                    <div style="padding:4px 16px 0; display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:1px;" id="dashDate">воскресенье, 31 мая 2026 г.</div>
+                            <div style="font-size:22px;font-weight:800;line-height:1.15;" id="dashGreeting">Добрый вечер</div>
                         </div>
-                        <div class="app-progress-bar"><div class="app-progress-fill" id="progressFill" style="width:0%"></div></div>
+                        <button style="display:flex;align-items:center;gap:5px;background:var(--accent);border:none;color:#000;font-size:11px;font-weight:700;padding:7px 12px;border-radius:20px;cursor:pointer;" onclick="switchNav('ai')">✦ AI</button>
+                    </div>
+
+                    <!-- Progress circle card — LIVE reactive -->
+                    <div style="margin:10px 16px 0;background:var(--surface);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+                        <div style="position:relative;width:56px;height:56px;flex-shrink:0;">
+                            <svg viewBox="0 0 56 56" width="56" height="56" style="transform:rotate(-90deg)">
+                                <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(16,185,129,0.15)" stroke-width="5"/>
+                                <circle id="progressRing" cx="28" cy="28" r="22" fill="none" stroke="#10B981" stroke-width="5" stroke-dasharray="138.2" stroke-dashoffset="138.2" stroke-linecap="round" style="transition:stroke-dashoffset 0.6s ease;"/>
+                            </svg>
+                            <div id="progressPctLabel" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text-primary);">0%</div>
+                        </div>
+                        <div>
+                            <div id="progressTitle" style="font-size:14px;font-weight:700;margin-bottom:3px;">Начни свой день</div>
+                            <div id="progressSubtitle" style="font-size:11px;color:var(--text-muted);line-height:1.4;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Habits mini row — horizontal slider, 3 visible -->
+                    <div style="padding:10px 16px 0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <div id="dashHabitsSection" style="font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;">ПРИВЫЧКИ</div>
+                            <div id="dashHabitsAll" style="font-size:11px;color:var(--accent);font-weight:600;cursor:pointer;" onclick="switchNav('habits')">Все</div>
+                        </div>
+                        <div id="dashHabitsRow" style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;"></div>
+                    </div>
+
+                    <!-- Tasks mini — clickable to toggle -->
+                    <div style="padding:10px 16px 0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <div id="dashTasksSection" style="font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;">ЗАДАЧИ</div>
+                            <div id="dashTasksAll" style="font-size:11px;color:var(--accent);font-weight:600;cursor:pointer;" onclick="switchNav('tasks')">Все</div>
+                        </div>
+                        <div id="dashTasksBlock" style="background:var(--surface);border-radius:12px;padding:4px 0;"></div>
+                    </div>
+
+                    <!-- Budget mini -->
+                    <div style="padding:10px 16px 0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <div id="dashBudgetSection" style="font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;">ЭТОТ МЕСЯЦ</div>
+                            <div id="dashBudgetAll" style="font-size:11px;color:var(--accent);font-weight:600;cursor:pointer;" onclick="switchNav('budget')">Баланс</div>
+                        </div>
+                        <div style="background:var(--surface);border-radius:12px;padding:12px 14px;">
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;" id="dashBalanceLbl">Баланс</div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <div id="dashBudgetBalance" style="font-size:19px;font-weight:800;">—</div>
+                                <div id="dashBudgetIncomeBadge" style="background:rgba(16,185,129,0.15);color:var(--accent);font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;"></div>
+                            </div>
+                            <div class="app-progress-bar" style="height:5px;"><div class="app-progress-fill" style="width:1%;"></div></div>
+                            <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--text-muted);">
+                                <span id="dashBudgetExpenseLbl">Расход</span><span id="dashBudgetExpense">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weekly review teaser -->
+                    <div style="padding:10px 16px 0;">
+                        <div id="dashWeekSection" style="font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px;">ОБЗОР НЕДЕЛИ</div>
+                        <div style="background:var(--surface);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+                            <div style="width:32px;height:32px;border-radius:10px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">✦</div>
+                            <div>
+                                <div id="dashWeekTitle" style="font-size:12px;font-weight:700;margin-bottom:2px;">Обзор недели</div>
+                                <div id="dashWeekSub" style="font-size:11px;color:var(--text-muted);">Отличная неделя! Привычки и бюджет в норме.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- TASKS VIEW -->
-                <div id="view-tasks" class="app-view hidden">
-                    <div class="app-topbar">
-                        <span class="app-topbar-title" data-i18n="app_tasks">Tasks</span>
-                        <button class="app-add-btn" onclick="openAddTask()">+</button>
+                <!-- ── HABITS VIEW ── -->
+                <div id="view-habits" class="app-view hidden">
+                    <div style="padding:6px 16px 4px; display:flex; justify-content:space-between; align-items:center;">
+                        <div id="mobileHabitsTitle" style="font-size:22px;font-weight:800;">Привычки</div>
+                        <button style="display:flex;align-items:center;gap:5px;background:var(--accent);border:none;color:#000;font-size:11px;font-weight:700;padding:7px 12px;border-radius:20px;cursor:pointer;" onclick="switchNav('ai')">✦ AI</button>
                     </div>
-                    <div style="padding:4px 16px 8px;font-size:12px;color:var(--text-muted);"><span id="tasksDone">0</span> / <span id="tasksTotal">0</span> <span data-i18n="app_done">done</span></div>
+                    <div style="padding:0 16px 8px;font-size:12px;color:var(--text-muted);" id="habitsSubtitle">0 из 0 выполнено сегодня</div>
+                    <div id="habitsList"></div>
+                </div>
+
+                <!-- ── TASKS VIEW ── -->
+                <div id="view-tasks" class="app-view hidden">
+                    <div style="padding:6px 16px 4px; display:flex; justify-content:space-between; align-items:center;">
+                        <div id="mobileTasksTitle" style="font-size:22px;font-weight:800;">Задачи</div>
+                        <button style="display:flex;align-items:center;gap:5px;background:var(--accent);border:none;color:#000;font-size:11px;font-weight:700;padding:7px 12px;border-radius:20px;cursor:pointer;" onclick="switchNav('ai')">✦ AI</button>
+                    </div>
+                    <div style="padding:0 16px 8px;font-size:12px;color:var(--text-muted);" id="tasksSubtitle">0 активных на сегодня</div>
+                    <div style="margin:0 16px 10px;display:flex;background:var(--surface);border-radius:10px;padding:3px;">
+                        <button class="app-seg-btn active" style="flex:1;" onclick="switchTaskTab('today',this)">Сегодня</button>
+                        <button class="app-seg-btn" style="flex:1;" onclick="switchTaskTab('all',this)">Все</button>
+                        <button class="app-seg-btn" style="flex:1;" onclick="switchTaskTab('done',this)">Выполненные</button>
+                    </div>
                     <div id="tasksList"></div>
                 </div>
 
-                <!-- BUDGET VIEW -->
+                <!-- ── BUDGET VIEW ── -->
                 <div id="view-budget" class="app-view hidden">
-                    <div class="app-topbar">
-                        <span class="app-topbar-title" data-i18n="app_budget">Budget</span>
-                        <button class="app-add-btn" id="budgetAddBtn" onclick="openBudgetAdd()">+</button>
+                    <div style="padding:6px 16px 4px; display:flex; justify-content:space-between; align-items:center;">
+                        <div id="mobileBudgetTitle" style="font-size:22px;font-weight:800;">Бюджет</div>
+                        <button style="display:flex;align-items:center;gap:5px;background:var(--accent);border:none;color:#000;font-size:11px;font-weight:700;padding:7px 12px;border-radius:20px;cursor:pointer;" onclick="switchNav('ai')">✦ AI</button>
                     </div>
-                    <!-- Summary card -->
-                    <div style="margin:4px 16px 8px;background:var(--surface);border-radius:var(--radius-md);padding:12px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <div>
-                                <div style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:1.2px;">SPENT</div>
-                                <div style="font-size:22px;font-weight:700;color:var(--danger);" id="budgetTotal">$1,847</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <div style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:1.2px;">INCOME</div>
-                                <div style="font-size:22px;font-weight:700;color:var(--accent);" id="budgetIncome">$3,200</div>
-                            </div>
-                        </div>
-                        <div class="app-progress-bar" style="margin-top:8px;"><div class="app-progress-fill" id="budgetFill" style="width:74%;background:linear-gradient(90deg,var(--accent),var(--warning));"></div></div>
-                        <div style="font-size:10px;color:var(--text-muted);margin-top:3px;" id="budgetPct">74% of $2,500 budget</div>
+                    <!-- Month nav -->
+                    <div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:0 16px 8px;">
+                        <button style="width:28px;height:28px;border-radius:50%;background:var(--surface);border:none;color:var(--text-primary);font-size:14px;cursor:pointer;">‹</button>
+                        <span style="font-size:13px;font-weight:600;">май 2026 г.</span>
+                        <button style="width:28px;height:28px;border-radius:50%;background:var(--surface);border:none;color:var(--text-primary);font-size:14px;cursor:pointer;">›</button>
                     </div>
-                    <!-- Sub-tabs -->
-                    <div style="display:flex;gap:2px;margin:0 16px 8px;overflow-x:auto;padding-bottom:2px;">
-                        <button class="app-seg-btn active" style="flex-shrink:0;padding:5px 10px;font-size:11px;" onclick="switchBudgetTab('expenses',this)">Expenses</button>
-                        <button class="app-seg-btn" style="flex-shrink:0;padding:5px 10px;font-size:11px;" onclick="switchBudgetTab('income',this)">Income</button>
-                        <button class="app-seg-btn" style="flex-shrink:0;padding:5px 10px;font-size:11px;" onclick="switchBudgetTab('debts',this)">Loans</button>
-                        <button class="app-seg-btn" style="flex-shrink:0;padding:5px 10px;font-size:11px;" onclick="switchBudgetTab('credits',this)">Debts</button>
-                        <button class="app-seg-btn" style="flex-shrink:0;padding:5px 10px;font-size:11px;" onclick="switchBudgetTab('recurring',this)">Recurring</button>
-                        <button class="app-seg-btn" style="flex-shrink:0;padding:5px 10px;font-size:11px;" onclick="switchBudgetTab('savings',this)">Savings</button>
+                    <!-- Dynamic balance card -->
+                    <div id="mobileBudgetBalance" style="margin:0 16px 10px;"></div>
+                    <!-- Dynamic expense categories -->
+                    <div style="padding:0 16px 8px;">
+                        <div id="mobileBudgetCatsSection" style="font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px;">РАСХОДЫ ПО КАТЕГОРИЯМ</div>
+                        <div id="mobileBudgetCats" style="background:var(--surface);border-radius:12px;padding:12px 14px;"></div>
                     </div>
-                    <div id="budgetCategories" style="padding:0 16px;"></div>
+                    <!-- Tools menu (dynamic) -->
+                    <div style="padding:0 16px 8px;">
+                        <div id="mobileBudgetToolsSection" style="font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px;">ИНСТРУМЕНТЫ</div>
+                        <div id="mobileBudgetToolsList" style="background:var(--surface);border-radius:14px;overflow:hidden;"></div>
+                    </div>
+                    <!-- Dynamic transactions -->
+                    <div style="padding:0 16px 8px;">
+                        <div id="mobileBudgetTxSection" style="font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px;">ОПЕРАЦИИ</div>
+                        <div id="mobileBudgetTx" style="background:var(--surface);border-radius:14px;overflow:hidden;"></div>
+                    </div>
                 </div>
 
-                <!-- AI VIEW -->
-                <div id="view-ai" class="app-view hidden" style="display:flex;flex-direction:column;overflow:hidden;">
-                    <div class="app-topbar" style="flex-shrink:0;">
-                        <span class="app-topbar-title" data-i18n="app_ai">AI Coach</span>
-                        <span style="font-size:10px;color:var(--accent);" data-i18n="ai_powered">Powered by AIFA AI</span>
+                <!-- ══ BUDGET SUB-SCREENS ══ -->
+
+                <!-- GOALS -->
+                <div id="subGoals" class="app-view hidden" style="overflow-y:auto;">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px 4px;">
+                        <button onclick="closeBudgetSub()" style="background:none;border:none;color:var(--text-primary);font-size:20px;cursor:pointer;">←</button>
+                        <div style="font-size:20px;font-weight:800;" id="subGoalsTitle">Цели</div>
                     </div>
-                    <div id="aiChats" class="app-ai-msgs"></div>
+                    <div id="goalsList" style="padding:8px 16px;"></div>
+                    
+                </div>
+
+                <!-- RECURRING -->
+                <div id="subRecurring" class="app-view hidden" style="overflow-y:auto;">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px 4px;">
+                        <button onclick="closeBudgetSub()" style="background:none;border:none;color:var(--text-primary);font-size:20px;cursor:pointer;">←</button>
+                        <div style="font-size:20px;font-weight:800;" id="subRecurringTitle">Регулярные</div>
+                    </div>
+                    <!-- Forecast card -->
+                    <div style="margin:8px 16px;background:var(--surface);border-radius:14px;padding:14px;">
+                        <div style="font-size:12px;font-weight:600;margin-bottom:10px;" id="subRecurringForecastLbl">Прогноз на месяц</div>
+                        <div style="display:flex;gap:20px;">
+                            <div><div style="font-size:10px;color:var(--text-muted);" id="subRecIncomeLbl">Доход</div><div id="subRecIncomeVal" style="font-size:16px;font-weight:700;color:var(--accent);">0 ₸</div></div>
+                            <div><div style="font-size:10px;color:var(--text-muted);" id="subRecExpLbl">Расход</div><div id="subRecExpVal" style="font-size:16px;font-weight:700;color:#FF6B6B;">0 ₸</div></div>
+                            <div><div style="font-size:10px;color:var(--text-muted);" id="subRecTotalLbl">Итог</div><div id="subRecTotalVal" style="font-size:16px;font-weight:700;color:var(--accent);">0 ₸</div></div>
+                        </div>
+                    </div>
+                    <div id="recurringList" style="padding:0 16px;"></div>
+                    
+                </div>
+
+                <!-- BUDGETS -->
+                <div id="subBudgets" class="app-view hidden" style="overflow-y:auto;">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px 4px;">
+                        <button onclick="closeBudgetSub()" style="background:none;border:none;color:var(--text-primary);font-size:20px;cursor:pointer;">←</button>
+                        <div style="font-size:20px;font-weight:800;" id="subBudgetsTitle">Бюджеты</div>
+                    </div>
+                    <div id="budgetLimitsList" style="padding:8px 16px;"></div>
+                    
+                </div>
+
+                <!-- SAVINGS GOALS -->
+                <div id="subSavings" class="app-view hidden" style="overflow-y:auto;">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px 4px;">
+                        <button onclick="closeBudgetSub()" style="background:none;border:none;color:var(--text-primary);font-size:20px;cursor:pointer;">←</button>
+                        <div style="font-size:20px;font-weight:800;" id="subSavingsTitle">Цель накоплений</div>
+                    </div>
+                    <div id="savingsGoalContent" style="padding:8px 16px;"></div>
+                    
+                </div>
+
+                <!-- DEBTS -->
+                <div id="subDebts" class="app-view hidden" style="overflow-y:auto;">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px 4px;">
+                        <button onclick="closeBudgetSub()" style="background:none;border:none;color:var(--text-primary);font-size:20px;cursor:pointer;">←</button>
+                        <div style="font-size:20px;font-weight:800;" id="subDebtsTitle">Долги</div>
+                    </div>
+                    <!-- Summary cards -->
+                    <div style="display:flex;gap:10px;padding:8px 16px;">
+                        <div style="flex:1;background:rgba(255,107,107,0.12);border-radius:12px;padding:12px;">
+                            <div style="font-size:10px;color:#FF6B6B;margin-bottom:4px;" id="subDebtIOweLabel">↑ Я должен</div>
+                            <div id="subDebtIOweVal" style="font-size:18px;font-weight:800;color:#FF6B6B;">0 ₸</div>
+                        </div>
+                        <div style="flex:1;background:rgba(16,185,129,0.1);border-radius:12px;padding:12px;">
+                            <div style="font-size:10px;color:var(--accent);margin-bottom:4px;" id="subDebtOwedLabel">↓ Мне должны</div>
+                            <div id="subDebtOwedVal" style="font-size:18px;font-weight:800;color:var(--accent);">0 ₸</div>
+                        </div>
+                    </div>
+                    <div id="debtsList" style="padding:0 16px;"></div>
+                    
+                </div>
+
+                <!-- RULES -->
+                <div id="subRules" class="app-view hidden" style="overflow-y:auto;">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px 4px;">
+                        <button onclick="closeBudgetSub()" style="background:none;border:none;color:var(--text-primary);font-size:20px;cursor:pointer;">←</button>
+                        <div style="font-size:20px;font-weight:800;" id="subRulesTitle">Правила накоплений</div>
+                    </div>
+                    <div id="rulesList" style="padding:8px 16px;"></div>
+                    
+                </div>
+
+                <!-- AI ANALYTICS -->
+                <div id="subAiAnalytics" class="app-view hidden" style="overflow-y:auto;">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px 12px;">
+                        <button onclick="closeBudgetSub()" style="background:none;border:none;color:var(--text-primary);font-size:20px;cursor:pointer;">←</button>
+                        <div style="font-size:20px;font-weight:800;" id="subAiTitle">AI аналитика</div>
+                    </div>
+                    <!-- Spend summary -->
+                    <div style="margin:0 16px 10px;background:var(--surface);border-radius:14px;padding:14px;cursor:pointer;" onclick="runAiSpend()">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><div style="display:flex;align-items:center;gap:8px;"><span>📊</span><span style="font-size:13px;font-weight:700;" id="subAiSpendTitle">Резюме трат</span></div><span style="font-size:18px;color:var(--text-muted);">↻</span></div>
+                        <div id="subAiSpendResult" style="font-size:11px;color:var(--text-muted);" id="subAiSpendHint">Нажмите ↻ для анализа</div>
+                    </div>
+                    <!-- Budget recs -->
+                    <div style="margin:0 16px 10px;background:var(--surface);border-radius:14px;padding:14px;cursor:pointer;" onclick="runAiBudget()">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><div style="display:flex;align-items:center;gap:8px;"><span>💡</span><span style="font-size:13px;font-weight:700;" id="subAiBudgetTitle">Рекомендации по бюджету</span></div><span style="font-size:18px;color:var(--text-muted);">↻</span></div>
+                        <div id="subAiBudgetResult" style="font-size:11px;color:var(--text-muted);">Нажмите ↻ для рекомендаций</div>
+                    </div>
+                    <!-- Forecast -->
+                    <div style="margin:0 16px 10px;background:var(--surface);border-radius:14px;padding:14px;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span>📈</span><span style="font-size:13px;font-weight:700;" id="subAiForecastTitle">Прогноз</span></div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+                            <button class="app-seg-btn" onclick="selectForecastPeriod(7,this)" style="font-size:11px;">7 д</button>
+                            <button class="app-seg-btn" onclick="selectForecastPeriod(14,this)" style="font-size:11px;">14 д</button>
+                            <button class="app-seg-btn active" onclick="selectForecastPeriod(30,this)" style="font-size:11px;">✓ 30 д</button>
+                            <button class="app-seg-btn" onclick="selectForecastPeriod(60,this)" style="font-size:11px;">60 д</button>
+                            <button class="app-seg-btn" onclick="selectForecastPeriod(90,this)" style="font-size:11px;">90 д</button>
+                        </div>
+                        <button onclick="runForecast()" style="display:flex;align-items:center;gap:6px;background:var(--accent);border:none;color:#000;font-size:12px;font-weight:700;padding:10px 16px;border-radius:12px;cursor:pointer;width:100%;justify-content:center;" id="subAiForecastBtn">↻ Запустить прогноз</button>
+                        <div id="subAiForecastResult" style="margin-top:8px;font-size:11px;color:var(--text-muted);"></div>
+                    </div>
+                    <!-- Anomalies -->
+                    <div style="margin:0 16px 10px;background:var(--surface);border-radius:14px;padding:14px;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span>⚠️</span><span style="font-size:13px;font-weight:700;" id="subAiAnomalyTitle">Аномалии</span></div>
+                        <div style="display:flex;gap:6px;margin-bottom:10px;">
+                            <button class="app-seg-btn" onclick="selectSensitivity('low',this)" style="font-size:11px;" id="subAiAnomalyLow">Низкая</button>
+                            <button class="app-seg-btn active" onclick="selectSensitivity('med',this)" style="font-size:11px;" id="subAiAnomalyMed">✓ Средняя</button>
+                            <button class="app-seg-btn" onclick="selectSensitivity('high',this)" style="font-size:11px;" id="subAiAnomalyHigh">Высокая</button>
+                        </div>
+                        <button onclick="runAnomalies()" style="display:flex;align-items:center;gap:6px;background:var(--accent);border:none;color:#000;font-size:12px;font-weight:700;padding:10px 16px;border-radius:12px;cursor:pointer;width:100%;justify-content:center;" id="subAiScanBtn">🔍 Сканировать транзакции</button>
+                        <div id="subAiAnomalyResult" style="margin-top:8px;font-size:11px;color:var(--text-muted);"></div>
+                    </div>
+                </div>
+
+                <!-- ══ FABs — shown per active view by switchNav ══ -->
+                <button id="phoneFabHabit" onclick="showPhoneSheet('habit')" style="display:none;position:absolute;bottom:80px;right:16px;width:46px;height:46px;border-radius:50%;background:var(--accent);border:none;color:#000;font-size:26px;font-weight:300;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(16,185,129,0.45);z-index:6;line-height:1;">+</button>
+                <button id="phoneFabTask"  onclick="showPhoneSheet('task')"  style="display:none;position:absolute;bottom:80px;right:16px;width:46px;height:46px;border-radius:50%;background:var(--accent);border:none;color:#000;font-size:26px;font-weight:300;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(16,185,129,0.45);z-index:6;line-height:1;">+</button>
+                <button id="phoneFabBudget" onclick="showPhoneSheet('budget')" style="display:none;position:absolute;bottom:80px;right:16px;width:46px;height:46px;border-radius:50%;background:var(--accent);border:none;color:#000;font-size:26px;font-weight:300;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(16,185,129,0.45);z-index:6;line-height:1;">+</button>
+
+                <!-- ── AI VIEW ── -->
+                <div id="view-ai" class="app-view hidden" style="display:flex;flex-direction:column;overflow:hidden;height:calc(100% - 64px);">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px;flex-shrink:0;">
+                        <button onclick="switchNav('dashboard')" style="background:none;border:none;color:var(--text-primary);font-size:18px;cursor:pointer;padding:0 4px;">←</button>
+                        <span id="mobileAiTitle" style="font-size:15px;font-weight:700;">✦ AI Ассистент</span>
+                    </div>
+                    <div style="display:flex;justify-content:center;padding:4px 0 8px;flex-shrink:0;">
+                        <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:600;color:var(--accent);">⭐ <span id="mobileAiCoach">Life Coach · auto</span></div>
+                    </div>
+                    <div id="aiChats" class="app-ai-msgs" style="flex:1;overflow-y:auto;padding:0 16px;"></div>
                     <div class="app-ai-input-bar">
-                        <input id="aiInput" type="text" data-i18n-placeholder="ai_placeholder" placeholder="Ask AI coach..." onkeydown="if(event.key==='Enter')appSendAi()">
+                        <input id="aiInput" type="text" placeholder="Запись расхода, вопрос..." style="flex:1;background:transparent;border:none;outline:none;font-size:12px;color:var(--text-primary);" onkeydown="if(event.key==='Enter')appSendAi()">
                         <button class="app-ai-send" onclick="appSendAi()">→</button>
                     </div>
                 </div>
 
-                <!-- SETTINGS VIEW -->
-                <div id="view-settings" class="app-view hidden">
-                    <div class="app-topbar"><span class="app-topbar-title" data-i18n="settings_title">Settings</span></div>
-                    <div style="padding:0 16px;">
-                        <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);">
-                            <div style="width:44px;height:44px;border-radius:50%;background:rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;">👤</div>
-                            <div><div style="font-weight:700;" data-i18n="settings_profile">Alexander</div><div style="font-size:12px;color:var(--accent);" data-i18n="settings_premium">Premium member</div></div>
-                        </div>
-                        <div class="settings-row"><span data-i18n="settings_notif">Notifications</span><button class="toggle on" onclick="toggleSetting(this)"><div class="toggle-thumb"></div></button></div>
-                        <div class="settings-row"><span data-i18n="settings_ai">AI Coach Access</span><button class="toggle on" onclick="toggleSetting(this)"><div class="toggle-thumb"></div></button></div>
-                        <div class="settings-row" style="border-bottom:none;"><span data-i18n="settings_version">Version</span><span style="color:var(--text-muted);font-size:13px;">1.0.0</span></div>
+                <!-- ── PROFILE VIEW ── -->
+                <div id="view-settings" class="app-view hidden" style="overflow-y:auto;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 12px;">
+                        <div id="mobileProfileTitle" style="font-size:22px;font-weight:800;">Profile</div>
+                        <button style="display:flex;align-items:center;gap:5px;background:var(--accent);border:none;color:#000;font-size:11px;font-weight:700;padding:7px 12px;border-radius:20px;cursor:pointer;" onclick="switchNav('ai')">✦ AI</button>
                     </div>
+                    <!-- Avatar card -->
+                    <div style="margin:0 16px 16px;background:var(--surface);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+                        <div style="width:48px;height:48px;border-radius:50%;background:rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--accent);flex-shrink:0;">A</div>
+                        <div style="flex:1;">
+                            <div style="font-size:14px;font-weight:700;">Alex</div>
+                            <div style="font-size:11px;color:var(--accent);font-weight:600;" id="mobileProfilePremium">Premium пользователь</div>
+                        </div>
+                        <div style="color:var(--text-muted);font-size:16px;cursor:pointer;">✎</div>
+                    </div>
+                    <!-- Profile actions -->
+                    <div style="padding:0 16px 10px;">
+                        <div id="mobileProfileSection" style="font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px;">PROFILE</div>
+                        <div style="background:var(--surface);border-radius:12px;overflow:hidden;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer;">
+                                <div style="display:flex;align-items:center;gap:10px;"><div style="width:28px;height:28px;border-radius:8px;background:rgba(51,154,240,0.12);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔</div><span id="mobileNotifLbl" style="font-size:13px;font-weight:500;">Notifications</span></div>
+                                <div style="width:36px;height:20px;border-radius:10px;background:var(--accent);position:relative;cursor:pointer;"><div style="position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;"></div></div>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer;">
+                                <div style="display:flex;align-items:center;gap:10px;"><div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--accent);">✦</div><span id="mobileAiAccessLbl" style="font-size:13px;font-weight:500;">AI Coach access</span></div>
+                                <div style="width:36px;height:20px;border-radius:10px;background:var(--accent);position:relative;cursor:pointer;"><div style="position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;"></div></div>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer;">
+                                <div style="display:flex;align-items:center;gap:10px;"><div style="width:28px;height:28px;border-radius:8px;background:rgba(132,94,247,0.12);display:flex;align-items:center;justify-content:center;font-size:13px;color:#845EF7;">★</div><span id="mobilePremiumLbl" style="font-size:13px;font-weight:500;">Premium</span></div>
+                                <span id="mobileActiveLbl" style="font-size:11px;color:var(--accent);font-weight:600;">Active ›</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;">
+                                <div style="width:28px;height:28px;border-radius:8px;background:rgba(255,107,107,0.15);display:flex;align-items:center;justify-content:center;font-size:13px;">↪</div>
+                                <span id="mobileLogoutLbl" style="font-size:13px;font-weight:600;color:#FF6B6B;">Log out</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:11px;color:var(--text-muted);padding:8px;">AIFA · 2.0</div>
                 </div>
 
-                <!-- BOTTOM NAVBAR -->
+                <!-- ══ SUB-SCREEN FAB (stays fixed in phone-screen, above navbar) ══ -->
+                <button id="phoneSubFab" onclick="phoneSubFabAction()" style="display:none;position:absolute;bottom:80px;right:16px;display:none;align-items:center;gap:6px;background:var(--accent);border:none;color:#000;font-size:13px;font-weight:700;padding:12px 18px;border-radius:20px;cursor:pointer;box-shadow:0 4px 16px rgba(16,185,129,0.4);z-index:8;">+</button>
+
+                <!-- ══ SINGLE SHEET PANEL — phone-screen child ══ -->
+                <div id="phoneSheetOverlay" onclick="hidePhoneSheet()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.6);z-index:40;"></div>
+                <div id="phoneSheetPanel" style="display:none;position:absolute;bottom:0;left:0;right:0;background:#181818;border-radius:20px 20px 0 0;z-index:41;overflow-y:auto;max-height:88%;"></div>
+
+                <!-- TOAST -->
                 <div id="phoneToast" style="position:absolute;bottom:76px;left:12px;right:12px;background:var(--accent);color:#000;font-size:12px;font-weight:700;padding:8px 14px;border-radius:10px;opacity:0;transform:translateY(6px);transition:opacity 0.25s,transform 0.25s;pointer-events:none;z-index:10;text-align:center;box-shadow:0 4px 16px rgba(16,185,129,0.4);"></div>
+
+                <!-- BOTTOM NAVBAR -->
                 <nav class="app-navbar">
-                    <button class="app-nav-item active" data-nav="habits" onclick="switchNav('habits')"><span style="font-size:18px;">✓</span><span data-i18n="app_today">Today</span></button>
-                    <button class="app-nav-item" data-nav="tasks" onclick="switchNav('tasks')"><span style="font-size:18px;">📋</span><span data-i18n="app_tasks">Tasks</span></button>
-                    <button class="app-nav-item" data-nav="budget" onclick="switchNav('budget')"><span style="font-size:18px;">$</span><span data-i18n="app_budget">Budget</span></button>
-                    <button class="app-nav-item" data-nav="ai" onclick="switchNav('ai')"><span style="font-size:18px;">✦</span><span data-i18n="app_ai">AI</span></button>
-                    <button class="app-nav-item" data-nav="settings" onclick="switchNav('settings')"><span style="font-size:18px;">⚙</span><span data-i18n="app_settings">Profile</span></button>
+                    <button class="app-nav-item active" data-nav="dashboard" onclick="switchNav('dashboard')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="app-nav-item" data-nav="habits" onclick="switchNav('habits')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 2l4 4-9 9-4-4 9-9z"/><path d="M3 20l4-4"/></svg>
+                        <span>Habits</span>
+                    </button>
+                    <button class="app-nav-item" data-nav="tasks" onclick="switchNav('tasks')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                        <span>Tasks</span>
+                    </button>
+                    <button class="app-nav-item" data-nav="budget" onclick="switchNav('budget')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        <span>Budget</span>
+                    </button>
+                    <button class="app-nav-item" data-nav="settings" onclick="switchNav('settings')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>Profile</span>
+                    </button>
                 </nav>
-            </div>
-        </div>
-    </div>
+            </div><!-- end phone-screen -->
+
+        </div><!-- end phone-frame -->
+    </div><!-- end phone-demo-wrap -->
+    </div><!-- end flex demo wrapper -->
 </section>
 
 <!-- AI AGENTS -->
@@ -890,7 +1143,7 @@
     <div class="pricing-grid">
         <div class="pricing-card animate-on-scroll">
             <div class="pricing-name" data-i18n="price_fname">Free</div>
-            <div class="pricing-price">$0 <span data-i18n="price_forever">forever</span></div>
+            <div class="pricing-price">0 ₸ <span data-i18n="price_forever">forever</span></div>
             <p class="pricing-desc" data-i18n="price_fdesc">Everything you need to get started with mindful productivity.</p>
             <ul class="pricing-features">
                 <li><span class="check">✓</span> Up to 5 habits</li>
@@ -906,7 +1159,7 @@
         <div class="pricing-card featured animate-on-scroll">
             <div class="pricing-popular" data-i18n="price_featured">MOST POPULAR</div>
             <div class="pricing-name" data-i18n="price_pname">Premium</div>
-            <div class="pricing-price"><sup>$</sup>4.99 <span data-i18n="price_per_month">/month</span></div>
+            <div class="pricing-price">2 500 ₸ <span data-i18n="price_per_month">/month</span></div>
             <p class="pricing-desc" data-i18n="price_pdesc">The complete AIFA experience for serious habit builders.</p>
             <ul class="pricing-features">
                 <li><span class="check">✓</span> <strong>Unlimited habits</strong></li>
@@ -965,7 +1218,7 @@
         <p class="section-desc" data-i18n="cta_sub">Join people who replaced ten apps with one calm, AI-powered space.</p>
         <div class="cta-buttons">
             <a href="https://play.google.com" class="btn-primary" target="_blank" data-i18n="cta_google">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.37.21.81.21 1.2 0l10.56-6.1L3.18.24c-.37-.21-.81-.21-1.2 0-.38.22-.38.57 0 .79l10.74 6.2-10.74 6.2c-.38.22-.38.57 0 .79v.01zm-.8-1.87l.8-.46v-9.7l-.8-.46V21.89zm11.2 0l.8.46V12.73l-.8.46v9.7z"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.18 1.07A1.5 1.5 0 0 0 2 2.5v19a1.5 1.5 0 0 0 1.18 1.43l10.63-10.92L3.18 1.07z" fill="#4CAF50"/><path d="M20.36 10.56l-2.94-1.7-3.32 3.14 3.32 3.14 2.94-1.7A1.5 1.5 0 0 0 20.36 10.56z" fill="#FFD600"/><path d="M3.18 1.07l10.63 10.02L17.13 7.9 5.27.51A1.5 1.5 0 0 0 3.18 1.07z" fill="#EA4335"/><path d="M3.18 22.93A1.5 1.5 0 0 0 5.27 23.49L17.13 16.1l-3.32-3.19-10.63 10.02z" fill="#1565C0"/></svg>
                 Download on Google Play
             </a>
         </div>
@@ -977,7 +1230,7 @@
     <div class="footer-inner">
         <div class="footer-brand">
             <div class="logo"><div class="logo-dot"></div> AIFA</div>
-            <p>The AI-powered app for mindful living. Habits, tasks, and budget — all in one flow.</p>
+            <p data-i18n="footer_tagline">The AI-powered app for mindful living. Habits, tasks, and budget — all in one flow.</p>
         </div>
         <div class="footer-links">
             <div class="footer-col">
@@ -1021,7 +1274,7 @@
         </div>
         <label class="modal-label">Source</label>
         <input id="incomeSource" class="modal-input" type="text" placeholder="e.g. Salary, Freelance..." onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')saveIncome()">
-        <label class="modal-label">Amount ($)</label>
+        <label class="modal-label">Amount (₸)</label>
         <input id="incomeAmt" class="modal-input" type="number" min="0.01" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
         <div class="modal-row">
             <button onclick="document.getElementById('addIncomeModal').style.display='none'" class="btn-secondary" style="flex:1;justify-content:center;">Cancel</button>
@@ -1039,9 +1292,9 @@
         </div>
         <label class="modal-label">Name</label>
         <input id="debtName" class="modal-input" type="text" placeholder="e.g. Car Loan, Credit Card..." onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        <label class="modal-label">Total Amount ($)</label>
+        <label class="modal-label">Total Amount (₸)</label>
         <input id="debtTotal" class="modal-input" type="number" min="0" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        <label class="modal-label">Monthly Payment ($)</label>
+        <label class="modal-label">Monthly Payment (₸)</label>
         <input id="debtMonthly" class="modal-input" type="number" min="0" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')saveDebt()">
         <div class="modal-row">
             <button onclick="document.getElementById('addDebtModal').style.display='none'" class="btn-secondary" style="flex:1;justify-content:center;">Cancel</button>
@@ -1059,7 +1312,7 @@
         </div>
         <label class="modal-label">Person / Name</label>
         <input id="creditName" class="modal-input" type="text" placeholder="e.g. John, Business Partner..." onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        <label class="modal-label">Amount ($)</label>
+        <label class="modal-label">Amount (₸)</label>
         <input id="creditAmt" class="modal-input" type="number" min="0" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')saveCredit()">
         <div class="modal-row">
             <button onclick="document.getElementById('addCreditModal').style.display='none'" class="btn-secondary" style="flex:1;justify-content:center;">Cancel</button>
@@ -1077,7 +1330,7 @@
         </div>
         <label class="modal-label">Name</label>
         <input id="recurringName" class="modal-input" type="text" placeholder="e.g. Netflix, Rent, Gym..." onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        <label class="modal-label">Amount ($)</label>
+        <label class="modal-label">Amount (₸)</label>
         <input id="recurringAmt" class="modal-input" type="number" min="0" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
         <label class="modal-label">Frequency</label>
         <select id="recurringFreq" class="modal-select"><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="yearly">Yearly</option></select>
@@ -1097,9 +1350,9 @@
         </div>
         <label class="modal-label">Goal Name</label>
         <input id="savingsGoalName" class="modal-input" type="text" placeholder="e.g. Vacation, Emergency Fund..." onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        <label class="modal-label">Target Amount ($)</label>
+        <label class="modal-label">Target Amount (₸)</label>
         <input id="savingsGoalTarget" class="modal-input" type="number" min="0" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        <label class="modal-label">Already Saved ($)</label>
+        <label class="modal-label">Already Saved (₸)</label>
         <input id="savingsGoalSaved" class="modal-input" type="number" min="0" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')saveSavingsGoal()">
         <div class="modal-row">
             <button onclick="document.getElementById('addSavingsGoalModal').style.display='none'" class="btn-secondary" style="flex:1;justify-content:center;">Cancel</button>
@@ -1117,7 +1370,7 @@
         </div>
         <label class="modal-label">Description</label>
         <input id="txDesc" class="modal-input" type="text" placeholder="e.g. Coffee, Salary..." onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        <label class="modal-label">Amount ($)</label>
+        <label class="modal-label">Amount (₸)</label>
         <input id="txAmt" class="modal-input" type="number" min="0.01" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')webAddTxConfirm()">
         <label class="modal-label">Type</label>
         <select id="txType" class="modal-select"><option value="expense">Expense</option><option value="income">Income</option></select>
@@ -1157,7 +1410,7 @@
             <h3 style="font-size:18px;font-weight:700;">Add Expense</h3>
             <button onclick="document.getElementById('addExpenseModal').style.display='none'" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
         </div>
-        <label class="modal-label">Amount ($)</label>
+        <label class="modal-label">Amount (₸)</label>
         <input id="newExpenseAmt" class="modal-input" type="number" min="0.01" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')appAddExpense()">
         <label class="modal-label">Category</label>
         <select id="newExpenseCat" class="modal-select"><option value="Food">🍕 Food</option><option value="Transport">🚌 Transport</option><option value="Entertainment">🎬 Entertainment</option><option value="Shopping">🛍 Shopping</option><option value="Other">💸 Other</option></select>
@@ -1198,7 +1451,7 @@
             <h3 id="paymentModalTitle" style="font-size:18px;font-weight:700;">Make Payment</h3>
             <button onclick="document.getElementById('paymentModal').style.display='none'" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
         </div>
-        <label class="modal-label">Amount ($)</label>
+        <label class="modal-label">Amount (₸)</label>
         <input id="paymentAmt" class="modal-input" type="number" min="0.01" step="0.01" placeholder="0.00" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')confirmPayment()">
         <div class="modal-row">
             <button onclick="document.getElementById('paymentModal').style.display='none'" class="btn-secondary" style="flex:1;justify-content:center;">Cancel</button>
@@ -1250,7 +1503,7 @@ const LANG = {
     "web_debts":"Долги",
     "web_credits":"Кредиты",
     "web_savings":"Сбережения",
-    "web_habits":"Привычки",
+    "web_habits":"Привычки","web_recurring":"Регулярные","web_tasks":"Задачи",
     "web_ai_advisor":"AI-советник",
     "web_ai_chat_title":"AI-советник",
     "web_ai_greeting":"Привет, Алекс! Заметил, что норма сбережений упала на 2% на этой неделе. Дать советы? 💡",
@@ -1365,6 +1618,8 @@ const LANG = {
     web_credits:"Credits",
     web_savings:"Savings",
     web_habits:"Habits",
+    web_recurring:"Recurring",
+    web_tasks:"Tasks",
     web_ai_advisor:"AI Advisor",
     web_ai_chat_title:"AI Advisor",
     web_ai_greeting:"Hi Alex! I noticed your savings rate dropped 2% this week. Want some tips? 💡",
@@ -1404,7 +1659,7 @@ const LANG = {
     web_ai_sub:"Your personal team of AI coaches",
     web_recent_insights:"Recent Insights",
   },
-  ru: {"nav_download":"Скачать приложение","hero_badge":"Доступно на Android","hero_title":"Ваша жизнь в <em>одном AI-помощнике</em>,<br>а не в десяти приложениях","hero_sub":"Формируйте привычки, выполняйте задачи и управляйте бюджетом — всё в одном красивом приложении с AI. Без перегрузки. Без стресса. Просто спокойная продуктивность.","hero_demo":"Попробовать демо","hero_google":"Google Play","hero_google_sm":"Скачать в","hero_stats1":"Бесплатно","hero_stats_l1":"Начать легко","hero_stats2":"4 AI-коуча","hero_stats_l2":"В приложении","hero_stats3":"3-в-1","hero_stats_l3":"Привычки + Задачи + Бюджет","feat_label":"Основные функции","feat_title":"Всё нужное.<br>Ничего лишнего.","feat_sub":"AIFA объединяет то, что действительно важно: ваши привычки, задачи и деньги — в одном спокойном пространстве с AI.","feat_h1":"Отслеживание привычек","feat_h1p":"Создавайте ежедневные, еженедельные или ежемесячные привычки с красивыми иконками. Одно нажатие — и готово. Следите за прогрессом.","feat_h2":"Управление задачами","feat_h2p":"Сосредоточьтесь на главном сегодня. Быстрый ввод задач с приоритетами. Никаких папок и тегов. Просто задачи.","feat_h3":"Контроль бюджета","feat_h3p":"Отслеживайте доходы и расходы без усилий. Видите, куда уходят деньги, с понятными категориями и графиками.","feat_h4":"Еженедельные обзоры","feat_h4p":"Персональный еженедельный обзор. Процент выполнения, паттерны расходов и рекомендации от AI.","feat_h5":"Умные напоминания","feat_h5p":"Мягкие утренние дайджесты и вечерние напоминания. Никогда не пропускайте привычку без спама уведомлений.","feat_h6":"AI в одном чате","feat_h6p":"Ставьте задачи, отслеживайте привычки и получайте финансовые советы — всё через один AI-чат. Ваш персональный коуч всегда рядом.","feat_tag":"Серии выполнений","feat_tag2":"Фокус на сегодня","feat_tag3":"Панель финансов","feat_tag4":"AI-помощник","feat_tag5":"Умные напоминания","demo_label":"Живое демо","demo_title":"Попробуйте здесь,<br>прямо сейчас","demo_sub":"Без регистрации. Оцените приложение перед скачиванием.","demo_download":"Скачать в Google Play","demo_feat1":"Одно нажатие — привычка выполнена","demo_feat1p":"Нажмите на привычку, чтобы отметить выполненной. Почувствуйте анимацию и рост серии.","demo_feat2":"Задачи с приоритетами","demo_feat2p":"Перейдите на вкладку Задачи, чтобы увидеть список дел. Нажмите, чтобы отметить выполненной.","demo_feat3":"Живой учёт бюджета","demo_feat3p":"Откройте Бюджет, чтобы увидеть расходы по категориям. Кнопка + добавляет новые расходы.","demo_feat4":"Чат с AI-коучем","demo_feat4p":"Напишите AI-коучу в соответствующей вкладке. Получите советы по привычкам, задачам и финансам.","demo_feat5":"Настройки и профиль","demo_feat5p":"Управляйте уведомлениями и доступом к AI. Просматривайте профиль и версию приложения.","ai_label":"AI-коучинг","ai_title":"Ваша личная команда AI-коучей","ai_sub":"Четыре специализированных AI-агента, каждый помогает в своей области жизни. Коуч привычек, менеджер задач, финансовый советник и коуч жизни — всё в кармане.","ai_h1":"Коуч привычек","ai_h1p":"Научно обоснованные советы по формированию устойчивых привычек. Изучает ваши паттерны и предлагает оптимизации.","ai_h2":"Ассистент задач","ai_h2p":"Помогает расставлять приоритеты, планировать и разбивать большие цели на ежедневные действия.","ai_h3":"Финансовый советник","ai_h3p":"Анализирует ваши расходы и даёт персональные советы, как экономить без потери качества жизни.","ai_h4":"Коуч жизни","ai_h4p":"Еженедельные рефлексии, коучинг целей и мотивация. Думающий спутник в вашем кармане.","ai_badge1":"Поведенческая наука","ai_badge2":"Метод GTD","ai_badge3":"Персональные советы","ai_badge4":"Еженедельные обзоры","price_label":"Тарифы","price_title":"Начните бесплатно.<br>Улучшите, когда будете готовы.","price_sub":"Бесплатный тариф действительно полезен. Premium открывает полный опыт для серьёзных пользователей.","price_fname":"Бесплатный","price_forever":"навсегда","price_fdesc":"Всё нужное для старта осознанной продуктивности.","price_pname":"Premium","price_per_month":"/месяц","price_pdesc":"Полный опыт AIFA для серьёзных строителей привычек.","price_free":"Начать бесплатно","price_prem":"7 дней бесплатно","price_featured":"ПОПУЛЯРНЫЙ","review_label":"Отзывы","review_title":"Любимо людьми,<br>которые попробовали всё остальное","review1":"\"Я попробовала каждое приложение для привычек. AIFA — единственное, которое я реально использую. Дизайн великолепный, и занимает буквально 30 секунд в день.\"","review1n":"Мария К.","review1r":"UX-дизайнер, Сан-Франциско","review2":"\"AI-коучи удивительно хороши. Мой финансовый советник заметил, что я тратила $300/месяц на забытые подписки. Каждый рубль того стоит.\"","review2n":"Борис Т.","review2r":"Основатель стартапа, Остин","review3":"\"Мне нравится, что это три приложения в одном. Больше не нужно переключаться между привычками, задачами и бюджетом. Мои утра стали намного спокойнее.\"","review3n":"Анна П.","review3r":"Проджект-менеджер, Берлин","cta_label":"Начать","cta_title":"Готовы построить<br>лучшие привычки?","cta_sub":"Присоединяйтесь к тем, кто заменил десять приложений одним спокойным пространством с AI.","cta_google":"Скачать в Google Play","footer_product":"Продукт","footer_features":"Функции","footer_pricing":"Тарифы","footer_demo":"Демо","footer_ai":"AI-агенты","footer_download":"Скачать","footer_google":"Google Play","footer_legal":"Правовая информация","footer_privacy":"Политика конфиденциальности","footer_terms":"Условия использования","footer_contact":"Контакты","footer_copy":"© 2026 AIFA. Все права защищены.","footer_made":"Сделано с ❤️ для осознанной жизни","app_today":"Сегодня","app_tasks":"Задачи","app_budget":"Бюджет","app_ai":"AI","app_settings":"Настройки","app_progress":"Прогресс сегодня","app_add_habit":"Новая привычка","app_add_title":"Название","app_add_placeholder":"Напр.: Утренняя медитация","app_add_color":"Цвет","app_add_icon":"Иконка","app_add_save":"Создать привычку","app_today_tab":"Сегодня","app_week_tab":"Неделя","app_month_tab":"Месяц","app_done":"выполнено","ai_placeholder":"Спросите AI-коуча...","ai_powered":"На базе AIFA AI","budget_spent":"ПОТРАЧЕНО ЗА МЕСЯЦ","settings_title":"Настройки","settings_profile":"Александр","settings_premium":"Premium участник","settings_dark":"Тёмная тема","settings_notif":"Уведомления","settings_ai":"Доступ к AI-коучу","settings_version":"Версия приложения","settings_signout":"Выйти"},
+  ru: {"nav_download":"Скачать приложение","hero_badge":"Доступно на Android","hero_title":"Ваша жизнь в <em>одном AI-помощнике</em>,<br>а не в десяти приложениях","hero_sub":"Формируйте привычки, выполняйте задачи и управляйте бюджетом — всё в одном красивом приложении с AI. Без перегрузки. Без стресса. Просто спокойная продуктивность.","hero_demo":"Попробовать демо","hero_google":"Google Play","hero_google_sm":"Скачать в","hero_stats1":"Бесплатно","hero_stats_l1":"Начать легко","hero_stats2":"4 AI-коуча","hero_stats_l2":"В приложении","hero_stats3":"3-в-1","hero_stats_l3":"Привычки + Задачи + Бюджет","feat_label":"Основные функции","feat_title":"Всё нужное.<br>Ничего лишнего.","feat_sub":"AIFA объединяет то, что действительно важно: ваши привычки, задачи и деньги — в одном спокойном пространстве с AI.","feat_h1":"Отслеживание привычек","feat_h1p":"Создавайте ежедневные, еженедельные или ежемесячные привычки с красивыми иконками. Одно нажатие — и готово. Следите за прогрессом.","feat_h2":"Управление задачами","feat_h2p":"Сосредоточьтесь на главном сегодня. Быстрый ввод задач с приоритетами. Никаких папок и тегов. Просто задачи.","feat_h3":"Контроль бюджета","feat_h3p":"Отслеживайте доходы и расходы без усилий. Видите, куда уходят деньги, с понятными категориями и графиками.","feat_h4":"Еженедельные обзоры","feat_h4p":"Персональный еженедельный обзор. Процент выполнения, паттерны расходов и рекомендации от AI.","feat_h5":"Умные напоминания","feat_h5p":"Мягкие утренние дайджесты и вечерние напоминания. Никогда не пропускайте привычку без спама уведомлений.","feat_h6":"AI в одном чате","feat_h6p":"Ставьте задачи, отслеживайте привычки и получайте финансовые советы — всё через один AI-чат. Ваш персональный коуч всегда рядом.","feat_tag":"Серии выполнений","feat_tag2":"Фокус на сегодня","feat_tag3":"Панель финансов","feat_tag4":"AI-помощник","feat_tag5":"Умные напоминания","demo_label":"Живое демо","demo_title":"Попробуйте здесь,<br>прямо сейчас","demo_sub":"Без регистрации. Оцените приложение перед скачиванием.","demo_download":"Скачать в Google Play","demo_feat1":"Одно нажатие — привычка выполнена","demo_feat1p":"Нажмите на привычку, чтобы отметить выполненной. Почувствуйте анимацию и рост серии.","demo_feat2":"Задачи с приоритетами","demo_feat2p":"Перейдите на вкладку Задачи, чтобы увидеть список дел. Нажмите, чтобы отметить выполненной.","demo_feat3":"Живой учёт бюджета","demo_feat3p":"Откройте Бюджет, чтобы увидеть расходы по категориям. Кнопка + добавляет новые расходы.","demo_feat4":"Чат с AI-коучем","demo_feat4p":"Напишите AI-коучу в соответствующей вкладке. Получите советы по привычкам, задачам и финансам.","demo_feat5":"Настройки и профиль","demo_feat5p":"Управляйте уведомлениями и доступом к AI. Просматривайте профиль и версию приложения.","ai_label":"AI-коучинг","ai_title":"Ваша личная команда AI-коучей","ai_sub":"Четыре специализированных AI-агента, каждый помогает в своей области жизни. Коуч привычек, менеджер задач, финансовый советник и коуч жизни — всё в кармане.","ai_h1":"Коуч привычек","ai_h1p":"Научно обоснованные советы по формированию устойчивых привычек. Изучает ваши паттерны и предлагает оптимизации.","ai_h2":"Ассистент задач","ai_h2p":"Помогает расставлять приоритеты, планировать и разбивать большие цели на ежедневные действия.","ai_h3":"Финансовый советник","ai_h3p":"Анализирует ваши расходы и даёт персональные советы, как экономить без потери качества жизни.","ai_h4":"Коуч жизни","ai_h4p":"Еженедельные рефлексии, коучинг целей и мотивация. Думающий спутник в вашем кармане.","ai_badge1":"Поведенческая наука","ai_badge2":"Метод GTD","ai_badge3":"Персональные советы","ai_badge4":"Еженедельные обзоры","price_label":"Тарифы","price_title":"Начните бесплатно.<br>Улучшите, когда будете готовы.","price_sub":"Бесплатный тариф действительно полезен. Premium открывает полный опыт для серьёзных пользователей.","price_fname":"Бесплатный","price_forever":"навсегда","price_fdesc":"Всё нужное для старта осознанной продуктивности.","price_pname":"Premium","price_per_month":"/месяц","price_pdesc":"Полный опыт AIFA для серьёзных строителей привычек.","price_free":"Начать бесплатно","price_prem":"7 дней бесплатно","price_featured":"ПОПУЛЯРНЫЙ","review_label":"Отзывы","review_title":"Любимо людьми,<br>которые попробовали всё остальное","review1":"\"Я попробовала каждое приложение для привычек. AIFA — единственное, которое я реально использую. Дизайн великолепный, и занимает буквально 30 секунд в день.\"","review1n":"Мария К.","review1r":"UX-дизайнер, Сан-Франциско","review2":"\"AI-коучи удивительно хороши. Мой финансовый советник заметил, что я тратила $300/месяц на забытые подписки. Каждый рубль того стоит.\"","review2n":"Борис Т.","review2r":"Основатель стартапа, Остин","review3":"\"Мне нравится, что это три приложения в одном. Больше не нужно переключаться между привычками, задачами и бюджетом. Мои утра стали намного спокойнее.\"","review3n":"Анна П.","review3r":"Проджект-менеджер, Берлин","cta_label":"Начать","cta_title":"Готовы построить<br>лучшие привычки?","cta_sub":"Присоединяйтесь к тем, кто заменил десять приложений одним спокойным пространством с AI.","cta_google":"Скачать в Google Play","footer_product":"Продукт","footer_features":"Функции","footer_pricing":"Тарифы","footer_demo":"Демо","footer_ai":"AI-агенты","footer_download":"Скачать","footer_google":"Google Play","footer_legal":"Правовая информация","footer_privacy":"Политика конфиденциальности","footer_terms":"Условия использования","footer_contact":"Контакты","footer_copy":"© 2026 AIFA. Все права защищены.","footer_made":"Сделано с ❤️ для осознанной жизни","app_today":"Сегодня","app_tasks":"Задачи","app_budget":"Бюджет","app_ai":"AI","app_settings":"Настройки","app_progress":"Прогресс сегодня","app_add_habit":"Новая привычка","app_add_title":"Название","app_add_placeholder":"Напр.: Утренняя медитация","app_add_color":"Цвет","app_add_icon":"Иконка","app_add_save":"Создать привычку","app_today_tab":"Сегодня","app_week_tab":"Неделя","app_month_tab":"Месяц","app_done":"выполнено","ai_placeholder":"Спросите AI-коуча...","ai_powered":"На базе AIFA AI","budget_spent":"ПОТРАЧЕНО ЗА МЕСЯЦ","settings_title":"Настройки","settings_profile":"Александр","settings_premium":"Premium участник","settings_dark":"Тёмная тема","settings_notif":"Уведомления","settings_ai":"Доступ к AI-коучу","settings_version":"Версия приложения","settings_signout":"Выйти","web_overview":"Обзор","web_transactions":"Транзакции","web_debts":"Долги","web_credits":"Кредиты","web_savings":"Сбережения","web_habits":"Привычки","web_recurring":"Регулярные","web_tasks":"Задачи","web_ai_advisor":"AI Советник","web_ai_chat_title":"AI Советник","web_ai_greeting":"Привет, Алекс! Норма сбережений упала на 2% на этой неделе. Дать советы? 💡","web_ai_placeholder":"Спросите что-нибудь...","web_greeting":"Доброе утро, Алекс","web_networth":"Состояние: растёт","web_total_balance":"ОБЩИЙ БАЛАНС","web_this_month":"в этом месяце","web_income":"ДОХОДЫ","web_expenses":"РАСХОДЫ","web_savings_rate":"НОРМА СБЕРЕЖЕНИЙ","web_vs_last_month":"vs прошлый месяц","web_today_habits":"Привычки сегодня","web_recent_insights":"Последние советы","web_ai_sub":"Ваша личная команда AI-коучей","footer_tagline":"AI-приложение для осознанной жизни. Привычки, задачи и бюджет — всё в одном потоке."},
   kk: {
     nav_download: 'Жүктеп алу',
 hero_badge: 'Android жүйесінде қолжетімді',
@@ -1565,7 +1820,9 @@ web_transactions: "Транзакциялар",
 web_debts: "Қарыздар",
 web_credits: "Берілген қарыздар",
 web_savings: "Жинақтар",
+web_recurring: "Тұрақты төлемдер",
 web_habits: "Әдеттер",
+web_tasks: "Тапсырмалар",
 
 web_ai_advisor: "AI-кеңесші",
 web_ai_chat_title: "AI-кеңесші",
@@ -1627,6 +1884,7 @@ web_today_habits: "Бүгінгі әдеттер",
 web_ai_sub: "Сіздің жеке AI-коучтар командаңыз",
 
 web_recent_insights: "Соңғы ұсыныстар",
+footer_tagline: "AI-мен жайлы өмір сүру қолданбасы. Әдеттер, тапсырмалар және бюджет — бір ағымда.",
   }
 };
 
@@ -1644,48 +1902,90 @@ function setLang(lang) {
     const key = el.dataset.i18nPlaceholder;
     if (t[key] !== undefined) el.placeholder = t[key];
   });
+  // Sync mobile demo language
+  var mTitles = {
+    mobileHabitsTitle: ml('habits'), mobileTasksTitle: ml('tasks'),
+    mobileBudgetTitle: ml('budget'), mobileProfileTitle: ml('profile_title')
+  };
+  Object.keys(mTitles).forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=mTitles[id]; });
+  // Tasks segment buttons
+  var segs = document.querySelectorAll('#view-tasks .app-seg-btn');
+  if (segs[0]) segs[0].textContent = (segs[0].classList.contains('active')?'':'') + ml('tasks_today');
+  if (segs[1]) segs[1].textContent = ml('tasks_all');
+  if (segs[2]) segs[2].textContent = ml('tasks_done');
+  // AI view
+  var aiTitle = document.getElementById('mobileAiTitle');
+  if (aiTitle) aiTitle.textContent = ml('ai_title');
+  var aiCoach = document.getElementById('mobileAiCoach');
+  if (aiCoach) aiCoach.textContent = ml('ai_coach');
+  var aiInput = document.getElementById('aiInput');
+  if (aiInput) aiInput.placeholder = ml('ai_placeholder');
+  // Profile labels
+  var profPrem = document.getElementById('mobileProfilePremium');
+  if (profPrem) profPrem.textContent = ml('profile_premium');
+  var profLabels = {
+    mobileNotifLbl: ml('notif_lbl'), mobileAiAccessLbl: ml('ai_access'),
+    mobilePremiumLbl: ml('premium_lbl'), mobileActiveLbl: ml('active_lbl'),
+    mobileLogoutLbl: ml('logout'), mobileProfileSection: ml('profile_title')
+  };
+  Object.keys(profLabels).forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=profLabels[id]; });
+  updateDate();
+  renderHabits();
+  renderTasks();
+  renderDashboard();
+  renderMobileBudget();
+  renderAi();
 }
 
 // ═══════════ WEBAPP DEMO STATE ═══════════
 const WEB_TX = [
-    { icon:'🏠', iconBg:'rgba(255,107,107,0.15)', iconColor:'#FF6B6B', title:'Rent Payment', meta:'Housing · Fixed', amount:-1200 },
-    { icon:'💰', iconBg:'rgba(16,185,129,0.15)', iconColor:'#10B981', title:'Salary Deposit', meta:'Income · Recurring', amount:4200 },
-    { icon:'☕', iconBg:'rgba(132,94,247,0.15)', iconColor:'#845EF7', title:'Morning Coffee Habit', meta:'Lifestyle · Habit-tracked', amount:-4.50 },
-    { icon:'📚', iconBg:'rgba(51,154,240,0.15)', iconColor:'#339AF0', title:'Online Course', meta:'Education · Investment', amount:-49 },
-    { icon:'🛒', iconBg:'rgba(255,169,77,0.15)', iconColor:'#FFA94D', title:'Grocery Run', meta:'Food · Essential', amount:-87.40 },
-    { icon:'🎬', iconBg:'rgba(240,101,149,0.15)', iconColor:'#F06595', title:'Netflix Subscription', meta:'Entertainment · Recurring', amount:-15.99 },
-    { icon:'💵', iconBg:'rgba(16,185,129,0.15)', iconColor:'#10B981', title:'Freelance Project', meta:'Income · One-time', amount:850 },
-    { icon:'⛽', iconBg:'rgba(255,169,77,0.15)', iconColor:'#FFA94D', title:'Gas Station', meta:'Transport', amount:-52 },
+    { icon:'🏠', iconBg:'rgba(255,107,107,0.15)', iconColor:'#FF6B6B', title:'Аренда квартиры', meta:'Housing · Fixed', amount:-150000 },
+    { icon:'💰', iconBg:'rgba(16,185,129,0.15)', iconColor:'#10B981', title:'Зарплата', meta:'Income · Recurring', amount:450000 },
+    { icon:'☕', iconBg:'rgba(132,94,247,0.15)', iconColor:'#845EF7', title:'Утренний кофе', meta:'Lifestyle · Habit-tracked', amount:-1500 },
+    { icon:'📚', iconBg:'rgba(51,154,240,0.15)', iconColor:'#339AF0', title:'Онлайн курс', meta:'Education · Investment', amount:-15000 },
+    { icon:'🛒', iconBg:'rgba(255,169,77,0.15)', iconColor:'#FFA94D', title:'Продукты', meta:'Food · Essential', amount:-25000 },
+    { icon:'🎬', iconBg:'rgba(240,101,149,0.15)', iconColor:'#F06595', title:'Netflix', meta:'Entertainment · Recurring', amount:-3500 },
+    { icon:'💵', iconBg:'rgba(16,185,129,0.15)', iconColor:'#10B981', title:'Фриланс проект', meta:'Income · One-time', amount:120000 },
+    { icon:'⛽', iconBg:'rgba(255,169,77,0.15)', iconColor:'#FFA94D', title:'Заправка', meta:'Transport', amount:-8000 },
 ];
 let WEB_DEBTS = [
-    { name:'Student Loan', meta:'4.5% APR · $312/mo', total:8400, paid:3600 },
-    { name:'Credit Card', meta:'18.9% APR · Min $120', total:2350, paid:850 },
-    { name:'Car Loan', meta:'6.2% APR · $280/mo', total:1700, paid:1100 },
+    { name:'Студенческий кредит', meta:'4.5% · 45 000₸/мес', total:1200000, paid:500000 },
+    { name:'Кредитная карта', meta:'18.9% · Min 20 000₸', total:350000, paid:120000 },
+    { name:'Автокредит', meta:'6.2% · 40 000₸/мес', total:250000, paid:160000 },
 ];
 let WEB_CREDITS = [
-    { name:'Loan to Mike', meta:'Personal · Due May 30', amount:500, status:'pending' },
-    { name:'Group Trip Split', meta:'Travel · 3 people', amount:240, status:'partial' },
-    { name:'Lent to brother', meta:'Family · Open', amount:1200, status:'pending' },
+    { name:'Займ Мике', meta:'Личный · До 30 мая', amount:75000, status:'pending' },
+    { name:'Совместная поездка', meta:'Путешествие · 3 чел', amount:35000, status:'partial' },
+    { name:'Брату', meta:'Семья · Открытый', amount:180000, status:'pending' },
 ];
 let WEB_SAVINGS = [
-    { icon:'🌴', name:'Vacation Fund', current:2400, target:5000, color:'#10B981' },
-    { icon:'🏠', name:'Down Payment', current:18500, target:50000, color:'#339AF0' },
-    { icon:'💍', name:'Emergency Fund', current:6800, target:10000, color:'#845EF7' },
-    { icon:'🚗', name:'New Car', current:1200, target:8000, color:'#FFA94D' },
+    { icon:'🌴', name:'Отпуск', current:350000, target:750000, color:'#10B981' },
+    { icon:'🏠', name:'Первый взнос', current:2700000, target:7500000, color:'#339AF0' },
+    { icon:'💍', name:'Резервный фонд', current:1000000, target:1500000, color:'#845EF7' },
+    { icon:'🚗', name:'Новая машина', current:180000, target:1200000, color:'#FFA94D' },
 ];
 let WEB_RECURRING = [
-    { name:'Netflix', amount:15.99, freq:'monthly' },
-    { name:'Gym Membership', amount:35, freq:'monthly' },
-    { name:'Spotify', amount:9.99, freq:'monthly' },
-    { name:'Cloud Storage', amount:2.99, freq:'monthly' },
+    { name:'Netflix', amount:3500, freq:'monthly' },
+    { name:'Абонемент в зал', amount:15000, freq:'monthly' },
+    { name:'Spotify', amount:2500, freq:'monthly' },
+    { name:'Облачное хранилище', amount:1200, freq:'monthly' },
 ];
+// ═══ UNIFIED DATA — desktop and mobile share the same arrays ═══
 const WEB_HABITS_DEMO = [
-    { name:'Morning meditation', streak:12, done:false },
-    { name:'Read 20 pages', streak:5, done:false },
-    { name:'Drink 2L water', streak:8, done:false },
-    { name:'Evening run', streak:3, done:false },
-    { name:'No social media before noon', streak:21, done:false },
+    { name:'Изучать документацию 30 мин', streak:1, done:true },
+    { name:'Писать 1 страницу каждый день', streak:1, done:true },
+    { name:'Читать 1 статью в неделю', streak:0, done:false },
 ];
+// webHabits is a live proxy — always mirrors `habits`
+Object.defineProperty(window, 'webHabits', {
+  get: function() { return habits.map(function(h){ return {name:h.title,streak:h.streak,done:h.completed,_base:h._base}; }); },
+  set: function() {} // ignore sets
+});
+// webTasksList is a live proxy — always mirrors `tasks`
+Object.defineProperty(window, 'webTasksList', {
+  get: function() { return tasks.map(function(t){ return {id:t.id,title:t.title,done:t.done,priority:t.priority,tag:t.tag}; }); },
+  set: function() {} // ignore sets
+});
 const WEB_INSIGHTS = [
     { role:'Habit Coach', text:'You\'ve completed 80% of your habits this week — your best in a month! 🚀' },
     { role:'Finance Advisor', text:'You spent $74 on coffee this month. Brewing at home could save ~$50/month.' },
@@ -1707,7 +2007,6 @@ const WEB_CHART_DATA = {
 };
 
 let webChartView = 'monthly';
-let webHabits = JSON.parse(JSON.stringify(WEB_HABITS_DEMO));
 let webTxFilter = 'all';
 
 function renderWebChart() {
@@ -1829,7 +2128,7 @@ function renderWebChart() {
     // Ensure no zero-length data
     if (!data.length) data = [0];
     var maxVal = Math.max(...data, 1);
-    function fmtVal(v) { return v >= 1000 ? '$' + (v/1000).toFixed(1) + 'k' : '$' + Math.round(v); }
+    function fmtVal(v) { return v >= 1000 ? '₸' + Math.round(v/1000) + 'k' : '₸' + Math.round(v); }
     chart.innerHTML = data.map(function(v, i) {
         var heightPct = Math.max(4, Math.round((v / maxVal) * 100));
         var xLabel = '<span class="webapp-bar-cat-label">' + (xLabels[i] || '') + '</span>';
@@ -1853,7 +2152,7 @@ function renderWebTx(limit) {
         return '<div class="webapp-tx">' +
             '<div class="webapp-tx-icon" style="background:' + tx.iconBg + ';color:' + tx.iconColor + ';">' + tx.icon + '</div>' +
             '<div class="webapp-tx-info"><div class="webapp-tx-title">' + tx.title + '</div><div class="webapp-tx-meta">' + tx.meta + '</div></div>' +
-            '<div class="webapp-tx-amount ' + cls + '">' + sign + '$' + formatted + '</div>' +
+            '<div class="webapp-tx-amount ' + cls + '">' + sign + formatted + ' ₸' + '</div>' +
         '</div>';
     }).join('');
     if (limit) document.getElementById('webTransactions').innerHTML = html;
@@ -1873,7 +2172,7 @@ function renderWebDebts() {
             '<div class="webapp-debt-info"><div class="webapp-debt-title">' + escHtml(d.name) + '</div><div class="webapp-debt-meta">' + escHtml(d.meta) + ' · ' + pct + '% paid</div></div>' +
             '<div class="webapp-debt-progress"><div class="webapp-debt-fill" style="width:' + pct + '%"></div></div>' +
             '<div style="display:flex;align-items:center;gap:6px;">' +
-            '<div class="webapp-debt-amount">$' + (d.total - d.paid).toLocaleString() + '</div>' +
+            '<div class="webapp-debt-amount">₸' + (d.total - d.paid).toLocaleString() + '</div>' +
             '<button onclick="openPaymentModal(\'debt\',' + i + ',\'Pay: ' + escHtml(d.name).replace(/'/g,'\\\'') + '\')" style="background:var(--accent);border:none;color:#000;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;flex-shrink:0;">Pay</button>' +
             '<button onclick="webDeleteDebt(' + i + ')" style="background:rgba(255,107,107,0.12);border:none;color:#FF6B6B;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;cursor:pointer;flex-shrink:0;">✕</button>' +
             '</div></div>';
@@ -1891,7 +2190,7 @@ function renderWebCredits() {
         return '<div class="webapp-debt">' +
             '<div class="webapp-debt-info"><div class="webapp-debt-title">' + escHtml(c.name) + '</div><div class="webapp-debt-meta">' + escHtml(c.meta||'Personal') + ' · ' + (c.status||'pending') + '</div></div>' +
             '<div style="display:flex;align-items:center;gap:6px;">' +
-            '<div class="webapp-debt-amount" style="color:var(--accent);">+$' + c.amount.toLocaleString() + '</div>' +
+            '<div class="webapp-debt-amount" style="color:var(--accent);">+₸' + c.amount.toLocaleString() + '</div>' +
             '<button onclick="webReceiveCredit(' + i + ')" style="background:rgba(16,185,129,0.12);border:none;color:var(--accent);font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;flex-shrink:0;">Received ✓</button>' +
             '<button onclick="webDeleteCredit(' + i + ')" style="background:rgba(255,107,107,0.12);border:none;color:#FF6B6B;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;cursor:pointer;flex-shrink:0;">✕</button>' +
             '</div></div>';
@@ -1911,8 +2210,8 @@ function renderWebSavings() {
             '<button onclick="webDeleteSaving(' + i + ')" style="position:absolute;top:10px;right:10px;background:rgba(255,107,107,0.12);border:none;color:#FF6B6B;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;cursor:pointer;">✕</button>' +
             '<div class="webapp-savings-icon">' + s.icon + '</div>' +
             '<div class="webapp-savings-name">' + escHtml(s.name) + '</div>' +
-            '<div class="webapp-savings-amount">$' + s.current.toLocaleString() + '</div>' +
-            '<div class="webapp-savings-target">of $' + s.target.toLocaleString() + ' (' + pct + '%)</div>' +
+            '<div class="webapp-savings-amount">₸' + s.current.toLocaleString() + '</div>' +
+            '<div class="webapp-savings-target">of ₸' + s.target.toLocaleString() + ' (' + pct + '%)</div>' +
             '<div class="webapp-savings-bar"><div class="webapp-savings-fill" style="width:' + pct + '%"></div></div>' +
             '<button onclick="openPaymentModal(\'savings\',' + i + ',\'Add Funds: ' + escHtml(s.name).replace(/'/g,'\\\'') + '\')" style="margin-top:10px;width:100%;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:var(--accent);font-size:12px;font-weight:600;padding:6px;border-radius:8px;cursor:pointer;">+ Add Funds</button>' +
         '</div>';
@@ -1931,13 +2230,13 @@ function renderWebRecurring() {
         return '<div class="webapp-debt">' +
             '<div class="webapp-debt-info"><div class="webapp-debt-title">' + escHtml(r.name) + '</div><div class="webapp-debt-meta">' + r.freq + '</div></div>' +
             '<div style="display:flex;align-items:center;gap:6px;">' +
-            '<div class="webapp-debt-amount" style="color:var(--violet);">-$' + r.amount.toFixed(2) + '</div>' +
+            '<div class="webapp-debt-amount" style="color:var(--violet);">-₸' + r.amount.toFixed(2) + '</div>' +
             '<button onclick="webCancelRecurring(' + i + ')" style="background:rgba(255,107,107,0.12);border:none;color:#FF6B6B;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;cursor:pointer;flex-shrink:0;">Cancel</button>' +
             '</div></div>';
     }).join('') +
     '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:12px;display:flex;justify-content:space-between;font-size:13px;">' +
     '<span style="color:var(--text-muted);">Monthly total</span>' +
-    '<span style="font-weight:700;color:var(--violet);">-$' + total.toFixed(2) + '</span></div>';
+    '<span style="font-weight:700;color:var(--violet);">-₸' + total.toFixed(2) + '</span></div>';
 }
 
 function webCancelRecurring(idx) {
@@ -1964,11 +2263,13 @@ function renderWebHabits() {
 }
 
 function toggleWebHabit(i) {
-    const h = webHabits[i];
-    if (h._base == null) h._base = h.streak;
-    h.done = !h.done;
-    h.streak = h.done ? h._base + 1 : h._base;
+    const h = habits[i];
+    if (!h) return;
+    h.completed = !h.completed;
+    h.streak = h.completed ? (h._base||0) + 1 : (h._base||0);
     renderWebHabits();
+    renderHabits();
+    renderDashboard();
 }
 
 function renderWebInsights() {
@@ -1988,9 +2289,9 @@ function renderWebOverview() {
         else totalExpenses += Math.abs(tx.amount);
     });
 
-    // Base balance = starting $24,380 + net of all transactions
+    // Base balance = starting 3 450 000 ₸ + net of all transactions
     var netFromTx = totalIncome - totalExpenses;
-    var baseBalance = 24380 + netFromTx;
+    var baseBalance = 3450000 + netFromTx;
 
     var savingsRate = totalIncome > 0
         ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 1000) / 10
@@ -1998,21 +2299,21 @@ function renderWebOverview() {
 
     // Update balance card
     var balEl = document.getElementById('webOverviewBalance');
-    if (balEl) balEl.textContent = '$' + Math.round(baseBalance).toLocaleString();
+    if (balEl) balEl.textContent = Math.round(baseBalance).toLocaleString() + ' ₸';
 
     var deltaEl = document.getElementById('webOverviewDelta');
     if (deltaEl) {
         var arrow = netFromTx >= 0 ? '▲' : '▼';
         var sign = netFromTx >= 0 ? '+' : '-';
-        deltaEl.innerHTML = arrow + ' ' + sign + '$' + Math.abs(Math.round(netFromTx)).toLocaleString() + ' <span data-i18n="web_this_month">this month</span>';
+        deltaEl.innerHTML = arrow + ' ' + sign + Math.abs(Math.round(netFromTx)).toLocaleString() + ' ₸' + ' <span data-i18n="web_this_month">this month</span>';
     }
 
     // Update KPI cards
     var incEl = document.getElementById('webOverviewIncome');
-    if (incEl) incEl.textContent = '$' + Math.round(totalIncome).toLocaleString();
+    if (incEl) incEl.textContent = Math.round(totalIncome).toLocaleString() + ' ₸';
 
     var expEl = document.getElementById('webOverviewExpenses');
-    if (expEl) expEl.textContent = '$' + Math.round(totalExpenses).toLocaleString();
+    if (expEl) expEl.textContent = Math.round(totalExpenses).toLocaleString() + ' ₸';
 
     var srEl = document.getElementById('webOverviewSavingsRate');
     if (srEl) srEl.textContent = savingsRate.toFixed(1) + '%';
@@ -2167,12 +2468,12 @@ const WEB_AI_MAIN_CONTEXT = [];
 function buildDemoContext() {
     const txS = WEB_TX.slice(0,5).map(function(t){return t.title+':'+(t.amount>0?'+':'')+t.amount;}).join(', ');
     const habS = webHabits.map(function(h){return h.name+'('+h.streak+'d,'+(h.done?'done':'pending')+')';}).join(', ');
-    const debS = WEB_DEBTS.map(function(d,i){return '['+i+']'+d.name+':$'+(d.total-d.paid)+' left';}).join(', ');
-    const credS = WEB_CREDITS.map(function(c,i){return '['+i+']'+c.name+':$'+c.amount;}).join(', ');
-    const savS = WEB_SAVINGS.map(function(s,i){return '['+i+']'+s.name+':$'+s.current+'/$'+s.target;}).join(', ');
+    const debS = WEB_DEBTS.map(function(d,i){return '['+i+']'+d.name+':₸'+(d.total-d.paid)+' left';}).join(', ');
+    const credS = WEB_CREDITS.map(function(c,i){return '['+i+']'+c.name+':₸'+c.amount;}).join(', ');
+    const savS = WEB_SAVINGS.map(function(s,i){return '['+i+']'+s.name+':₸'+s.current+'/₸'+s.target;}).join(', ');
     const taskS = webTasksList.slice(0,5).map(function(t){return '['+t.id+']'+t.title+':'+(t.done?'done':'todo');}).join(', ');
-    const recS = WEB_RECURRING.map(function(r){return r.name+':$'+r.amount+'/'+r.freq;}).join(', ');
-    return 'Balance:$24,380 | Income:$5,200/mo | Expenses:$3,180/mo | Savings:38.8%\nTransactions: '+txS+'\nHabits: '+habS+'\nDebts: '+debS+'\nCredits (owed to me): '+credS+'\nSavings goals: '+savS+'\nRecurring payments: '+recS+'\nTasks: '+taskS;
+    const recS = WEB_RECURRING.map(function(r){return r.name+':₸'+r.amount+'/'+r.freq;}).join(', ');
+    return 'Balance:3 450 000 ₸ | Income:450 000 ₸/mo | Expenses:203 000 ₸/mo | Savings:38.8%\nTransactions: '+txS+'\nHabits: '+habS+'\nDebts: '+debS+'\nCredits (owed to me): '+credS+'\nSavings goals: '+savS+'\nRecurring payments: '+recS+'\nTasks: '+taskS;
 }
 
 function showToast(msg) {
@@ -2228,7 +2529,7 @@ function parseAndExec(text) {
                 if (typeof act.idx==='number' && webHabits[act.idx]) { toggleWebHabit(act.idx); }
                 showToast('✓ Habit updated →');
             } else if (act.action==='addDebt') {
-                var rate=act.rate?act.rate+'% APR · ':'', mo=act.monthly?'$'+act.monthly+'/mo':'';
+                var rate=act.rate?act.rate+'% APR · ':'', mo=act.monthly?act.monthly + ' ₸/мес':'';
                 WEB_DEBTS.push({name:act.name||'Debt',meta:(rate+mo)||'0% APR',total:Math.abs(act.total||0),paid:0});
                 renderWebDebts();
                 showToast('✓ Debt added →');
@@ -2393,13 +2694,6 @@ renderWebOverview();
 updateWebDate();
 
 // ═══════════ WEBAPP TASKS ═══════════
-let webTasksList = [
-    {id:1, title:'Review quarterly report', done:false, priority:'#FF6B6B', tag:'Work'},
-    {id:2, title:'Schedule dentist appt', done:false, priority:'#FFA94D', tag:'Health'},
-    {id:3, title:'Reply to investor email', done:true, priority:'#FF6B6B', tag:'Work'},
-    {id:4, title:'Grocery shopping', done:false, priority:'#51CF66', tag:'Personal'},
-    {id:5, title:'Finish design mockups', done:true, priority:'#339AF0', tag:'Work'},
-];
 
 function renderWebTasksView() {
     const el = document.getElementById('webTasksContent');
@@ -2418,8 +2712,8 @@ function renderWebTasksView() {
 }
 
 function toggleWebTaskItem(id) {
-    const t = webTasksList.find(function(x){return x.id===id;});
-    if (t) { t.done = !t.done; renderWebTasksView(); }
+    const t = tasks.find(function(x){return x.id===id;});
+    if (t) { t.done = !t.done; renderWebTasksView(); renderTasks(); renderDashboard(); }
 }
 
 function webAddTaskItem() {
@@ -2468,11 +2762,11 @@ const HABIT_COLORS = [
 ];
 const HABIT_ICONS = ['🏃','🧘','📚','💧','🎯','😴','🧠','💪','🎨','🎵','💰','🥗','📝','🌿','⏰'];
 const BUDGET_CATS = [
-  {name:'Food & Dining',amount:'$620',color:'#FF6B6B'},
-  {name:'Transport',amount:'$280',color:'#339AF0'},
-  {name:'Entertainment',amount:'$190',color:'#845EF7'},
-  {name:'Subscriptions',amount:'$450',color:'#FFA94D'},
-  {name:'Shopping',amount:'$307',color:'#51CF66'},
+  {name:'Питание',amount:'25 000 ₸',color:'#FF6B6B'},
+  {name:'Транспорт',amount:'8 000 ₸',color:'#339AF0'},
+  {name:'Развлечения',amount:'15 000 ₸',color:'#845EF7'},
+  {name:'Подписки',amount:'7 200 ₸',color:'#FFA94D'},
+  {name:'Покупки',amount:'18 000 ₸',color:'#51CF66'},
 ];
 const AI_RESPONSES = [
   "Based on your habit data, I'd suggest focusing on consistency over intensity. Small wins compound over time.",
@@ -2483,18 +2777,12 @@ const AI_RESPONSES = [
 ];
 
 let habits = [
-  {id:1,title:'Morning meditation',icon:'🧘',color:'#845EF7',streak:12,completed:false},
-  {id:2,title:'Read 20 pages',icon:'📚',color:'#339AF0',streak:5,completed:false},
-  {id:3,title:'Drink 2L water',icon:'💧',color:'#22B8CF',streak:8,completed:false},
-  {id:4,title:'Evening run',icon:'🏃',color:'#51CF66',streak:3,completed:false},
-  {id:5,title:'No social media before noon',icon:'📵',color:'#FF6B6B',streak:21,completed:false},
+  {id:1,title:'Изучать документацию 30 мин',icon:'И',color:'#51CF66',streak:1,completed:true},
+  {id:2,title:'Писать 1 страницу каждый день',icon:'П',color:'#339AF0',streak:1,completed:true},
+  {id:3,title:'Читать 1 статью в неделю',icon:'Ч',color:'#845EF7',streak:0,completed:false},
 ];
 let tasks = [
-  {id:1,title:'Review quarterly report',done:false,priority:'#FF6B6B',tag:'Work',tagBg:'rgba(255,107,107,0.15)'},
-  {id:2,title:'Schedule dentist appt',done:false,priority:'#FFA94D',tag:'Health',tagBg:'rgba(255,169,77,0.15)'},
-  {id:3,title:'Reply to investor email',done:true,priority:'#FF6B6B',tag:'Work',tagBg:'rgba(255,107,107,0.15)'},
-  {id:4,title:'Grocery shopping',done:false,priority:'#51CF66',tag:'Personal',tagBg:'rgba(81,207,102,0.15)'},
-  {id:5,title:'Finish design mockups',done:true,priority:'#339AF0',tag:'Work',tagBg:'rgba(255,107,107,0.15)'},
+  {id:1,title:'Хочу сходить в магазин',done:true,priority:'#FFA94D',tag:'Средн.',tagBg:'rgba(255,169,77,0.15)'},
 ];
 let aiMessages = [
   {role:'assistant',text:'👋 Hi! I\'m your AIFA AI Coach. I can see your habits, tasks and budget. Ask me anything or try: "How am I doing today?" or "Help me save more money"',color:'var(--accent)'},
@@ -2503,19 +2791,9 @@ let aiMessages = [
 // M1 FIX: pre-fill history for habits with non-zero streaks
 const _todayDow = (new Date().getDay() + 6) % 7; // Mon=0 … Sun=6
 habits.forEach(function(h) {
-    h._base = h.streak;
-    if (!h.history) {
-        h.history = Array(7).fill(false);
-    }
-    // M1 FIX: pre-fill last N days (up to 7) in history based on streak
-    if (h.streak > 0) {
-        var daysToFill = Math.min(h.streak, 7);
-        for (var d = 0; d < daysToFill; d++) {
-            // Fill backwards from today: today=_todayDow, yesterday=(_todayDow-1+7)%7, etc.
-            var dayIdx = (_todayDow - d + 7) % 7;
-            h.history[dayIdx] = true;
-        }
-    }
+    h._base = h.streak || 0;
+    if (!h.history) h.history = Array(7).fill(false);
+    if (h.completed) h.history[_todayDow] = true;
 });
 let selectedColor = '#845EF7';
 let selectedIcon = '🧘';
@@ -2567,37 +2845,156 @@ function switchHabitTab(tab, btn) {
 
 function renderHabits() {
   const total = habits.length, done = habits.filter(h=>h.completed).length;
-  const pct = total>0 ? Math.round((done/total)*100) : 0;
-  document.getElementById('progressPct').textContent = pct+'%';
-  document.getElementById('progressFill').style.width = pct+'%';
-  document.getElementById('habitsList').innerHTML = habits.map(h=>`
-    <div class="app-habit-card ${h.completed?'completed':''}" data-id="${h.id}" onclick="toggleHabit(${h.id})">
-      <div class="app-habit-icon" style="background:${h.color}22;color:${h.color};">${h.icon}</div>
-      <div class="app-habit-info">
-        <div class="app-habit-title">${h.title}</div>
-        <div class="app-habit-sub">${h.completed?'✓ Completed':'Tap to complete'}</div>
+  const sub = document.getElementById('habitsSubtitle');
+  if (sub) sub.textContent = ml('habits_subtitle')(done, total);
+  var el = document.getElementById('habitsList');
+  if (!el) return;
+  el.innerHTML = habits.map(h=>{
+    var letter = h.title.charAt(0).toUpperCase();
+    return `<div class="app-habit-card ${h.completed?'completed':''}" data-id="${h.id}" onclick="toggleHabit(${h.id})" style="margin:0 16px 8px;background:var(--surface);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1px solid var(--border);">
+      <div style="width:38px;height:38px;border-radius:10px;background:${h.color}22;color:${h.color};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;">${h.icon||letter}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(h.title)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">● ${h.streak||0} &nbsp;${ml('every_day')}</div>
       </div>
-      ${h.streak>0?`<div class="app-habit-streak">🔥 ${h.streak}d</div>`:''}
-      <div class="app-habit-check" id="check-${h.id}">${h.completed?'✓':''}</div>
-    </div>`).join('');
+      <button onclick="event.stopPropagation();habits=habits.filter(x=>x.id!==${h.id});renderHabits();renderWebHabits();renderDashboard();" style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;padding:2px 6px;">🗑</button>
+      <div style="width:28px;height:28px;border-radius:50%;border:2px solid ${h.completed?h.color:'var(--border)'};background:${h.completed?h.color:'transparent'};display:flex;align-items:center;justify-content:center;font-size:13px;color:#000;transition:all 0.2s;flex-shrink:0;">${h.completed?'✓':''}</div>
+    </div>`;
+  }).join('');
   if (done===total && total>0) setTimeout(triggerConfetti,400);
+  renderDashboard();
 }
 
-function renderTasks() {
-  const done = tasks.filter(t=>t.done).length;
-  document.getElementById('tasksDone').textContent = done;
-  document.getElementById('tasksTotal').textContent = tasks.length;
-  document.getElementById('tasksList').innerHTML = tasks.map(t=>`
-    <div class="task-card ${t.done?'done':''}" data-id="${t.id}" onclick="toggleTask(${t.id})">
-      <div class="task-check">${t.done?'✓':''}</div>
-      <div class="task-priority" style="background:${t.priority}"></div>
-      <div class="task-title">${t.title}</div>
-      <div class="task-tag" style="background:${t.tagBg};color:${t.priority};">${t.tag}</div>
-    </div>`).join('');
+function renderTasks(tab) {
+  tab = tab || 'today';
+  var active = tasks.filter(function(t){return !t.done;}).length;
+  var sub = document.getElementById('tasksSubtitle');
+  if (sub) sub.textContent = ml('tasks_subtitle')(active);
+  var list;
+  if (tab==='all') list = tasks;
+  else if (tab==='done') list = tasks.filter(function(t){return t.done;});
+  else list = tasks; // today shows all for demo
+  var el = document.getElementById('tasksList');
+  if (!el) return;
+  if (list.length===0) { el.innerHTML='<div style="margin:0 16px;background:var(--surface);border-radius:12px;padding:14px;font-size:12px;color:var(--text-muted);text-align:center;">Нет задач</div>'; return; }
+  el.innerHTML = list.map(function(t){
+    return '<div class="task-card '+(t.done?'done':'')+'" data-id="'+t.id+'" onclick="toggleTask('+t.id+')" style="margin:0 16px 8px;background:var(--surface);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px solid var(--border);">'
+      +'<div style="width:26px;height:26px;border-radius:50%;border:2px solid '+(t.done?'var(--accent)':'var(--border)')+';background:'+(t.done?'var(--accent)':'transparent')+';display:flex;align-items:center;justify-content:center;font-size:12px;color:#000;flex-shrink:0;">'+(t.done?'✓':'')+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:13px;font-weight:600;'+(t.done?'text-decoration:line-through;opacity:0.5;':'')+'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(t.title)+'</div>'
+        +'<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">● вс, 31 мая</div>'
+      +'</div>'
+      +'<div style="font-size:10px;padding:3px 9px;border-radius:100px;background:rgba(255,169,77,0.15);color:'+t.priority+';font-weight:600;white-space:nowrap;">'+escHtml(t.tag)+'</div>'
+    +'</div>';
+  }).join('');
+  renderDashboard();
+}
+
+function renderMobileBudget() {
+  var income = WEB_TX.filter(function(t){return t.amount>0;}).reduce(function(s,t){return s+t.amount;},0);
+  var spent  = WEB_TX.filter(function(t){return t.amount<0;}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
+  var balance = 3450000 + (income - spent); // same base as desktop
+
+  var balEl = document.getElementById('mobileBudgetBalance');
+  if (balEl) {
+    balEl.innerHTML = '<div style="background:var(--surface);border-radius:14px;padding:14px;">'
+      +'<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">'+ml('balance')+'</div>'
+      +'<div style="font-size:26px;font-weight:800;margin-bottom:2px;">'+balance.toLocaleString()+' ₸</div>'
+      +'<div style="font-size:10px;color:var(--text-muted);margin-bottom:10px;">'+ml('spent_today')+'</div>'
+      +'<div style="display:flex;gap:20px;">'
+        +'<div><div style="font-size:10px;color:var(--text-muted);">'+ml('income_lbl')+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:var(--accent);">'+income.toLocaleString()+' ₸</div></div>'
+        +'<div><div style="font-size:10px;color:var(--text-muted);">'+ml('expense_lbl')+'</div>'
+        +'<div style="font-size:14px;font-weight:700;">'+spent.toLocaleString()+' ₸</div></div>'
+      +'</div>'
+      +'</div>';
+  }
+
+  // Also update dashboard budget mini
+  var dashBal = document.getElementById('dashBudgetBalance');
+  var dashInc = document.getElementById('dashBudgetIncome');
+  var dashExp = document.getElementById('dashBudgetExpense');
+  if (dashBal) dashBal.textContent = balance.toLocaleString() + ' ₸';
+  if (dashInc) dashInc.textContent = income.toLocaleString() + ' ₸';
+  if (dashExp) dashExp.textContent = spent.toLocaleString() + ' ₸';
+
+  var catsEl = document.getElementById('mobileBudgetCats');
+  if (catsEl) {
+    if (BUDGET_CATS.length === 0) {
+      catsEl.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px 0;">'+ml('no_expenses')+'</div>';
+    } else {
+      var maxAmt = Math.max.apply(null, BUDGET_CATS.map(function(c){return parseFloat(String(c.amount).replace(/[^0-9.]/g,''))||0;}));
+      catsEl.innerHTML = BUDGET_CATS.map(function(c){
+        var amt = parseFloat(String(c.amount).replace(/[^0-9.]/g,''))||0;
+        var pct = maxAmt>0 ? Math.round((amt/maxAmt)*100) : 0;
+        return '<div style="margin-bottom:10px;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">'
+          +'<div style="display:flex;align-items:center;gap:7px;"><div style="width:9px;height:9px;border-radius:50%;background:'+c.color+';flex-shrink:0;"></div><span style="font-size:12px;">'+escHtml(c.name)+'</span></div>'
+          +'<span style="font-size:12px;font-weight:600;">'+escHtml(String(c.amount))+'</span></div>'
+          +'<div style="height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;">'
+          +'<div style="height:100%;width:'+pct+'%;background:'+c.color+';border-radius:2px;"></div></div>'
+          +'</div>';
+      }).join('');
+    }
+  }
+
+  var txEl = document.getElementById('mobileBudgetTx');
+  if (txEl) {
+    var txs = WEB_TX.slice(0, 8);
+    if (txs.length === 0) {
+      txEl.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:14px;">'+ml('no_tx')+'</div>';
+    } else {
+      txEl.innerHTML = txs.map(function(tx, i){
+        var isInc = tx.amount > 0;
+        var letter = tx.title ? tx.title.charAt(0).toUpperCase() : '?';
+        var amtStr = (isInc ? '+' : '−') + Math.abs(tx.amount).toLocaleString() + ' ₸';
+        var border = i < txs.length-1 ? 'border-bottom:1px solid var(--border);' : '';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;'+border+'">'
+          +'<div style="width:34px;height:34px;border-radius:10px;background:'+(tx.iconBg||'rgba(90,90,102,0.15)')+';display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:'+(tx.iconColor||'var(--text-muted)')+';flex-shrink:0;">'+(tx.icon&&tx.icon.length>1?tx.icon:letter)+'</div>'
+          +'<div style="flex:1;min-width:0;">'
+          +'<div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(tx.title)+'</div>'
+          +'<div style="font-size:10px;color:var(--text-muted);">'+escHtml(tx.meta||'')+'</div>'
+          +'</div>'
+          +'<div style="font-size:13px;font-weight:700;color:'+(isInc?'var(--accent)':'var(--text-primary)')+';">'+amtStr+'</div>'
+          +'</div>';
+      }).join('');
+    }
+  }
+
+  // Section labels
+  var secEls = {
+    mobileBudgetCatsSection: ml('cats_section'),
+    mobileBudgetToolsSection: ml('tools_section'),
+    mobileBudgetTxSection: ml('tx_section')
+  };
+  Object.keys(secEls).forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=secEls[id]; });
+
+  // Tools list
+  var toolsEl = document.getElementById('mobileBudgetToolsList');
+  if (toolsEl) {
+    var tools = [
+      ['⊕','rgba(16,185,129,0.12)','var(--accent)',ml('tool_goals'),'subGoals'],
+      ['◈','rgba(51,154,240,0.12)','#339AF0',ml('tool_recurring'),'subRecurring'],
+      ['▭','rgba(132,94,247,0.12)','#845EF7',ml('tool_budgets'),'subBudgets'],
+      ['▣','rgba(255,169,77,0.12)','#FFA94D',ml('tool_savings'),'subSavings'],
+      ['↓','rgba(255,107,107,0.12)','#FF6B6B',ml('tool_debts'),'subDebts'],
+      ['⚙','rgba(90,90,102,0.15)','var(--text-muted)',ml('tool_rules'),'subRules'],
+      ['✦','rgba(16,185,129,0.12)','var(--accent)',ml('tool_ai'),'subAiAnalytics']
+    ];
+    toolsEl.innerHTML = tools.map(function(t,i){
+      var border = i<tools.length-1?'border-bottom:1px solid var(--border);':'';
+      return '<div onclick="openBudgetSub(\''+t[4]+'\')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;'+border+'cursor:pointer;">'
+        +'<div style="display:flex;align-items:center;gap:10px;">'
+        +'<div style="width:28px;height:28px;border-radius:8px;background:'+t[1]+';display:flex;align-items:center;justify-content:center;font-size:13px;color:'+t[2]+';">'+t[0]+'</div>'
+        +'<span style="font-size:13px;font-weight:500;">'+escHtml(t[3])+'</span></div>'
+        +'<span style="color:var(--text-muted);">›</span></div>';
+    }).join('');
+  }
 }
 
 function renderBudget() {
   renderBudgetTab();
+  renderMobileBudget();
 }
 
 function renderAi() {
@@ -2615,15 +3012,15 @@ function toggleHabit(id) {
   const h = habits.find(x=>x.id===id);
   if (!h) return;
   h.completed = !h.completed;
-  h.streak = h.completed ? h._base + 1 : h._base;
+  h.streak = h.completed ? (h._base||0) + 1 : (h._base||0);
   if (!h.history) h.history = Array(7).fill(false);
   h.history[_todayDow] = h.completed;
   renderHabits();
-  const chk = document.getElementById('check-'+id);
-  if (chk && h.completed) { chk.style.animation='none'; chk.offsetHeight; chk.style.animation='checkPop 0.35s cubic-bezier(0.34,1.56,0.64,1)'; }
+  renderWebHabits();
+  renderDashboard();
 }
 
-function toggleTask(id) { const t=tasks.find(x=>x.id===id); if(t){t.done=!t.done;renderTasks();} }
+function toggleTask(id) { const t=tasks.find(x=>x.id===id); if(t){t.done=!t.done;renderTasks();renderWebTasksView();renderDashboard();} }
 const APP_AI_CONTEXT = [];
 
 function showPhoneToast(msg) {
@@ -2639,10 +3036,10 @@ function showPhoneToast(msg) {
 function buildMobileContext() {
     var habS = habits.map(function(h){ return h.title+(h.completed?'✓':'○'); }).join(', ');
     var taskS = tasks.map(function(t){ return '['+t.id+']'+t.title+(t.done?'(done)':''); }).join(', ');
-    var debS = phoneDebts.map(function(d){ return d.name+':$'+(d.total-d.paid)+' left'; }).join(', ');
-    var savS = phoneSavingsGoals.map(function(g){ return g.name+':$'+g.saved+'/$'+g.target; }).join(', ');
-    var credS = phoneCredits.map(function(c){ return c.name+':$'+c.amount; }).join(', ');
-    var recS = phoneRecurring.map(function(r){ return r.name+':$'+r.amount+'/'+r.freq; }).join(', ');
+    var debS = phoneDebts.map(function(d){ return d.name+':₸'+(d.total-d.paid)+' left'; }).join(', ');
+    var savS = phoneSavingsGoals.map(function(g){ return g.name+':₸'+g.saved+'/₸'+g.target; }).join(', ');
+    var credS = phoneCredits.map(function(c){ return c.name+':₸'+c.amount; }).join(', ');
+    var recS = phoneRecurring.map(function(r){ return r.name+':₸'+r.amount+'/'+r.freq; }).join(', ');
     return 'Habits: '+habS+'\nTasks: '+taskS+'\nDebts: '+debS+'\nSavings: '+savS+'\nCredits (owed to me): '+credS+'\nRecurring: '+recS;
 }
 
@@ -2684,9 +3081,9 @@ function parseMobileAndExec(text) {
                     var existing = BUDGET_CATS.find(function(c){ return c.name.toLowerCase().indexOf(cat)>=0; });
                     if (existing) {
                         var prev = parseFloat(existing.amount.replace(/[^0-9.]/g,''))||0;
-                        existing.amount = '$'+Math.round(prev+Math.abs(act.amount||0));
+                        existing.amount = Math.round(prev+Math.abs(act.amount||0)).toLocaleString()+' ₸';
                     } else {
-                        BUDGET_CATS.push({name:cname, amount:'$'+Math.abs(act.amount||0), color:ccol});
+                        BUDGET_CATS.push({name:cname, amount:Math.abs(act.amount||0).toLocaleString()+' ₸', color:ccol});
                     }
                     switchBudgetTab('expenses', null);
                 }
@@ -2762,9 +3159,9 @@ function parseMobileAndExec(text) {
                     var existing2 = BUDGET_CATS.find(function(c){ return c.name.toLowerCase().indexOf('debt')>=0 || c.name.toLowerCase().indexOf('loan')>=0; });
                     if (existing2) {
                         var prev2 = parseFloat(existing2.amount.replace(/[^0-9.]/g,''))||0;
-                        existing2.amount = '$'+Math.round(prev2+Math.abs(act.amount));
+                        existing2.amount = Math.round(prev2+Math.abs(act.amount)).toLocaleString()+' ₸';
                     } else {
-                        BUDGET_CATS.push({name:'Debt Payment', amount:'$'+Math.abs(act.amount), color:'#A0A0A8'});
+                        BUDGET_CATS.push({name:'Debt Payment', amount:Math.abs(act.amount).toLocaleString()+' ₸', color:'#A0A0A8'});
                     }
                     switchBudgetTab('debts', null);
                     renderBudgetTab();
@@ -2872,18 +3269,19 @@ function appAddTask() {
   const newId = Date.now();
   tasks.unshift({ id: newId, title, done: false, priority, tag, tagBg: tagBgs[priority] || 'rgba(81,207,102,0.15)' });
   renderTasks();
-  webTasksList.unshift({id: newId, title, done: false, priority, tag});
   renderWebTasksView();
+  renderDashboard();
   document.getElementById('addTaskModal').style.display = 'none';
   if (titleEl) titleEl.value = '';
 }
 
 // ── Budget sub-data ──
-let phoneIncomes = [{source:'Salary', amount:3200}, {source:'Freelance', amount:450}];
-let phoneDebts = [{name:'Car Loan', total:8000, paid:3200, monthly:200}, {name:'Credit Card', total:2500, paid:800, monthly:150}];
-let phoneCredits = [{name:'John', amount:300}, {name:'Business Partner', amount:1200}];
-let phoneRecurring = [{name:'Netflix', amount:15.99, freq:'monthly'}, {name:'Gym', amount:35, freq:'monthly'}, {name:'Spotify', amount:9.99, freq:'monthly'}];
-let phoneSavingsGoals = [{name:'Vacation', target:3000, saved:1200, color:'#339AF0'}, {name:'Emergency Fund', target:10000, saved:4500, color:'#845EF7'}];
+// Mobile data uses SAME arrays as desktop for sync
+let phoneIncomes = WEB_TX.filter(function(t){return t.amount>0;}).map(function(t){return {source:t.title, amount:t.amount};});
+let phoneDebts = WEB_DEBTS.map(function(d){return {name:d.name, total:d.total, paid:d.paid, monthly:parseInt((d.meta||'').replace(/[^0-9]/g,'')||0)};});
+let phoneCredits = WEB_CREDITS.map(function(c){return {name:c.name, amount:c.amount};});
+let phoneRecurring = WEB_RECURRING.map(function(r){return {name:r.name, amount:r.amount, freq:r.freq, type:r.type||'expense'};});
+let phoneSavingsGoals = WEB_SAVINGS.map(function(s){return {name:s.name, target:s.target, saved:s.current, color:s.color};});
 let currentBudgetTab = 'expenses';
 
 // BUG 3 FIX: recalculate and update the top Budget summary card from live data.
@@ -2902,10 +3300,10 @@ function updateBudgetSummary() {
     var incomeEl = document.getElementById('budgetIncome');
     var fillEl = document.getElementById('budgetFill');
     var pctEl = document.getElementById('budgetPct');
-    if (totalEl) totalEl.textContent = '$' + Math.round(spent).toLocaleString();
-    if (incomeEl) incomeEl.textContent = '$' + Math.round(income).toLocaleString();
+    if (totalEl) totalEl.textContent = Math.round(spent).toLocaleString() + ' ₸';
+    if (incomeEl) incomeEl.textContent = Math.round(income).toLocaleString() + ' ₸';
     if (fillEl) fillEl.style.width = pct + '%';
-    if (pctEl) pctEl.textContent = pct + '% of $' + budgetLimit.toLocaleString() + ' budget';
+    if (pctEl) pctEl.textContent = pct + '% от ' + budgetLimit.toLocaleString() + ' ₸';
 }
 
 function openBudgetAdd() {
@@ -3048,7 +3446,7 @@ function appAddExpense() {
   if (isNaN(amt) || amt <= 0) { if (amtEl) amtEl.style.borderColor = '#FF6B6B'; return; }
   const cat = document.getElementById('newExpenseCat')?.value || 'Other';
   const catColors = { Food:'#FF6B6B', Transport:'#339AF0', Entertainment:'#845EF7', Shopping:'#51CF66', Other:'#FFA94D' };
-  BUDGET_CATS.push({ name: cat, amount: '$' + Math.round(amt), color: catColors[cat] || '#FFA94D' });
+  BUDGET_CATS.push({ name: cat, amount: Math.round(amt).toLocaleString()+' ₸', color: catColors[cat] || '#FFA94D' });
   renderBudget();
   // BUG 3 FIX: recompute summary from source-of-truth data instead of reading
   // and incrementing the DOM value (which can drift when AI also adds expenses).
@@ -3082,10 +3480,211 @@ function switchNav(view) {
   if (target) target.classList.remove('hidden');
   const btn=document.querySelector('[data-nav="'+view+'"]');
   if (btn) btn.classList.add('active');
+  // FABs — show only the right one
+  ['phoneFabHabit','phoneFabTask','phoneFabBudget'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  var fabMap = {habits:'phoneFabHabit', tasks:'phoneFabTask', budget:'phoneFabBudget'};
+  if (fabMap[view]) {
+    var fab = document.getElementById(fabMap[view]);
+    if (fab) fab.style.display = 'flex';
+  }
+  if (view==='dashboard') renderDashboard();
   if (view==='habits') renderHabits();
   if (view==='tasks') renderTasks();
   if (view==='budget') renderBudget();
   if (view==='ai') renderAi();
+}
+
+// ═══ MOBILE TRANSLATIONS ═══
+const ML = {
+  en: {
+    habits: 'Habits', tasks: 'Tasks', budget: 'Budget', profile: 'Profile', dashboard: 'Dashboard',
+    ai_btn: '✦ AI', ai_title: '✦ AI Assistant',
+    habits_subtitle: (d,t) => d+' of '+t+' done today',
+    tasks_subtitle: (a) => a+' active today',
+    tasks_today: 'Today', tasks_all: 'All', tasks_done: 'Done',
+    no_tasks: 'No tasks today',
+    habits_section: 'HABITS', tasks_section: 'TASKS', budget_section: 'THIS MONTH',
+    week_section: 'WEEKLY REVIEW', balance_lbl: 'Баланс', see_all: 'All', see_balance: 'Balance',
+    balance: 'Balance', spent_today: '📅 Spent today: 0 ₸', income_lbl: '↑ Income', expense_lbl: '↓ Expense',
+    cats_section: 'EXPENSE CATEGORIES', tools_section: 'TOOLS', tx_section: 'TRANSACTIONS',
+    no_expenses: 'No expenses', no_tx: 'No transactions',
+    tool_goals: 'Goals', tool_recurring: 'Recurring', tool_budgets: 'Budgets',
+    tool_savings: 'Savings', tool_debts: 'Debts', tool_rules: 'Rules', tool_ai: 'AI Analytics',
+    week_title: 'Weekly Review', week_sub: 'Great week! Habits and budget are on track.',
+    prog_start: 'Start your day', prog_mid: "You're on track", prog_done: 'Great day! 🎉',
+    prog_sub: (dh,th,dt,tt) => dh+' of '+th+' habits and '+dt+'/'+tt+' tasks<br>completed.',
+    every_day: 'Every day',
+    profile_title: 'Profile', profile_premium: 'Premium user',
+    notif_lbl: 'Notifications', ai_access: 'AI Coach access', premium_lbl: 'Premium',
+    active_lbl: 'Active ›', logout: 'Log out',
+    sheet_habit_title: 'New Habit', sheet_task_title: 'New Task', sheet_budget_title: 'New Transaction',
+    period_lbl: 'Period', icon_lbl: 'Icon', color_lbl: 'Color',
+    period_day: 'Every day', period_week: 'Every week', period_month: 'Every month',
+    priority_lbl: 'Priority', pri_low: 'Low', pri_med: 'Medium', pri_high: 'High', pri_urgent: 'Urgent',
+    tx_expense: 'Expense', tx_income: 'Income',
+    create_btn: 'Create',
+    task_placeholder: 'What needs to be done?', habit_placeholder: 'Name', tx_name_ph: 'Name', tx_amt_ph: 'Amount',
+    ai_placeholder: 'Record expense, question...', ai_coach: '⭐ Life Coach · auto', ai_back: '←',
+    toast_habit: '✓ Habit added', toast_task: '✓ Task added', toast_income: '✓ Income added', toast_expense: '✓ Expense added',
+    fill_fields: 'Fill all fields',
+    sun_31_may: 'Sun, May 31',
+  },
+  ru: {
+    habits: 'Привычки', tasks: 'Задачи', budget: 'Бюджет', profile: 'Профиль', dashboard: 'Dashboard',
+    ai_btn: '✦ AI', ai_title: '✦ AI Ассистент',
+    habits_subtitle: (d,t) => d+' из '+t+' выполнено сегодня',
+    tasks_subtitle: (a) => a+' активных на сегодня',
+    tasks_today: 'Сегодня', tasks_all: 'Все', tasks_done: 'Выполненные',
+    no_tasks: 'Задач на сегодня нет',
+    habits_section: 'ПРИВЫЧКИ', tasks_section: 'ЗАДАЧИ', budget_section: 'ЭТОТ МЕСЯЦ',
+    week_section: 'ОБЗОР НЕДЕЛИ', balance_lbl: 'Баланс', see_all: 'Все', see_balance: 'Баланс',
+    balance: 'Баланс', spent_today: '📅 Потрачено сегодня: 0 ₸', income_lbl: '↑ Доход', expense_lbl: '↓ Расход',
+    cats_section: 'РАСХОДЫ ПО КАТЕГОРИЯМ', tools_section: 'ИНСТРУМЕНТЫ', tx_section: 'ОПЕРАЦИИ',
+    no_expenses: 'Нет расходов', no_tx: 'Нет операций',
+    tool_goals: 'Цели', tool_recurring: 'Регулярные', tool_budgets: 'Бюджеты',
+    tool_savings: 'Сбережения', tool_debts: 'Долги', tool_rules: 'Правила', tool_ai: 'AI аналитика',
+    week_title: 'Обзор недели', week_sub: 'Отличная неделя! Привычки и бюджет в норме.',
+    prog_start: 'Начни свой день', prog_mid: 'Ты на верном пути', prog_done: 'Отличный день! 🎉',
+    prog_sub: (dh,th,dt,tt) => dh+' из '+th+' привычек и '+dt+'/'+tt+' задач<br>выполнено.',
+    every_day: 'Каждый день',
+    profile_title: 'Профиль', profile_premium: 'Premium пользователь',
+    notif_lbl: 'Уведомления', ai_access: 'AI-коуч доступ', premium_lbl: 'Premium',
+    active_lbl: 'Активно ›', logout: 'Выйти',
+    sheet_habit_title: 'Новая привычка', sheet_task_title: 'Новая задача', sheet_budget_title: 'Новая транзакция',
+    period_lbl: 'Период', icon_lbl: 'Иконка', color_lbl: 'Цвет',
+    period_day: 'Каждый день', period_week: 'Каждую неделю', period_month: 'Каждый месяц',
+    priority_lbl: 'Приоритет', pri_low: 'Низкий', pri_med: 'Средний', pri_high: 'Высокий', pri_urgent: 'Срочно',
+    tx_expense: 'Расход', tx_income: 'Доход',
+    create_btn: 'Создать',
+    task_placeholder: 'Что нужно сделать?', habit_placeholder: 'Название', tx_name_ph: 'Название', tx_amt_ph: 'Сумма',
+    ai_placeholder: 'Запись расхода, вопрос...', ai_coach: '⭐ Life Coach · auto', ai_back: '←',
+    toast_habit: '✓ Привычка добавлена', toast_task: '✓ Задача добавлена', toast_income: '✓ Доход добавлен', toast_expense: '✓ Расход добавлен',
+    fill_fields: 'Заполните все поля',
+    sun_31_may: 'вс, 31 мая',
+  },
+  kk: {
+    habits: 'Әдеттер', tasks: 'Тапсырмалар', budget: 'Бюджет', profile: 'Профиль', dashboard: 'Dashboard',
+    ai_btn: '✦ AI', ai_title: '✦ AI Көмекші',
+    habits_subtitle: (d,t) => d+' / '+t+' бүгін орындалды',
+    tasks_subtitle: (a) => a+' белсенді бүгін',
+    tasks_today: 'Бүгін', tasks_all: 'Барлығы', tasks_done: 'Орындалған',
+    no_tasks: 'Бүгін тапсырма жоқ',
+    habits_section: 'ӘДЕТТЕР', tasks_section: 'ТАПСЫРМАЛАР', budget_section: 'БУЛ АЙ',
+    week_section: 'АПТАлық ШОЛУ', balance_lbl: 'Баланс', see_all: 'Барлығы', see_balance: 'Баланс',
+    balance: 'Баланс', spent_today: '📅 Бүгін жұмсалды: 0 ₸', income_lbl: '↑ Кіріс', expense_lbl: '↓ Шығын',
+    cats_section: 'ШЫҒЫН САНАТТАРЫ', tools_section: 'ҚҰРАЛДАР', tx_section: 'ОПЕРАЦИЯЛАР',
+    no_expenses: 'Шығын жоқ', no_tx: 'Операция жоқ',
+    tool_goals: 'Мақсаттар', tool_recurring: 'Тұрақты', tool_budgets: 'Бюджеттер',
+    tool_savings: 'Жинақтар', tool_debts: 'Қарыздар', tool_rules: 'Ережелер', tool_ai: 'AI аналитика',
+    week_title: 'Аптадық шолу', week_sub: 'Тамаша апта! Әдеттер мен бюджет қалыпты.',
+    prog_start: 'Күніңді бастай', prog_mid: 'Дұрыс жолдасың', prog_done: 'Тамаша күн! 🎉',
+    prog_sub: (dh,th,dt,tt) => dh+' / '+th+' әдет және '+dt+'/'+tt+' тапсырма<br>орындалды.',
+    every_day: 'Күн сайын',
+    profile_title: 'Профиль', profile_premium: 'Premium пайдаланушысы',
+    notif_lbl: 'Хабарламалар', ai_access: 'AI-коуч қолжетімділігі', premium_lbl: 'Premium',
+    active_lbl: 'Белсенді ›', logout: 'Шығу',
+    sheet_habit_title: 'Жаңа әдет', sheet_task_title: 'Жаңа тапсырма', sheet_budget_title: 'Жаңа транзакция',
+    period_lbl: 'Кезең', icon_lbl: 'Белгіше', color_lbl: 'Түс',
+    period_day: 'Күн сайын', period_week: 'Апта сайын', period_month: 'Ай сайын',
+    priority_lbl: 'Басымдық', pri_low: 'Төмен', pri_med: 'Орта', pri_high: 'Жоғары', pri_urgent: 'Шұғыл',
+    tx_expense: 'Шығын', tx_income: 'Кіріс',
+    create_btn: 'Жасау',
+    task_placeholder: 'Не істеу керек?', habit_placeholder: 'Атауы', tx_name_ph: 'Атауы', tx_amt_ph: 'Сома',
+    ai_placeholder: 'Шығынды жазу, сұрақ...', ai_coach: '⭐ Life Coach · auto', ai_back: '←',
+    toast_habit: '✓ Әдет қосылды', toast_task: '✓ Тапсырма қосылды', toast_income: '✓ Кіріс қосылды', toast_expense: '✓ Шығын қосылды',
+    fill_fields: 'Барлық өрісті толтырыңыз',
+    sun_31_may: 'жс, 31 мамыр',
+  }
+};
+function ml(key) {
+  var lang = typeof currentLang !== 'undefined' ? currentLang : 'ru';
+  return (ML[lang] && ML[lang][key] !== undefined) ? ML[lang][key] : (ML.ru[key] || key);
+}
+
+
+function renderDashboard() {
+  var totalH = habits.length, doneH = habits.filter(function(h){return h.completed;}).length;
+  var totalT = tasks.length, doneT = tasks.filter(function(t){return t.done;}).length;
+  var total = totalH + totalT, done = doneH + doneT;
+  var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  var circumference = 138.2;
+  var offset = circumference - (pct / 100) * circumference;
+
+  var ring = document.getElementById('progressRing');
+  if (ring) ring.setAttribute('stroke-dashoffset', offset.toFixed(1));
+  var pctLabel = document.getElementById('progressPctLabel');
+  if (pctLabel) pctLabel.textContent = pct + '%';
+
+  var title = document.getElementById('progressTitle');
+  var sub = document.getElementById('progressSubtitle');
+  var progTitle = pct === 100 ? ml('prog_done') : pct >= 50 ? ml('prog_mid') : ml('prog_start');
+  if (title) title.textContent = progTitle;
+  if (sub) sub.innerHTML = ml('prog_sub')(doneH, totalH, doneT, totalT);
+
+  // Section labels via IDs
+  var els = {
+    dashHabitsSection: ml('habits_section'), dashTasksSection: ml('tasks_section'),
+    dashBudgetSection: ml('budget_section'), dashWeekSection: ml('week_section'),
+    dashHabitsAll: ml('see_all'), dashTasksAll: ml('see_all'), dashBudgetAll: ml('see_balance'),
+    dashWeekTitle: ml('week_title'), dashWeekSub: ml('week_sub')
+  };
+  Object.keys(els).forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=els[id]; });
+
+  // Habits grid
+  var row = document.getElementById('dashHabitsRow');
+  if (row) {
+    row.innerHTML = habits.map(function(h){
+      return '<div onclick="toggleHabit('+h.id+')" style="flex:0 0 calc(33.3% - 6px);min-width:0;background:var(--surface);border-radius:12px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;border:1px solid '+(h.completed?h.color+'44':'var(--border)')+';">'
+        +'<div style="width:32px;height:32px;border-radius:9px;background:'+h.color+'22;color:'+h.color+';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;">'+escHtml(h.icon)+'</div>'
+        +'<div style="width:22px;height:22px;border-radius:50%;border:2px solid '+(h.completed?h.color:'var(--border)')+';background:'+(h.completed?h.color:'transparent')+';display:flex;align-items:center;justify-content:center;font-size:10px;color:#000;transition:all 0.2s;">'+(h.completed?'✓':'')+'</div>'
+        +'<div style="font-size:9px;color:var(--text-muted);text-align:center;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70px;">'+escHtml(h.title.split(' ').slice(0,2).join(' '))+'</div>'
+        +'<div style="font-size:9px;font-weight:600;color:'+(h.completed?h.color:'var(--text-muted)')+';">'+(h.streak||0)+' дн.</div>'
+      +'</div>';
+    }).join('');
+  }
+
+  // Tasks block
+  var tb = document.getElementById('dashTasksBlock');
+  if (tb) {
+    if (tasks.length === 0) {
+      tb.innerHTML = '<div style="padding:12px 14px;font-size:12px;color:var(--text-muted);text-align:center;">'+ml('no_tasks')+'</div>';
+    } else {
+      tb.innerHTML = tasks.map(function(task){
+        return '<div onclick="toggleTask('+task.id+')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;">'
+          +'<div style="width:20px;height:20px;border-radius:50%;border:2px solid '+(task.done?'var(--accent)':'var(--border)')+';background:'+(task.done?'var(--accent)':'transparent')+';display:flex;align-items:center;justify-content:center;font-size:10px;color:#000;flex-shrink:0;transition:all 0.2s;">'+(task.done?'✓':'')+'</div>'
+          +'<div style="flex:1;font-size:12px;font-weight:500;'+(task.done?'text-decoration:line-through;opacity:0.4;':'')+'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(task.title)+'</div>'
+          +'<div style="font-size:10px;padding:2px 8px;border-radius:100px;background:rgba(255,169,77,0.15);color:'+task.priority+';font-weight:600;flex-shrink:0;">'+escHtml(task.tag)+'</div>'
+        +'</div>';
+      }).join('');
+    }
+  }
+
+  // Budget mini — same formula as desktop
+  var income = WEB_TX.filter(function(t){return t.amount>0;}).reduce(function(s,t){return s+t.amount;},0);
+  var spent  = WEB_TX.filter(function(t){return t.amount<0;}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
+  var balance = 3450000 + (income - spent);
+  var dashBal = document.getElementById('dashBudgetBalance');
+  var dashExp = document.getElementById('dashBudgetExpense');
+  var dashBalLbl = document.getElementById('dashBalanceLbl');
+  if (dashBalLbl) dashBalLbl.textContent = ml('balance');
+  if (dashBal) dashBal.textContent = balance.toLocaleString() + ' ₸';
+  var badge = document.getElementById('dashBudgetIncomeBadge');
+  if (badge) badge.textContent = '↑ ' + income.toLocaleString() + ' ₸';
+  var expLbl = document.getElementById('dashBudgetExpenseLbl');
+  if (expLbl) expLbl.textContent = ml('expense_lbl');
+  if (dashExp) dashExp.textContent = spent.toLocaleString() + ' ₸';
+
+  var sub2 = document.getElementById('tasksSubtitle');
+  if (sub2) sub2.textContent = ml('tasks_subtitle')(tasks.filter(function(t){return !t.done;}).length);
+}
+
+function switchTaskTab(tab, btn) {
+  document.querySelectorAll('#view-tasks .app-seg-btn').forEach(function(b){b.classList.remove('active');});
+  if (btn) btn.classList.add('active');
+  renderTasks(tab);
 }
 
 const modal = document.getElementById('addModal');
@@ -3100,7 +3699,7 @@ if (modal) {
     const title = titleEl.value.trim();
     if (!title) { titleEl.style.borderColor='#FF6B6B'; titleEl.focus(); return; }
     habits.push({id:Date.now(),title,icon:selectedIcon,color:selectedColor,streak:0,completed:false,_base:0,history:Array(7).fill(false)});
-    webHabits.push({name:title, streak:0, done:false, _base:0});
+    // habits array already updated above
     modal.style.display='none';
     titleEl.value='';
     renderHabits();
@@ -3132,25 +3731,681 @@ const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(ent
 document.querySelectorAll('.animate-on-scroll').forEach(el=>observer.observe(el));
 
 function updateDate(){
-  const now=new Date();
-  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const el=document.getElementById('demoDate');
-  if(el) el.textContent=`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+  const now = new Date();
+  const h = now.getHours();
+  const greetings = {
+    en: h<12?'Good morning':h<18?'Good afternoon':'Good evening',
+    ru: h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер',
+    kk: h<12?'Қайырлы таң':h<18?'Қайырлы күн':'Қайырлы кеш'
+  };
+  const lang = typeof currentLang !== 'undefined' ? currentLang : 'ru';
+  const daysEn=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const daysRu=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  const daysKk=['жексенбі','дүйсенбі','сейсенбі','сәрсенбі','бейсенбі','жұма','сенбі'];
+  const monthsEn=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthsRu=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const monthsKk=['қаңтар','ақпан','наурыз','сәуір','мамыр','маусым','шілде','тамыз','қыркүйек','қазан','қараша','желтоқсан'];
+  const d=now.getDay(), mo=now.getMonth(), dt=now.getDate(), yr=now.getFullYear();
+  let dateStr;
+  if (lang==='ru') dateStr = daysRu[d]+', '+dt+' '+monthsRu[mo]+' '+yr+' г.';
+  else if (lang==='kk') dateStr = daysKk[d]+', '+dt+' '+monthsKk[mo]+' '+yr+' ж.';
+  else dateStr = daysEn[d]+', '+monthsEn[mo]+' '+dt+', '+yr;
+  const dateEl = document.getElementById('dashDate');
+  if (dateEl) dateEl.textContent = dateStr;
+  const greetEl = document.getElementById('dashGreeting');
+  if (greetEl) greetEl.textContent = greetings[lang] || greetings.en;
+  // Desktop demo date
+  const el = document.getElementById('demoDate');
+  if(el) el.textContent = daysEn[d]+', '+monthsEn[mo]+' '+dt;
+  // Update web_greeting
+  const webGreet = document.querySelector('[data-i18n="web_greeting"]');
+  if (webGreet && LANG[lang]) {
+    const g = h<12?'morning':h<18?'afternoon':'evening';
+    const gMap = {en:'Good '+g+', Alex', ru:greetings.ru+', Alex', kk:greetings.kk+', Alex'};
+    webGreet.textContent = gMap[lang] || gMap.en;
+  }
 }
 
 window.addEventListener('scroll',()=>{document.getElementById('nav').style.background=window.scrollY>20?'rgba(10,10,11,0.95)':'rgba(10,10,11,0.8)';});
 
+// ═══ BUDGET SUB-SCREENS ═══
+let subGoalsList = [{title:'Получить 95+ на дипломной работе', icon:'🎯', target:null, saved:0}];
+let subRecurringList = [];
+let subBudgetLimits = [];
+let subSavingsGoal = null; // {amount: number}
+let subDebtsList = []; // {name, amount, type:'owe'|'owedTo', note}
+let subRulesList = [];
+let _forecastDays = 30;
+
+var _subFabType = null;
+function phoneSubFabAction() { if(_subFabType) openSubSheet(_subFabType); }
+
+function openBudgetSub(id) {
+  document.querySelectorAll('.app-view').forEach(v=>v.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  ['phoneFabHabit','phoneFabTask','phoneFabBudget'].forEach(function(f){ var e=document.getElementById(f); if(e) e.style.display='none'; });
+  // Map sub-screen to sheet type and label
+  var fabMap = {
+    subGoals:     {type:'goal',       label:'+ Новая цель'},
+    subRecurring: {type:'recurring',  label:'+ Новое расписание'},
+    subBudgets:   {type:'budgetlimit',label:'+ Новый бюджет'},
+    subSavings:   {type:'savings',    label:'+ Задать ориентир'},
+    subDebts:     {type:'debt',       label:'+ Добавить долг'},
+    subRules:     {type:'rule',       label:'+ Добавить правило'}
+  };
+  var fab = document.getElementById('phoneSubFab');
+  if (fab) {
+    if (fabMap[id]) {
+      _subFabType = fabMap[id].type;
+      fab.textContent = fabMap[id].label;
+      fab.style.display = 'flex';
+    } else {
+      _subFabType = null;
+      fab.style.display = 'none';
+    }
+  }
+  if (id==='subGoals') renderSubGoals();
+  if (id==='subRecurring') renderSubRecurring();
+  if (id==='subBudgets') renderSubBudgets();
+  if (id==='subSavings') renderSubSavings();
+  if (id==='subDebts') renderSubDebts();
+  if (id==='subRules') renderSubRules();
+}
+function closeBudgetSub() {
+  document.querySelectorAll('.app-view').forEach(v=>v.classList.add('hidden'));
+  document.getElementById('view-budget').classList.remove('hidden');
+  var fab = document.getElementById('phoneFabBudget');
+  if (fab) fab.style.display='flex';
+  var subFab = document.getElementById('phoneSubFab');
+  if (subFab) subFab.style.display='none';
+  _subFabType = null;
+  renderMobileBudget();
+}
+
+function renderSubGoals() {
+  var el=document.getElementById('goalsList'); if(!el) return;
+  if(subGoalsList.length===0){ el.innerHTML='<div style="text-align:center;padding:40px 16px;"><div style="font-size:40px;margin-bottom:12px;">🎯</div><div style="font-size:14px;font-weight:600;margin-bottom:6px;">Целей нет</div><div style="font-size:12px;color:var(--text-muted);">Нажмите + чтобы добавить</div></div>'; return; }
+  el.innerHTML = subGoalsList.map(function(g,i){
+    return '<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">'
+      +'<div style="width:40px;height:40px;border-radius:12px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">'+escHtml(g.icon||'🎯')+'</div>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:600;">'+escHtml(g.title)+'</div>'
+      +(g.target?'<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">'+escHtml(String(g.target))+' ₸ · '+escHtml(g.unit||'')+'</div>':'')+'</div>'
+      +'<button onclick="subGoalsList.splice('+i+',1);renderSubGoals();" style="background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;">🗑</button>'
+      +'</div>';
+  }).join('');
+}
+
+function renderSubRecurring() {
+  var el=document.getElementById('recurringList'); if(!el) return;
+  // calc totals
+  var inc=0,exp=0;
+  subRecurringList.forEach(function(r){ if(r.type==='income') inc+=r.amount||0; else exp+=r.amount||0; });
+  var totalEl=document.getElementById('subRecTotalVal'),incEl=document.getElementById('subRecIncomeVal'),expEl=document.getElementById('subRecExpVal');
+  if(incEl) incEl.textContent=(inc).toLocaleString()+' ₸';
+  if(expEl) expEl.textContent=(exp).toLocaleString()+' ₸';
+  if(totalEl) totalEl.textContent=(inc-exp).toLocaleString()+' ₸';
+  if(subRecurringList.length===0){ el.innerHTML='<div style="text-align:center;padding:40px 16px;"><div style="font-size:40px;margin-bottom:12px;">🔄</div><div style="font-size:14px;font-weight:600;margin-bottom:6px;">Регулярных платежей нет</div><div style="font-size:12px;color:var(--text-muted);">Нажмите + чтобы добавить</div></div>'; return; }
+  el.innerHTML = subRecurringList.map(function(r,i){
+    var isInc=r.type==='income';
+    return '<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">'
+      +'<div style="width:38px;height:38px;border-radius:10px;background:'+(isInc?'rgba(16,185,129,0.15)':'rgba(255,107,107,0.12)')+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🔄</div>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:600;">'+escHtml(r.name)+'</div><div style="font-size:10px;color:var(--text-muted);">'+escHtml(r.freq||'monthly')+'</div></div>'
+      +'<div style="font-size:13px;font-weight:700;color:'+(isInc?'var(--accent)':'#FF6B6B')+';">'+(isInc?'+':'-')+(r.amount||0).toLocaleString()+' ₸</div>'
+      +'<button onclick="subRecurringList.splice('+i+',1);renderSubRecurring();" style="background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;">🗑</button>'
+      +'</div>';
+  }).join('');
+}
+
+function renderSubBudgets() {
+  var el=document.getElementById('budgetLimitsList'); if(!el) return;
+  if(subBudgetLimits.length===0){ el.innerHTML='<div style="text-align:center;padding:40px 16px;"><div style="font-size:40px;margin-bottom:12px;">🧾</div><div style="font-size:14px;font-weight:600;margin-bottom:6px;">Бюджетов ещё нет</div><div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.5;">Задайте месячные лимиты по категориям.</div></div>'; return; }
+  el.innerHTML = subBudgetLimits.map(function(b,i){
+    var spent = BUDGET_CATS.find(function(c){ return c.name.toLowerCase()===b.cat.toLowerCase(); });
+    var spentAmt = spent ? (parseFloat(String(spent.amount).replace(/[^0-9.]/g,''))||0) : 0;
+    var pct = b.limit>0 ? Math.min(100,Math.round((spentAmt/b.limit)*100)) : 0;
+    var color = pct>=90?'#FF6B6B':pct>=70?'#FFA94D':'var(--accent)';
+    return '<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:8px;">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:6px;">'
+      +'<span style="font-size:13px;font-weight:600;">'+escHtml(b.cat)+'</span>'
+      +'<button onclick="subBudgetLimits.splice('+i+',1);renderSubBudgets();" style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;">🗑</button></div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:5px;"><span>'+spentAmt.toLocaleString()+' ₸</span><span>'+b.limit.toLocaleString()+' ₸</span></div>'
+      +'<div style="height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:3px;transition:width 0.4s;"></div></div>'
+      +'</div>';
+  }).join('');
+}
+
+function renderSubSavings() {
+  var el=document.getElementById('savingsGoalContent'); if(!el) return;
+  var btn=document.getElementById('subSavingsBtn');
+  if(subSavingsGoal){ 
+    el.innerHTML='<div style="background:var(--surface);border-radius:14px;padding:16px;text-align:center;">'
+      +'<div style="font-size:40px;margin-bottom:8px;">💰</div>'
+      +'<div style="font-size:14px;font-weight:600;margin-bottom:4px;">Ориентир установлен</div>'
+      +'<div style="font-size:24px;font-weight:800;color:var(--accent);margin-bottom:4px;">'+subSavingsGoal.toLocaleString()+' ₸/мес</div>'
+      +'<div style="font-size:11px;color:var(--text-muted);">Приложение отслеживает прогресс автоматически</div>'
+      +'<button onclick="subSavingsGoal=null;renderSubSavings();" style="margin-top:12px;background:none;border:1px solid var(--border);border-radius:10px;padding:8px 16px;color:#FF6B6B;font-size:12px;cursor:pointer;">Удалить ориентир</button>'
+      +'</div>';
+    if(btn){ btn.style.display='none'; }
+  } else {
+    el.innerHTML='<div style="text-align:center;padding:40px 16px;"><div style="font-size:40px;margin-bottom:12px;">💰</div><div style="font-size:14px;font-weight:600;margin-bottom:6px;">Цель накоплений не задана</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5;">Задайте месячный ориентир — приложение автоматически отслеживает прогресс.</div></div>';
+    if(btn){ btn.style.display='flex'; }
+  }
+}
+
+function renderSubDebts() {
+  var el=document.getElementById('debtsList'); if(!el) return;
+  var iOwe=0, owedMe=0;
+  WEB_DEBTS.forEach(function(d){ iOwe+=(d.total-d.paid)||0; });
+  WEB_CREDITS.forEach(function(c){ if(c.status!=='settled') owedMe+=c.amount||0; });
+  var ioEl=document.getElementById('subDebtIOweVal'), omEl=document.getElementById('subDebtOwedVal');
+  if(ioEl) ioEl.textContent=Math.round(iOwe).toLocaleString()+' ₸';
+  if(omEl) omEl.textContent=Math.round(owedMe).toLocaleString()+' ₸';
+  var all=[];
+  WEB_DEBTS.forEach(function(d){ all.push({name:d.name,amount:d.total-d.paid,type:'owe',note:d.meta||''}); });
+  WEB_CREDITS.forEach(function(c){ if(c.status!=='settled') all.push({name:c.name,amount:c.amount,type:'owedTo',note:c.meta||''}); });
+  if(all.length===0){ el.innerHTML='<div style="text-align:center;padding:40px 16px;"><div style="font-size:40px;margin-bottom:12px;">🤚</div><div style="font-size:14px;font-weight:600;">Долгов нет</div><div style="font-size:12px;color:var(--text-muted);">Нажмите + чтобы добавить</div></div>'; return; }
+  el.innerHTML = all.map(function(d,i){
+    var isOwe=d.type==='owe';
+    return '<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">'
+      +'<div style="width:38px;height:38px;border-radius:10px;background:'+(isOwe?'rgba(255,107,107,0.12)':'rgba(16,185,129,0.12)')+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">'+(isOwe?'↑':'↓')+'</div>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:600;">'+escHtml(d.name)+'</div>'
+      +(d.note?'<div style="font-size:10px;color:var(--text-muted);">'+escHtml(d.note)+'</div>':'')+'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:'+(isOwe?'#FF6B6B':'var(--accent)')+';">'+(d.amount||0).toLocaleString()+' ₸</div>'
+      +'</div>';
+  }).join('');
+  // Also refresh desktop debts view
+  if(typeof renderWebDebts === 'function') renderWebDebts();
+  if(typeof renderWebCredits === 'function') renderWebCredits();
+}
+
+function renderSubRules() {
+  var el=document.getElementById('rulesList'); if(!el) return;
+  if(subRulesList.length===0){ el.innerHTML='<div style="text-align:center;padding:40px 16px;"><div style="font-size:40px;margin-bottom:12px;">📊</div><div style="font-size:14px;font-weight:600;margin-bottom:6px;">Нет правил накоплений</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5;">Создайте правило, чтобы автоматически откладывать деньги</div></div>'; return; }
+  el.innerHTML = subRulesList.map(function(r,i){
+    var typeLabels={monthly:'Ежемес. накопления',income:'С каждого дохода',daily:'Лимит трат в день'};
+    return '<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">'
+      +'<div style="width:38px;height:38px;border-radius:10px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🔄</div>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:600;">'+(typeLabels[r.type]||r.type)+'</div><div style="font-size:10px;color:var(--text-muted);">'+(r.goal||'')+' · '+(r.amount||0).toLocaleString()+' ₸</div></div>'
+      +'<button onclick="subRulesList.splice('+i+',1);renderSubRules();" style="background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;">🗑</button>'
+      +'</div>';
+  }).join('');
+}
+
+// AI Analytics helpers
+var _aiSensitivity = 'med';
+function selectForecastPeriod(d, btn) {
+  _forecastDays=d;
+  document.querySelectorAll('#subAiAnalytics .app-seg-btn').forEach(function(b){ if(b.onclick&&b.onclick.toString().includes('selectForecastPeriod')){b.classList.remove('active');b.textContent=b.textContent.replace('✓ ','');} });
+  btn.classList.add('active'); btn.textContent='✓ '+btn.textContent.replace('✓ ','');
+}
+function selectSensitivity(s, btn) {
+  _aiSensitivity=s;
+  ['Low','Med','High'].forEach(function(x){var b=document.getElementById('subAiAnomaly'+x);if(b){b.classList.remove('active');b.textContent=b.textContent.replace('✓ ','');}});
+  btn.classList.add('active'); btn.textContent='✓ '+btn.textContent.replace('✓ ','');
+}
+function runAiSpend() {
+  var el=document.getElementById('subAiSpendResult'); if(!el) return;
+  el.textContent='Анализирую...'; el.style.color='var(--accent)';
+  setTimeout(function(){
+    var spent=WEB_TX.filter(function(t){return t.amount<0;}).reduce(function(s,t){return s+Math.abs(t.amount);},0);
+    var inc=WEB_TX.filter(function(t){return t.amount>0;}).reduce(function(s,t){return s+t.amount;},0);
+    el.textContent='Расходы: '+Math.round(spent).toLocaleString()+' ₸. Доходы: '+Math.round(inc).toLocaleString()+' ₸. Норма сбережений: '+Math.round(inc>0?(inc-spent)/inc*100:0)+'%.';
+    el.style.color='var(--text-secondary)';
+  }, 1200);
+}
+function runAiBudget() {
+  var el=document.getElementById('subAiBudgetResult'); if(!el) return;
+  el.textContent='Формирую рекомендации...'; el.style.color='var(--accent)';
+  setTimeout(function(){ el.textContent='Попробуйте ограничить расходы на развлечения до 15% от дохода и откладывать минимум 20% ежемесячно.'; el.style.color='var(--text-secondary)'; }, 1400);
+}
+function runForecast() {
+  var el=document.getElementById('subAiForecastResult'); if(!el) return;
+  var avgSpent=WEB_TX.filter(function(t){return t.amount<0;}).reduce(function(s,t){return s+Math.abs(t.amount);},0)/30;
+  var proj=Math.round(avgSpent*_forecastDays);
+  el.textContent='За '+_forecastDays+' дней прогнозируемые расходы: ~'+proj.toLocaleString()+' ₸.';
+}
+function runAnomalies() {
+  var el=document.getElementById('subAiAnomalyResult'); if(!el) return;
+  el.textContent='Сканирую...'; el.style.color='var(--accent)';
+  setTimeout(function(){ el.textContent='Аномалий не обнаружено. Все транзакции в пределах нормы.'; el.style.color='var(--text-secondary)'; }, 1000);
+}
+
+// openSubSheet — for sub-screen forms
+function openSubSheet(type) {
+  var html='', title='';
+  if(type==='goal'){
+    title='Новая цель';
+    html='<input id="ssGoalTitle" type="text" placeholder="Название" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+      +'<input id="ssGoalTarget" type="number" placeholder="Числовая цель (например: 95)" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+      +'<input id="ssGoalUnit" type="text" placeholder="Единица (страницы, стаканы...)" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:13px;"><span style="color:#888;">Без срока</span><span style="color:#10B981;cursor:pointer;">Установить</span></div>'
+      +'<button style="width:100%;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:13px;padding:12px;color:#10B981;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;" onclick="">✦ AI: предложить привычки</button>'
+      +'<button onclick="var t=document.getElementById(\'ssGoalTitle\').value.trim();if(!t)return;var g=parseFloat(document.getElementById(\'ssGoalTarget\').value||0);var u=document.getElementById(\'ssGoalUnit\').value.trim();subGoalsList.push({title:t,icon:\'🎯\',target:g||null,unit:u});hidePhoneSheet();renderSubGoals();showPhoneToast(\'✓ Цель добавлена\');" style="width:100%;background:#10B981;border:none;border-radius:13px;padding:13px;color:#000;font-size:14px;font-weight:700;cursor:pointer;">Создать</button>';
+  } else if(type==='recurring'){
+    title='Новое расписание';
+    html='<input id="ssRecName" type="text" placeholder="Название" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+      +'<input id="ssRecAmt" type="number" placeholder="Сумма" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+      +'<select id="ssRecType" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;appearance:none;"><option value="expense">Расход</option><option value="income">Доход</option></select>'
+      +'<select id="ssRecFreq" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;appearance:none;"><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="yearly">Yearly</option></select>'
+      +'<input id="ssRecCat" type="text" placeholder="Категория" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:14px;">'
+      +'<button onclick="var n=document.getElementById(\'ssRecName\').value.trim();var a=parseFloat(document.getElementById(\'ssRecAmt\').value);var tp=document.getElementById(\'ssRecType\').value;var fr=document.getElementById(\'ssRecFreq\').value;if(!n||isNaN(a))return;subRecurringList.push({name:n,amount:a,type:tp,freq:fr});hidePhoneSheet();renderSubRecurring();showPhoneToast(\'✓ Добавлено\');" style="width:100%;background:#10B981;border:none;border-radius:13px;padding:13px;color:#000;font-size:14px;font-weight:700;cursor:pointer;">Создать</button>';
+  } else if(type==='budgetlimit'){
+    title='Новый бюджет';
+    html='<select id="ssBLCat" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;appearance:none;"><option>Food</option><option>Transport</option><option>Shopping</option><option>Health</option><option>Entertainment</option><option>Other</option></select>'
+      +'<input id="ssBLLimit" type="number" placeholder="Месячный лимит" style="width:100%;background:#252525;border:1.5px solid #10B981;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:14px;">'
+      +'<button onclick="var c=document.getElementById(\'ssBLCat\').value;var l=parseFloat(document.getElementById(\'ssBLLimit\').value);if(isNaN(l)||l<=0)return;subBudgetLimits.push({cat:c,limit:l});hidePhoneSheet();renderSubBudgets();showPhoneToast(\'✓ Бюджет добавлен\');" style="width:100%;background:#10B981;border:none;border-radius:13px;padding:13px;color:#000;font-size:14px;font-weight:700;cursor:pointer;">Создать</button>';
+  } else if(type==='savings'){
+    title='Задать месячный ориентир';
+    html='<input id="ssSavAmt" type="number" placeholder="Сумма в месяц" style="width:100%;background:#252525;border:1.5px solid #10B981;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:14px;">'
+      +'<button onclick="var a=parseFloat(document.getElementById(\'ssSavAmt\').value);if(isNaN(a)||a<=0)return;subSavingsGoal=a;hidePhoneSheet();renderSubSavings();showPhoneToast(\'✓ Ориентир задан\');" style="width:100%;background:#10B981;border:none;border-radius:13px;padding:13px;color:#000;font-size:14px;font-weight:700;cursor:pointer;">Сохранить</button>';
+  } else if(type==='debt'){
+    title='Новый долг';
+    html='<div style="display:flex;background:#252525;border-radius:10px;padding:3px;gap:2px;margin-bottom:12px;">'
+      +'<button id="ssDebtTypeOwedTo" class="app-seg-btn active" style="flex:1;font-size:12px;" onclick="document.getElementById(\'ssDebtTypeOwedTo\').classList.add(\'active\');document.getElementById(\'ssDebtTypeOwe\').classList.remove(\'active\');window._debtType=\'owedTo\';">✓ Мне должны</button>'
+      +'<button id="ssDebtTypeOwe" class="app-seg-btn" style="flex:1;font-size:12px;" onclick="document.getElementById(\'ssDebtTypeOwe\').classList.add(\'active\');document.getElementById(\'ssDebtTypeOwedTo\').classList.remove(\'active\');window._debtType=\'owe\';">↑ Я должен</button>'
+      +'</div>'
+      +'<input id="ssDebtName" type="text" placeholder="Имя" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+      +'<input id="ssDebtAmt" type="number" placeholder="Сумма" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px;">'
+      +'<input id="ssDebtNote" type="text" placeholder="Заметка (необязательно)" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:14px;">'
+      +'<button onclick="var n=document.getElementById(\'ssDebtName\').value.trim();var a=parseFloat(document.getElementById(\'ssDebtAmt\').value);var nt=document.getElementById(\'ssDebtNote\').value.trim();if(!n||isNaN(a))return;if(window._debtType===\'owe\'){WEB_DEBTS.push({name:n,meta:nt,total:a,paid:0});}else{WEB_CREDITS.push({name:n,meta:nt,amount:a,status:\'pending\'});}hidePhoneSheet();renderSubDebts();showPhoneToast(\'✓ Добавлено\');" style="width:100%;background:#10B981;border:none;border-radius:13px;padding:13px;color:#000;font-size:14px;font-weight:700;cursor:pointer;">Сохранить</button>';
+    window._debtType='owedTo';
+  } else if(type==='rule'){
+    title='Новое правило';
+    html='<div style="display:flex;background:#252525;border-radius:10px;padding:3px;gap:2px;margin-bottom:12px;">'
+      +'<button id="ssRuleMonthly" class="app-seg-btn active" style="flex:1;font-size:10px;" onclick="[\'ssRuleMonthly\',\'ssRuleIncome\',\'ssRuleDaily\'].forEach(function(x){document.getElementById(x).classList.remove(\'active\')});this.classList.add(\'active\');window._ruleType=\'monthly\';">✓ Ежемесяч.<br>накопления</button>'
+      +'<button id="ssRuleIncome" class="app-seg-btn" style="flex:1;font-size:10px;" onclick="[\'ssRuleMonthly\',\'ssRuleIncome\',\'ssRuleDaily\'].forEach(function(x){document.getElementById(x).classList.remove(\'active\')});this.classList.add(\'active\');window._ruleType=\'income\';">С каждого<br>дохода</button>'
+      +'<button id="ssRuleDaily" class="app-seg-btn" style="flex:1;font-size:10px;" onclick="[\'ssRuleMonthly\',\'ssRuleIncome\',\'ssRuleDaily\'].forEach(function(x){document.getElementById(x).classList.remove(\'active\')});this.classList.add(\'active\');window._ruleType=\'daily\';">Лимит трат<br>в день</button>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;margin-bottom:10px;">'
+      +'<span style="color:#888;font-size:16px;">🔄</span><input id="ssRuleAmt" type="number" placeholder="Сумма (₸)" style="flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:13px;font-family:inherit;">'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;margin-bottom:14px;">'
+      +'<span style="color:#888;font-size:16px;">🏁</span><input id="ssRuleGoal" type="text" placeholder="Название цели (необязательно)" style="flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:13px;font-family:inherit;">'
+      +'</div>'
+      +'<button onclick="var a=parseFloat(document.getElementById(\'ssRuleAmt\').value);var g=document.getElementById(\'ssRuleGoal\').value.trim();if(isNaN(a)||a<=0)return;subRulesList.push({type:window._ruleType||\'monthly\',amount:a,goal:g});hidePhoneSheet();renderSubRules();showPhoneToast(\'✓ Правило добавлено\');" style="width:100%;background:#10B981;border:none;border-radius:13px;padding:13px;color:#000;font-size:14px;font-weight:700;cursor:pointer;">Сохранить</button>';
+    window._ruleType='monthly';
+  }
+  // Build panel
+  var panel=document.getElementById('phoneSheetPanel');
+  var overlay=document.getElementById('phoneSheetOverlay');
+  if(!panel||!overlay) return;
+  panel.innerHTML='<div style="padding:12px 16px 28px;">'
+    +'<div style="width:36px;height:4px;background:#444;border-radius:2px;margin:0 auto 14px;"></div>'
+    +'<div style="font-size:17px;font-weight:800;margin-bottom:16px;color:#fff;">'+title+'</div>'
+    +html
+    +'</div>';
+  overlay.style.display='block';
+  panel.style.display='block';
+}
+
+
+function hidePhoneSheet() {
+  document.getElementById('phoneSheetOverlay').style.display = 'none';
+  document.getElementById('phoneSheetPanel').style.display = 'none';
+}
+function showPhoneSheet(type) {
+  var panel = document.getElementById('phoneSheetPanel');
+  var overlay = document.getElementById('phoneSheetOverlay');
+  if (!panel || !overlay) return;
+  var html = '';
+  if (type === 'habit') {
+    html = '<div style="padding:12px 16px 28px;">'
+      +'<div style="width:36px;height:4px;background:#444;border-radius:2px;margin:0 auto 14px;"></div>'
+      +'<div style="font-size:17px;font-weight:800;text-align:center;margin-bottom:14px;color:#fff;">'+ml('sheet_habit_title')+'</div>'
+      +'<input id="psHabitTitle" type="text" placeholder="'+ml('habit_placeholder')+'" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:12px;" onfocus="this.style.borderColor=\'#10B981\'" onblur="this.style.borderColor=\'#333\'">'
+      +'<div style="font-size:11px;font-weight:600;color:#888;margin-bottom:7px;">'+ml('period_lbl')+'</div>'
+      +'<div style="display:flex;background:#252525;border-radius:10px;padding:3px;gap:2px;margin-bottom:12px;">'
+      +'<button id="psPeriodDay" class="app-seg-btn active" style="flex:1;font-size:10px;" onclick="psSelectPeriod(\'day\')">✓ '+ml('period_day')+'</button>'
+      +'<button id="psPeriodWeek" class="app-seg-btn" style="flex:1;font-size:10px;" onclick="psSelectPeriod(\'week\')">'+ml('period_week')+'</button>'
+      +'<button id="psPeriodMonth" class="app-seg-btn" style="flex:1;font-size:10px;" onclick="psSelectPeriod(\'month\')">'+ml('period_month')+'</button>'
+      +'</div>'
+      +'<div style="font-size:11px;font-weight:600;color:#888;margin-bottom:7px;">'+ml('icon_lbl')+'</div>'
+      +'<div id="psIconGrid" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;"></div>'
+      +'<div style="font-size:11px;font-weight:600;color:#888;margin-bottom:7px;">'+ml('color_lbl')+'</div>'
+      +'<div id="psColorRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;"></div>'
+      +'<button onclick="psSubmitHabit()" style="width:100%;background:#10B981;border:none;border-radius:13px;padding:13px;color:#000;font-size:14px;font-weight:700;cursor:pointer;">'+ml('create_btn')+'</button>'
+      +'</div>';
+  } else if (type === 'task') {
+    html = '<div style="padding:12px 16px 28px;">'
+      +'<div style="width:36px;height:4px;background:#444;border-radius:2px;margin:0 auto 14px;"></div>'
+      +'<div style="font-size:17px;font-weight:800;text-align:center;margin-bottom:14px;color:#fff;">'+ml('sheet_task_title')+'</div>'
+      +'<input id="psTaskTitle" type="text" placeholder="'+ml('task_placeholder')+'" style="width:100%;background:#252525;border:1.5px solid #10B981;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:12px;">'
+      +'<div style="font-size:11px;font-weight:600;color:#888;margin-bottom:7px;">'+ml('priority_lbl')+'</div>'
+      +'<div style="display:flex;background:#252525;border-radius:10px;padding:3px;gap:2px;margin-bottom:12px;">'
+      +'<button id="psPriLow" class="app-seg-btn" style="flex:1;font-size:10px;" onclick="psSelectPri(\'low\')">'+ml('pri_low')+'</button>'
+      +'<button id="psPriMed" class="app-seg-btn active" style="flex:1;font-size:10px;" onclick="psSelectPri(\'med\')">✓ '+ml('pri_med')+'</button>'
+      +'<button id="psPriHigh" class="app-seg-btn" style="flex:1;font-size:10px;" onclick="psSelectPri(\'high\')">'+ml('pri_high')+'</button>'
+      +'<button id="psPriUrgent" class="app-seg-btn" style="flex:1;font-size:10px;" onclick="psSelectPri(\'urgent\')">'+ml('pri_urgent')+'</button>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;background:#252525;border-radius:12px;padding:11px 13px;margin-bottom:16px;font-size:12px;color:#888;">📅 '+ml('sun_31_may')+'</div>'
+      +'<button onclick="psSubmitTask()" style="width:100%;background:#10B981;border:none;border-radius:13px;padding:13px;color:#000;font-size:14px;font-weight:700;cursor:pointer;">'+ml('create_btn')+'</button>'
+      +'</div>';
+  } else if (type === 'budget') {
+    html = '<div style="padding:12px 16px 28px;">'
+      +'<div style="width:36px;height:4px;background:#444;border-radius:2px;margin:0 auto 14px;"></div>'
+      +'<div style="font-size:17px;font-weight:800;text-align:center;margin-bottom:14px;color:#fff;">'+ml('sheet_budget_title')+'</div>'
+      +'<div style="display:flex;background:#252525;border-radius:10px;padding:3px;gap:2px;margin-bottom:12px;">'
+      +'<button id="psTxExp" class="app-seg-btn active" style="flex:1;font-size:12px;" onclick="psSelectTxType(\'exp\')">✓ '+ml('tx_expense')+'</button>'
+      +'<button id="psTxInc" class="app-seg-btn" style="flex:1;font-size:12px;" onclick="psSelectTxType(\'inc\')">↑ '+ml('tx_income')+'</button>'
+      +'</div>'
+      +'<input id="psTxName" type="text" placeholder="'+ml('tx_name_ph')+'" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:9px;" onfocus="this.style.borderColor=\'#10B981\'" onblur="this.style.borderColor=\'#333\'">'
+      +'<input id="psTxAmt" type="number" placeholder="'+ml('tx_amt_ph')+'" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:9px;" onfocus="this.style.borderColor=\'#10B981\'" onblur="this.style.borderColor=\'#333\'">'
+      +'<select id="psTxCat" style="width:100%;background:#252525;border:1px solid #333;border-radius:12px;padding:11px 13px;color:#fff;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:9px;appearance:none;">'
+      +'<option>Food</option><option>Transport</option><option>Shopping</option><option>Health</option><option>Entertainment</option><option>Other</option>'
+      +'</select>'
+      +'<div style="display:flex;align-items:center;gap:8px;background:#252525;border-radius:12px;padding:11px 13px;margin-bottom:16px;font-size:12px;color:#888;">📅 '+ml('sun_31_may')+'</div>'
+      +'<button onclick="psSubmitBudget()" style="width:100%;background:#10B981;border:none;border-radius:13px;padding:13px;color:#000;font-size:14px;font-weight:700;cursor:pointer;">'+ml('create_btn')+'</button>'
+      +'</div>';
+  }
+  panel.innerHTML = html;
+  overlay.style.display = 'block';
+  panel.style.display = 'block';
+  if (type === 'habit') psBuildIconColor();
+  if (type === 'task') _psPri = 'med';
+  if (type === 'budget') _psTxType = 'exp';
+}
+
+var _psPeriod='day', _psPri='med', _psTxType='exp', _psIcon='🎯', _psColor='#10B981';
+var PS_ICONS=['🎯','📚','💧','🏃','🧘','💪','📝','😴','🥗','🚭','💻','🎨','🎵','☕','🌱'];
+var PS_COLORS=['#10B981','#339AF0','#FF6B6B','#FFA94D','#845EF7','#FFD43B','#F06595','#20C997'];
+
+function psBuildIconColor() {
+  var ig=document.getElementById('psIconGrid'), cr=document.getElementById('psColorRow');
+  if(ig) ig.innerHTML=PS_ICONS.map(function(ic){return '<div onclick="psSelIcon(\''+ic+'\')" style="width:38px;height:38px;border-radius:9px;background:'+_psColor+'33;border:2px solid '+(_psIcon===ic?_psColor:'transparent')+';display:flex;align-items:center;justify-content:center;font-size:19px;cursor:pointer;">'+ic+'</div>';}).join('');
+  if(cr) cr.innerHTML=PS_COLORS.map(function(c){return '<div onclick="psSelColor(\''+c+'\')" style="width:26px;height:26px;border-radius:50%;background:'+c+';cursor:pointer;border:3px solid '+(_psColor===c?'#fff':'transparent')+';box-sizing:border-box;"></div>';}).join('');
+}
+function psSelIcon(ic){_psIcon=ic;psBuildIconColor();}
+function psSelColor(c){_psColor=c;psBuildIconColor();}
+function psSelectPeriod(p){
+  _psPeriod=p;
+  var L={day:'Каждый день',week:'Каждую неделю',month:'Каждый месяц'};
+  ['Day','Week','Month'].forEach(function(x){var b=document.getElementById('psPeriod'+x);if(b){b.classList.toggle('active',x.toLowerCase()===p);b.textContent=(x.toLowerCase()===p?'✓ ':'')+L[x.toLowerCase()];}});
+}
+function psSelectPri(p){
+  _psPri=p;
+  var L={low:'Низкий',med:'Средний',high:'Высокий',urgent:'Срочно'};
+  ['Low','Med','High','Urgent'].forEach(function(x){var b=document.getElementById('psPri'+x);if(b){b.classList.toggle('active',x.toLowerCase()===p);b.textContent=(x.toLowerCase()===p?'✓ ':'')+L[x.toLowerCase()];}});
+}
+function psSelectTxType(t){
+  _psTxType=t;
+  var be=document.getElementById('psTxExp'),bi=document.getElementById('psTxInc');
+  if(be){be.classList.toggle('active',t==='exp');be.textContent=(t==='exp'?'✓ ':'')+'Расход';}
+  if(bi){bi.classList.toggle('active',t==='inc');bi.textContent=(t==='inc'?'↑ ':'↑ ')+'Доход';}
+}
+function psSubmitHabit(){
+  var title=(document.getElementById('psHabitTitle')||{}).value||'';
+  if(!title.trim()){var el=document.getElementById('psHabitTitle');if(el)el.style.borderColor='#FF6B6B';return;}
+  habits.push({id:Date.now(),title:title.trim(),icon:_psIcon,color:_psColor,streak:0,completed:false,_base:0,history:Array(7).fill(false)});
+  // habits array already updated above
+  hidePhoneSheet(); renderHabits(); renderDashboard(); renderWebHabits();
+  showPhoneToast(ml('toast_habit'));
+}
+function psSubmitTask(){
+  var title=(document.getElementById('psTaskTitle')||{}).value||'';
+  if(!title.trim()){var el=document.getElementById('psTaskTitle');if(el)el.style.borderColor='#FF6B6B';return;}
+  var pm={low:{c:'#51CF66',tag:'Низкий'},med:{c:'#FFA94D',tag:'Средний'},high:{c:'#FF6B6B',tag:'Высокий'},urgent:{c:'#FF6B6B',tag:'Срочно'}};
+  var p=pm[_psPri]||pm.med;
+  tasks.push({id:Date.now(),title:title.trim(),done:false,priority:p.c,tag:p.tag,tagBg:'rgba(255,169,77,0.15)'});
+  // tasks array already updated above
+  hidePhoneSheet(); renderTasks(); renderDashboard();
+  showPhoneToast(ml('toast_task'));
+}
+function psSubmitBudget(){
+  var name=(document.getElementById('psTxName')||{}).value||'';
+  var amt=parseFloat((document.getElementById('psTxAmt')||{}).value);
+  var cat=(document.getElementById('psTxCat')||{}).value||'Other';
+  if(!name.trim()||isNaN(amt)||amt<=0){showPhoneToast(ml('fill_fields'));return;}
+  var isInc=_psTxType==='inc';
+  var cc={Food:'#FF6B6B',Transport:'#339AF0',Shopping:'#51CF66',Health:'#845EF7',Entertainment:'#FFA94D',Other:'#A0A0A8'};
+  var finalAmt=isInc?Math.abs(amt):-Math.abs(amt);
+  if(!isInc){var ex=BUDGET_CATS.find(function(c){return c.name.toLowerCase()===cat.toLowerCase();});if(ex){var prev=parseFloat(ex.amount.replace(/[^0-9.]/g,''))||0;ex.amount=(prev+Math.abs(amt)).toLocaleString()+' ₸';}else{BUDGET_CATS.push({name:cat,amount:Math.abs(amt).toLocaleString()+' ₸',color:cc[cat]||'#A0A0A8'});}}
+  WEB_TX.unshift({icon:isInc?'💼':'💸',iconBg:(cc[cat]||'#A0A0A8')+'22',iconColor:cc[cat]||'#A0A0A8',title:name.trim(),meta:cat+' · One-time',amount:finalAmt});
+  hidePhoneSheet(); renderBudget();
+  showPhoneToast(isInc?ml('toast_income'):ml('toast_expense'));
+}
+
+var _hPeriod = 'day', _hIcon = '🎯', _hColor = '#10B981';
+var _tPri = 'med', _bType = 'exp';
+
+var H_ICONS = ['🎯','📚','💧','🏃','🧘','💪','📝','😴','🥗','🚭','💻','🎨','🎵','☕','🌱'];
+var H_COLORS = ['#10B981','#339AF0','#FF6B6B','#FFA94D','#845EF7','#FFD43B','#F06595','#20C997'];
+
+function initHabitSheet() {
+  var ig = document.getElementById('hIconGrid');
+  var cr = document.getElementById('hColorRow');
+  if (ig) ig.innerHTML = H_ICONS.map(function(ic){
+    return '<div onclick="hSelectIcon(\''+ic+'\')" id="hic_'+ic.codePointAt(0)+'" style="width:38px;height:38px;border-radius:9px;background:'+_hColor+'33;border:2px solid '+(_hIcon===ic?_hColor:'transparent')+';display:flex;align-items:center;justify-content:center;font-size:19px;cursor:pointer;">'+ic+'</div>';
+  }).join('');
+  if (cr) cr.innerHTML = H_COLORS.map(function(c){
+    return '<div onclick="hSelectColor(\''+c+'\')" style="width:26px;height:26px;border-radius:50%;background:'+c+';cursor:pointer;border:3px solid '+(_hColor===c?'#fff':'transparent')+';box-sizing:border-box;"></div>';
+  }).join('');
+}
+function hSelectIcon(ic) { _hIcon = ic; initHabitSheet(); }
+function hSelectColor(c) { _hColor = c; initHabitSheet(); }
+function hSelectPeriod(p) {
+  _hPeriod = p;
+  var labels = {day:'Каждый день', week:'Каждую неделю', month:'Каждый месяц'};
+  ['Day','Week','Month'].forEach(function(x){
+    var b = document.getElementById('hPeriod'+x);
+    var key = x.toLowerCase();
+    if (b) { b.classList.toggle('active', key===p); b.textContent = (key===p?'✓ ':'')+labels[key]; }
+  });
+}
+function tSelectPri(p) {
+  _tPri = p;
+  var labels = {low:'Низкий', med:'Средний', high:'Высокий', urgent:'Срочно'};
+  ['Low','Med','High','Urgent'].forEach(function(x){
+    var b = document.getElementById('tPri'+x);
+    var key = x.toLowerCase();
+    if (b) { b.classList.toggle('active', key===p); b.textContent = (key===p?'✓ ':'')+labels[key]; }
+  });
+}
+function bSelectType(t) {
+  _bType = t;
+  var be = document.getElementById('bTypeExp'), bi = document.getElementById('bTypeInc');
+  if (be) { be.classList.toggle('active', t==='exp'); be.textContent = (t==='exp'?'✓ ':'')+'Расход'; }
+  if (bi) { bi.classList.toggle('active', t==='inc'); bi.textContent = (t==='inc'?'↑ ':'↑ ')+'Доход'; }
+}
+
+function submitInlineHabit() {
+  var title = (document.getElementById('habitSheetTitle')||{}).value||'';
+  if (!title.trim()) { var el=document.getElementById('habitSheetTitle'); if(el) el.style.borderColor='#FF6B6B'; return; }
+  habits.push({id:Date.now(),title:title.trim(),icon:_hIcon,color:_hColor,streak:0,completed:false,_base:0,history:Array(7).fill(false)});
+  // habits array already updated above
+  document.getElementById('habitSheetTitle').value = '';
+  document.getElementById('habitSheet').style.display = 'none';
+  renderHabits(); renderDashboard(); renderWebHabits();
+  showPhoneToast(ml('toast_habit'));
+}
+function submitInlineTask() {
+  var title = (document.getElementById('taskSheetTitle')||{}).value||'';
+  if (!title.trim()) { var el=document.getElementById('taskSheetTitle'); if(el) el.style.borderColor='#FF6B6B'; return; }
+  var pm = {low:{c:'#51CF66',tag:'Низкий'}, med:{c:'#FFA94D',tag:'Средний'}, high:{c:'#FF6B6B',tag:'Высокий'}, urgent:{c:'#FF6B6B',tag:'Срочно'}};
+  var p = pm[_tPri]||pm.med;
+  tasks.push({id:Date.now(),title:title.trim(),done:false,priority:p.c,tag:p.tag,tagBg:'rgba(255,169,77,0.15)'});
+  // tasks array already updated above
+  document.getElementById('taskSheetTitle').value = '';
+  document.getElementById('taskSheet').style.display = 'none';
+  renderTasks(); renderDashboard();
+  showPhoneToast(ml('toast_task'));
+}
+function submitInlineBudget() {
+  var name = (document.getElementById('budgetSheetName')||{}).value||'';
+  var amt = parseFloat((document.getElementById('budgetSheetAmt')||{}).value);
+  var cat = (document.getElementById('budgetSheetCat')||{}).value||'Other';
+  if (!name.trim()||isNaN(amt)||amt<=0) { showPhoneToast(ml('fill_fields')); return; }
+  var isIncome = _bType==='inc';
+  var catColors = {Food:'#FF6B6B',Transport:'#339AF0',Shopping:'#51CF66',Health:'#845EF7',Entertainment:'#FFA94D',Other:'#A0A0A8'};
+  var finalAmt = isIncome ? Math.abs(amt) : -Math.abs(amt);
+  if (!isIncome) {
+    var existing = BUDGET_CATS.find(function(c){ return c.name.toLowerCase()===cat.toLowerCase(); });
+    if (existing) { var prev=parseFloat(existing.amount.replace(/[^0-9.]/g,''))||0; existing.amount=(prev+Math.abs(amt)).toLocaleString()+' ₸'; }
+    else BUDGET_CATS.push({name:cat,amount:Math.abs(amt).toLocaleString()+' ₸',color:catColors[cat]||'#A0A0A8'});
+  }
+  WEB_TX.unshift({icon:isIncome?'💼':'💸',iconBg:(catColors[cat]||'#A0A0A8')+'22',iconColor:catColors[cat]||'#A0A0A8',title:name.trim(),meta:cat+' · One-time',amount:finalAmt});
+  document.getElementById('budgetSheetName').value='';
+  document.getElementById('budgetSheetAmt').value='';
+  document.getElementById('budgetSheet').style.display='none';
+  renderBudget();
+  showPhoneToast(isIncome?ml('toast_income'):ml('toast_expense'));
+}
+
+var _sheetPeriod = 'day';
+var _sheetPri = 'med';
+var _sheetTxType = 'exp';
+var _sheetSelectedIcon = '🎯';
+var _sheetSelectedColor = '#10B981';
+
+var SHEET_ICONS = ['🎯','📚','💧','🏃','🧘','💪','📝','😴','🥗','🚭','💻','🎨','🎵','☕','🌱'];
+var SHEET_COLORS = ['#10B981','#339AF0','#FF6B6B','#FFA94D','#845EF7','#FFD43B','#F06595','#20C997'];
+
+function buildSheetPickers() {
+  var ip = document.getElementById('iconPicker2');
+  var cp = document.getElementById('colorPicker2');
+  if (ip) {
+    ip.innerHTML = SHEET_ICONS.map(function(ic){
+      return '<div onclick="selectIcon(\''+ic+'\')" style="width:40px;height:40px;border-radius:10px;background:'+(_sheetSelectedColor+'33')+';border:2px solid '+(_sheetSelectedIcon===ic?_sheetSelectedColor:'transparent')+';display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;">'+ic+'</div>';
+    }).join('');
+  }
+  if (cp) {
+    cp.innerHTML = SHEET_COLORS.map(function(c){
+      return '<div onclick="selectSheetColor(\''+c+'\')" style="width:28px;height:28px;border-radius:50%;background:'+c+';cursor:pointer;border:3px solid '+(_sheetSelectedColor===c?'#fff':'transparent')+';box-sizing:border-box;"></div>';
+    }).join('');
+  }
+}
+
+function selectIcon(ic) {
+  _sheetSelectedIcon = ic;
+  buildSheetPickers();
+}
+function selectSheetColor(c) {
+  _sheetSelectedColor = c;
+  buildSheetPickers();
+}
+function selectPeriod(p) {
+  _sheetPeriod = p;
+  ['day','week','month'].forEach(function(x){
+    var b = document.getElementById('period'+x.charAt(0).toUpperCase()+x.slice(1));
+    if (!b) return;
+    b.classList.toggle('active', x===p);
+    b.textContent = (x===p?'✓ ':'')+{day:'Каждый день',week:'Каждую неделю',month:'Каждый месяц'}[x];
+  });
+}
+function selectPri(p) {
+  _sheetPri = p;
+  var labels = {low:'Низкий',med:'Средний',high:'Высокий',urgent:'Срочно'};
+  ['low','med','high','urgent'].forEach(function(x){
+    var b = document.getElementById('pri'+x.charAt(0).toUpperCase()+x.slice(1));
+    if (!b) return;
+    b.classList.toggle('active', x===p);
+    b.textContent = (x===p?'✓ ':'')+labels[x];
+  });
+}
+function selectTxType(t) {
+  _sheetTxType = t;
+  var be = document.getElementById('txTypeExp'), bi = document.getElementById('txTypeInc');
+  if (be) { be.classList.toggle('active', t==='exp'); be.textContent = (t==='exp'?'✓ ':'')+'Расход'; }
+  if (bi) { bi.classList.toggle('active', t==='inc'); bi.textContent = (t==='inc'?'↑ ':'↑ ')+'Доход'; }
+}
+
+function openSheet(type) {
+  var overlay = document.getElementById('sheetOverlay');
+  // Push all sheets behind screen and lower their z-index
+  ['Habit','Task','Budget'].forEach(function(t){
+    var s = document.getElementById('sheet'+t);
+    if (s) {
+      s.style.transform = 'translateY(110%)';
+      s.style.pointerEvents = 'none';
+      s.style.zIndex = '21';
+    }
+  });
+  var id = 'sheet' + type.charAt(0).toUpperCase() + type.slice(1);
+  var sheet = document.getElementById(id);
+  if (!sheet || !overlay) return;
+  if (type === 'habit') buildSheetPickers();
+  // Bring this sheet to top
+  sheet.style.zIndex = '30';
+  overlay.style.zIndex = '29';
+  overlay.style.display = 'block';
+  setTimeout(function(){
+    sheet.style.transform = 'translateY(0)';
+    sheet.style.pointerEvents = 'auto';
+  }, 16);
+}
+function closeSheet() {
+  ['Habit','Task','Budget'].forEach(function(t){
+    var s = document.getElementById('sheet'+t);
+    if (s) { s.style.transform='translateY(110%)'; s.style.pointerEvents='none'; }
+  });
+  var o = document.getElementById('sheetOverlay');
+  if (o) setTimeout(function(){ o.style.display='none'; }, 320);
+}
+
+function submitHabitSheet() {
+  var title = (document.getElementById('sheetHabitTitle')||{}).value;
+  if (!title || !title.trim()) { var el=document.getElementById('sheetHabitTitle'); if(el){el.style.borderColor='#FF6B6B';} return; }
+  habits.push({id:Date.now(),title:title.trim(),icon:_sheetSelectedIcon,color:_sheetSelectedColor,streak:0,completed:false,_base:0,history:Array(7).fill(false)});
+  // habits array already updated above
+  document.getElementById('sheetHabitTitle').value = '';
+  closeSheet();
+  renderHabits();
+  renderDashboard();
+  renderWebHabits();
+  showPhoneToast(ml('toast_habit'));
+}
+
+function submitTaskSheet() {
+  var title = (document.getElementById('sheetTaskTitle')||{}).value;
+  if (!title || !title.trim()) { var el=document.getElementById('sheetTaskTitle'); if(el){el.style.borderColor='#FF6B6B';} return; }
+  var priMap = {low:{c:'#51CF66',bg:'rgba(81,207,102,0.15)',tag:'Низкий'},med:{c:'#FFA94D',bg:'rgba(255,169,77,0.15)',tag:'Средний'},high:{c:'#FF6B6B',bg:'rgba(255,107,107,0.15)',tag:'Высокий'},urgent:{c:'#FF6B6B',bg:'rgba(255,107,107,0.15)',tag:'Срочно'}};
+  var pm = priMap[_sheetPri]||priMap.med;
+  tasks.push({id:Date.now(),title:title.trim(),done:false,priority:pm.c,tag:pm.tag,tagBg:pm.bg});
+  // tasks array already updated above
+  document.getElementById('sheetTaskTitle').value = '';
+  closeSheet();
+  renderTasks();
+  renderDashboard();
+  showPhoneToast(ml('toast_task'));
+}
+
+function submitBudgetSheet() {
+  var name = (document.getElementById('sheetTxName')||{}).value;
+  var amt = parseFloat((document.getElementById('sheetTxAmt')||{}).value);
+  var cat = (document.getElementById('sheetTxCat')||{}).value || 'Other';
+  if (!name||!name.trim()||isNaN(amt)||amt<=0) { showPhoneToast(ml('fill_fields')); return; }
+  var catColors = {Food:'#FF6B6B',Transport:'#339AF0',Shopping:'#51CF66',Health:'#845EF7',Entertainment:'#FFA94D',Other:'#A0A0A8'};
+  var isIncome = _sheetTxType === 'inc';
+  var finalAmt = isIncome ? Math.abs(amt) : -Math.abs(amt);
+  var catColor = catColors[cat]||'#A0A0A8';
+  var existing = BUDGET_CATS.find(function(c){ return c.name.toLowerCase()===cat.toLowerCase(); });
+  if (!isIncome) {
+    if (existing) {
+      var prev = parseFloat(existing.amount.replace(/[^0-9.]/g,''))||0;
+      existing.amount = (prev+Math.abs(amt)).toLocaleString()+' ₸';
+    } else {
+      BUDGET_CATS.push({name:cat,amount:Math.abs(amt).toLocaleString()+' ₸',color:catColor});
+    }
+  }
+  WEB_TX.unshift({icon:isIncome?'💼':'💸',iconBg:catColor+'22',iconColor:catColor,title:name.trim(),meta:cat+' · One-time',amount:finalAmt});
+  document.getElementById('sheetTxName').value='';
+  document.getElementById('sheetTxAmt').value='';
+  closeSheet();
+  renderBudget();
+  showPhoneToast(isIncome?ml('toast_income'):ml('toast_expense'));
+}
+
 if (document.getElementById('colorPicker')) buildColorPicker();
 if (document.getElementById('iconPicker')) buildIconPicker();
 
+setLang('en');
 // Init phone app
+setLang('en');
 renderHabits();
 renderTasks();
 renderBudget();
 renderAi();
 updateDate();
-switchNav('habits');
+switchNav('dashboard');
 </script>
 </body>
 </html>
