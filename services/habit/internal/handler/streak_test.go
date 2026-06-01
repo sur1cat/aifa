@@ -74,7 +74,7 @@ func TestStreak_EmptyReturnsZero(t *testing.T) {
 }
 
 // TestStreak_WeeklyProgressOffCursorDay covers the case where the user
-// logs progress on a day other than the cursor (e.g., Sunday when the
+// logs progress on a day other than the cursor (e.g., Monday when the
 // cursor lands on Tuesday). The weekly completion index must match.
 func TestStreak_WeeklyProgressOffCursorDay(t *testing.T) {
 	now := time.Date(2026, 4, 21, 12, 0, 0, 0, time.UTC) // Tuesday, week 17
@@ -82,10 +82,8 @@ func TestStreak_WeeklyProgressOffCursorDay(t *testing.T) {
 	h := &domain.Habit{
 		Period:      domain.PeriodWeekly,
 		TargetValue: ptrInt(target),
-		// Completed on Sunday of week 17 (not on cursor Tuesday) and a day in week 16.
-		CompletedDates: []string{"2026-04-19", "2026-04-13"},
 		ProgressValues: map[string]int{
-			"2026-04-19": 5,
+			"2026-04-20": 5, // Monday of week 17, not the cursor Tuesday
 			"2026-04-13": 7,
 		},
 	}
