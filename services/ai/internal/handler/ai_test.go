@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sur1cat/aifa/ai-service/internal/finance"
 	"github.com/sur1cat/aifa/ai-service/internal/localai"
 	"github.com/sur1cat/aifa/ai-service/internal/openai"
 )
@@ -108,9 +109,38 @@ func (f *fakeLocalAIClient) BudgetSuggestions(ctx context.Context, transactions 
 	return nil, nil
 }
 
+type fakeFinanceClient struct {
+	createDebtFn func(ctx context.Context, authHeader string, req finance.CreateDebtRequest) error
+	listDebtsFn  func(ctx context.Context, authHeader string, settled *bool) ([]finance.Debt, error)
+	patchDebtFn  func(ctx context.Context, authHeader, debtID string, req finance.PatchDebtRequest) error
+}
+
+func (f *fakeFinanceClient) CreateDebt(ctx context.Context, authHeader string, req finance.CreateDebtRequest) error {
+	if f.createDebtFn != nil {
+		return f.createDebtFn(ctx, authHeader, req)
+	}
+	return nil
+}
+
+func (f *fakeFinanceClient) ListDebts(ctx context.Context, authHeader string, settled *bool) ([]finance.Debt, error) {
+	if f.listDebtsFn != nil {
+		return f.listDebtsFn(ctx, authHeader, settled)
+	}
+	return nil, nil
+}
+
+func (f *fakeFinanceClient) PatchDebt(ctx context.Context, authHeader, debtID string, req finance.PatchDebtRequest) error {
+	if f.patchDebtFn != nil {
+		return f.patchDebtFn(ctx, authHeader, debtID, req)
+	}
+	return nil
+}
+
 func setupRouter(h *AIHandler) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.POST("/ai/command", h.Command)
+	r.POST("/ai/parse-message", h.ParseMessage)
 	r.POST("/categorize", h.CategorizeExpense)
 	r.POST("/voice/transcribe", h.TranscribeVoice)
 	r.POST("/receipt/scan", h.ScanReceipt)
@@ -315,5 +345,142 @@ func TestScanReceiptReturns503WhenFallbackNotConfigured(t *testing.T) {
 
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("expected 503, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestIsSupportedDomainMessageAcceptsDebtWording(t *testing.T) {
+	cases := []string{
+		"Ким должен мне 1000",
+		"я должен Киму 400",
+		"одолжил другу 2000",
+		"взял взаймы 5000",
+	}
+	for _, tc := range cases {
+		if !isSupportedDomainMessage(tc) {
+			t.Fatalf("expected debt wording to be supported: %q", tc)
+		}
+	}
+}
+
+func TestCommandCreateDebtReturnsCompleted(t *testing.T) {
+	created := false
+	h := NewAIHandler(&fakeOpenAIClient{
+		chatFn: func(ctx context.Context, systemPrompt, userMessage string) (string, error) {
+			return `{
+				"intent":"create_debt",
+				"response":"Записал, что Ким вам должен 1000.",
+				"debt":{
+					"counterparty":"Ким",
+					"direction":"they_owe",
+					"amount":1000
+				}
+			}`, nil
+		},
+	}, &fakeLocalAIClient{}, &fakeFinanceClient{
+		createDebtFn: func(ctx context.Context, authHeader string, req finance.CreateDebtRequest) error {
+			created = true
+			if req.Counterparty != "Ким" || req.Direction != "they_owe" || req.Amount != 1000 {
+				t.Fatalf("unexpected create debt request: %+v", req)
+			}
+			if authHeader != "Bearer token" {
+				t.Fatalf("unexpected auth header: %q", authHeader)
+			}
+			return nil
+		},
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/ai/command", bytes.NewBufferString(`{"message":"Запиши долг, что Ким мне должен 1000"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer token")
+	setupRouter(h).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	payload := decodeData(t, rec)
+	data := payload["data"].(map[string]any)
+	if data["status"] != "completed" {
+		t.Fatalf("expected completed status, got %v", data["status"])
+	}
+	if data["intent"] != "create_debt" {
+		t.Fatalf("expected create_debt intent, got %v", data["intent"])
+	}
+	if !created {
+		t.Fatal("expected finance create debt to be executed")
+	}
+}
+
+func TestCommandCreateRecurringReturnsCompleted(t *testing.T) {
+	h := NewAIHandler(&fakeOpenAIClient{
+		chatFn: func(ctx context.Context, systemPrompt, userMessage string) (string, error) {
+			return `{
+				"intent":"create_recurring",
+				"response":"Записал регулярный расход на интернет.",
+				"recurring":{
+					"title":"Интернет",
+					"amount":5000,
+					"type":"expense",
+					"frequency":"monthly",
+					"category":"utilities"
+				}
+			}`, nil
+		},
+	}, &fakeLocalAIClient{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/ai/command", bytes.NewBufferString(`{"message":"Плачу за интернет 5000 в месяц"}`))
+	req.Header.Set("Content-Type", "application/json")
+	setupRouter(h).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	payload := decodeData(t, rec)
+	data := payload["data"].(map[string]any)
+	if data["status"] != "completed" {
+		t.Fatalf("expected completed status, got %v", data["status"])
+	}
+	if data["intent"] != "create_recurring" {
+		t.Fatalf("expected create_recurring intent, got %v", data["intent"])
+	}
+}
+
+func TestParseMessageCreateDebtExecutesFinanceCreate(t *testing.T) {
+	created := false
+	amount := 1000.0
+	counterparty := "Ким"
+	direction := "they_owe"
+	h := NewAIHandler(&fakeOpenAIClient{}, &fakeLocalAIClient{
+		parseMessageFn: func(ctx context.Context, message string, debtsContext []map[string]any) (*localai.ParseMessageResponse, error) {
+			return &localai.ParseMessageResponse{
+				Intent:        "create_debt",
+				Response:      "Запись о долге сохранена: Ким должен вам 1000.",
+				Amount:        &amount,
+				Counterparty:  &counterparty,
+				DebtDirection: &direction,
+			}, nil
+		},
+	}, &fakeFinanceClient{
+		createDebtFn: func(ctx context.Context, authHeader string, req finance.CreateDebtRequest) error {
+			created = true
+			if req.Counterparty != "Ким" || req.Direction != "they_owe" || req.Amount != 1000 {
+				t.Fatalf("unexpected create debt request: %+v", req)
+			}
+			return nil
+		},
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/ai/parse-message", bytes.NewBufferString(`{"message":"Ким должен мне 1000"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer token")
+	setupRouter(h).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !created {
+		t.Fatal("expected finance create debt to be executed")
 	}
 }

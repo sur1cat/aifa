@@ -5,12 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
 	"unicode"
 
+	"github.com/sur1cat/aifa/ai-service/internal/finance"
 	"github.com/sur1cat/aifa/ai-service/internal/localai"
 	"github.com/sur1cat/aifa/ai-service/internal/openai"
 
@@ -20,6 +22,7 @@ import (
 type AIHandler struct {
 	client      openAIClient
 	localClient localAIClient
+	finance     financeClient
 }
 
 type openAIClient interface {
@@ -40,8 +43,18 @@ type localAIClient interface {
 	BudgetSuggestions(ctx context.Context, transactions []localai.InsightTransaction, lookbackDays int, percentile float64) (*localai.BudgetSuggestResponse, error)
 }
 
-func NewAIHandler(c openAIClient, lc localAIClient) *AIHandler {
-	return &AIHandler{client: c, localClient: lc}
+type financeClient interface {
+	CreateDebt(ctx context.Context, authHeader string, req finance.CreateDebtRequest) error
+	ListDebts(ctx context.Context, authHeader string, settled *bool) ([]finance.Debt, error)
+	PatchDebt(ctx context.Context, authHeader, debtID string, req finance.PatchDebtRequest) error
+}
+
+func NewAIHandler(c openAIClient, lc localAIClient, fc ...financeClient) *AIHandler {
+	var financeClient financeClient
+	if len(fc) > 0 {
+		financeClient = fc[0]
+	}
+	return &AIHandler{client: c, localClient: lc, finance: financeClient}
 }
 
 func (h *AIHandler) chat(c *gin.Context, systemPrompt, userMessage string) (string, bool) {
@@ -70,10 +83,165 @@ func respondJSONOrRaw(c *gin.Context, raw string, target any) {
 	respondOK(c, target)
 }
 
+func authHeader(c *gin.Context) string {
+	return strings.TrimSpace(c.GetHeader("Authorization"))
+}
+
+func sameCounterparty(a, b string) bool {
+	a = strings.ToLower(strings.TrimSpace(a))
+	b = strings.ToLower(strings.TrimSpace(b))
+	if a == "" || b == "" {
+		return false
+	}
+	return a == b || strings.Contains(a, b) || strings.Contains(b, a)
+}
+
+func (h *AIHandler) executeCreateDebt(ctx context.Context, auth string, debt *commandDebt) error {
+	if h.finance == nil || debt == nil {
+		return nil
+	}
+	return h.finance.CreateDebt(ctx, auth, finance.CreateDebtRequest{
+		Counterparty: strings.TrimSpace(debt.Counterparty),
+		Direction:    debt.Direction,
+		Amount:       debt.Amount,
+	})
+}
+
+func (h *AIHandler) executeSettleDebt(ctx context.Context, auth string, counterparty string) error {
+	if h.finance == nil {
+		return nil
+	}
+	settled := false
+	debts, err := h.finance.ListDebts(ctx, auth, &settled)
+	if err != nil {
+		return err
+	}
+	for _, debt := range debts {
+		if sameCounterparty(debt.Counterparty, counterparty) {
+			return h.finance.PatchDebt(ctx, auth, debt.ID, finance.PatchDebtRequest{Settle: true})
+		}
+	}
+	return fmt.Errorf("active debt not found for %q", counterparty)
+}
+
+func (h *AIHandler) applyCommandSideEffects(c *gin.Context, body *commandResponse) bool {
+	if body == nil || body.Status != cmdStatusCompleted {
+		return true
+	}
+	auth := authHeader(c)
+	switch body.Intent {
+	case "create_debt":
+		if err := h.executeCreateDebt(c.Request.Context(), auth, body.Debt); err != nil {
+			slog.Error("execute create_debt", "err", err)
+			respondError(c, http.StatusBadGateway, codeAIError, "Failed to save debt")
+			return false
+		}
+	case "settle_debt":
+		if body.SettleDebt == nil {
+			return true
+		}
+		if err := h.executeSettleDebt(c.Request.Context(), auth, body.SettleDebt.Counterparty); err != nil {
+			slog.Error("execute settle_debt", "err", err)
+			respondError(c, http.StatusBadGateway, codeAIError, "Failed to settle debt")
+			return false
+		}
+	}
+	return true
+}
+
+func (h *AIHandler) liveDebtsContext(ctx context.Context, auth string) []map[string]any {
+	if h.finance == nil {
+		return nil
+	}
+	settled := false
+	debts, err := h.finance.ListDebts(ctx, auth, &settled)
+	if err != nil {
+		slog.Error("load active debts", "err", err)
+		return nil
+	}
+	out := make([]map[string]any, 0, len(debts))
+	for _, debt := range debts {
+		out = append(out, map[string]any{
+			"id":           debt.ID,
+			"counterparty": debt.Counterparty,
+			"amount":       debt.Amount,
+			"direction":    debt.Direction,
+			"settled":      debt.Settled,
+		})
+	}
+	return out
+}
+
+func (h *AIHandler) maybeRefreshDebtContext(ctx context.Context, auth string, reqCtx []map[string]any, parsed *localai.ParseMessageResponse) ([]map[string]any, bool) {
+	if parsed == nil || parsed.Intent != "update_debt" {
+		return reqCtx, false
+	}
+	if parsed.DebtUpdate == nil || parsed.DebtUpdate.Type != "not_found" {
+		return reqCtx, false
+	}
+	live := h.liveDebtsContext(ctx, auth)
+	if len(live) == 0 {
+		return reqCtx, false
+	}
+	return live, true
+}
+
+func (h *AIHandler) applyParsedDebtSideEffects(c *gin.Context, parsed *localai.ParseMessageResponse) bool {
+	if parsed == nil || h.finance == nil {
+		return true
+	}
+	auth := authHeader(c)
+	switch parsed.Intent {
+	case "create_debt":
+		if parsed.Counterparty == nil || parsed.DebtDirection == nil || parsed.Amount == nil {
+			return true
+		}
+		if *parsed.Amount <= 0 {
+			return true
+		}
+		if err := h.finance.CreateDebt(c.Request.Context(), auth, finance.CreateDebtRequest{
+			Counterparty: strings.TrimSpace(*parsed.Counterparty),
+			Direction:    *parsed.DebtDirection,
+			Amount:       *parsed.Amount,
+		}); err != nil {
+			slog.Error("execute parsed create_debt", "err", err)
+			respondError(c, http.StatusBadGateway, codeAIError, "Failed to save debt")
+			return false
+		}
+	case "update_debt":
+		if parsed.Counterparty == nil || parsed.DebtUpdate == nil {
+			return true
+		}
+		if parsed.DebtUpdate.Type == "not_found" {
+			return true
+		}
+		debtID := ""
+		if parsed.DebtUpdate.DebtID != nil {
+			debtID = strings.TrimSpace(*parsed.DebtUpdate.DebtID)
+		}
+		if debtID == "" {
+			return true
+		}
+		req := finance.PatchDebtRequest{}
+		if parsed.DebtUpdate.ReduceBy > 0 {
+			reduceBy := parsed.DebtUpdate.ReduceBy
+			req.ReduceBy = &reduceBy
+		} else {
+			req.Settle = true
+		}
+		if err := h.finance.PatchDebt(c.Request.Context(), auth, debtID, req); err != nil {
+			slog.Error("execute parsed update_debt", "err", err)
+			respondError(c, http.StatusBadGateway, codeAIError, "Failed to update debt")
+			return false
+		}
+	}
+	return true
+}
+
 var supportedDomainKeywords = []string{
 	// finance
 	"деньг", "финанс", "бюджет", "расход", "доход", "зарплат", "зп", "потрат", "купил", "купила",
-	"заплат", "перевод", "долг", "накоп", "сбереж", "кредит", "инвест", "expense", "income", "budget",
+	"заплат", "плач", "получа", "перевод", "долг", "долж", "одолж", "взайм", "взаймы", "накоп", "сбереж", "кредит", "инвест", "ежемесяч", "в месяц", "каждый месяц", "expense", "income", "budget",
 	"spent", "spend", "salary", "debt", "save", "saving", "savings", "transaction", "finance", "money",
 	// habits / goals
 	"привыч", "каждый день", "ежеднев", "стрик", "цель", "бег", "читать", "медит", "тренир",
@@ -518,6 +686,25 @@ type commandTransaction struct {
 	Date          string  `json:"date"`
 }
 
+type commandDebt struct {
+	Counterparty string  `json:"counterparty"`
+	Direction    string  `json:"direction"` // "i_owe" | "they_owe"
+	Amount       float64 `json:"amount"`
+	Note         string  `json:"note,omitempty"`
+}
+
+type commandSettleDebt struct {
+	Counterparty string `json:"counterparty"`
+}
+
+type commandRecurring struct {
+	Title     string  `json:"title"`
+	Amount    float64 `json:"amount"`
+	Type      string  `json:"type"`      // "income" | "expense"
+	Frequency string  `json:"frequency"` // "daily" | "weekly" | "monthly" | "yearly"
+	Category  string  `json:"category"`
+}
+
 // commandResponse is what we send back to the Flutter client.
 //
 // `status` and `message` are added on top of the OpenAI-emitted shape so the
@@ -534,6 +721,9 @@ type commandResponse struct {
 	Task          *commandTask        `json:"task,omitempty"`
 	Tasks         []commandTask       `json:"tasks,omitempty"`
 	Plan          *commandPlan        `json:"plan,omitempty"`
+	Debt          *commandDebt        `json:"debt,omitempty"`
+	SettleDebt    *commandSettleDebt  `json:"settle_debt,omitempty"`
+	Recurring     *commandRecurring   `json:"recurring,omitempty"`
 	Advice        string              `json:"advice,omitempty"`
 }
 
@@ -590,6 +780,59 @@ func deriveCommandStatus(body *commandResponse) []string {
 			return missing
 		}
 		body.Status = cmdStatusNeedsConfirmation
+	case "create_debt":
+		if body.Debt == nil {
+			body.Status = cmdStatusNeedsClarification
+			missing = append(missing, "debt")
+			return missing
+		}
+		if strings.TrimSpace(body.Debt.Counterparty) == "" {
+			missing = append(missing, "counterparty")
+		}
+		if body.Debt.Amount <= 0 {
+			missing = append(missing, "amount")
+		}
+		if body.Debt.Direction != "i_owe" && body.Debt.Direction != "they_owe" {
+			missing = append(missing, "direction")
+		}
+		if len(missing) > 0 {
+			body.Status = cmdStatusNeedsClarification
+			return missing
+		}
+		body.Status = cmdStatusCompleted
+	case "settle_debt":
+		if body.SettleDebt == nil || strings.TrimSpace(body.SettleDebt.Counterparty) == "" {
+			body.Status = cmdStatusNeedsClarification
+			missing = append(missing, "settle_debt")
+			return missing
+		}
+		body.Status = cmdStatusCompleted
+	case "create_recurring":
+		if body.Recurring == nil {
+			body.Status = cmdStatusNeedsClarification
+			missing = append(missing, "recurring")
+			return missing
+		}
+		if strings.TrimSpace(body.Recurring.Title) == "" {
+			missing = append(missing, "title")
+		}
+		if body.Recurring.Amount <= 0 {
+			missing = append(missing, "amount")
+		}
+		if body.Recurring.Type != "income" && body.Recurring.Type != "expense" {
+			missing = append(missing, "type")
+		}
+		if strings.TrimSpace(body.Recurring.Frequency) == "" {
+			missing = append(missing, "frequency")
+		}
+		if strings.TrimSpace(body.Recurring.Category) == "" {
+			missing = append(missing, "category")
+		}
+		if len(missing) > 0 {
+			body.Status = cmdStatusNeedsClarification
+			return missing
+		}
+		body.Status = cmdStatusCompleted
 	default:
 		// "chat", "advice", "unsupported", or unknown — surface the
 		// model's `response` text but let the client know there's no
@@ -655,6 +898,9 @@ func (h *AIHandler) Command(c *gin.Context) {
 	if body.Advice != "" && body.Message == "" {
 		body.Message = body.Advice
 	}
+	if !h.applyCommandSideEffects(c, &body) {
+		return
+	}
 	respondOK(c, body)
 }
 
@@ -674,10 +920,28 @@ func (h *AIHandler) ParseMessage(c *gin.Context) {
 		return
 	}
 
-	result, err := h.localClient.ParseMessage(c.Request.Context(), req.Message, req.DebtsContext)
+	auth := authHeader(c)
+	debtsContext := req.DebtsContext
+	if len(debtsContext) == 0 {
+		debtsContext = h.liveDebtsContext(c.Request.Context(), auth)
+	}
+
+	result, err := h.localClient.ParseMessage(c.Request.Context(), req.Message, debtsContext)
 	if err != nil {
 		slog.Error("localai parse-message", "err", err)
 		respondError(c, http.StatusServiceUnavailable, "AI_UNAVAILABLE", "AI local service unavailable")
+		return
+	}
+	refreshed, shouldRetry := h.maybeRefreshDebtContext(c.Request.Context(), auth, debtsContext, result)
+	if shouldRetry {
+		result, err = h.localClient.ParseMessage(c.Request.Context(), req.Message, refreshed)
+		if err != nil {
+			slog.Error("localai parse-message retry", "err", err)
+			respondError(c, http.StatusServiceUnavailable, "AI_UNAVAILABLE", "AI local service unavailable")
+			return
+		}
+	}
+	if !h.applyParsedDebtSideEffects(c, result) {
 		return
 	}
 	respondOK(c, result)

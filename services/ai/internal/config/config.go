@@ -23,6 +23,7 @@ type Config struct {
 
 	AILocalURL     string
 	AILocalTimeout time.Duration
+	FinanceURL     string
 }
 
 const defaultJWTSecret = "change-me-in-production-min-32-chars-long-secret"
@@ -59,6 +60,7 @@ func Load() (*Config, error) {
 		OpenAIModel:    env("OPENAI_MODEL", "gpt-4o-mini"),
 		AILocalURL:     env("AI_LOCAL_URL", "http://ai-local-service:8000"),
 		AILocalTimeout: time.Duration(aiLocalTimeoutSeconds) * time.Second,
+		FinanceURL:     env("FINANCE_SERVICE_URL", "http://finance-service:8080"),
 	}, nil
 }
 

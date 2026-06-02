@@ -1034,6 +1034,7 @@ class ParseMessageResponse(BaseModel):
     intent: str
     response: str
     transaction: Optional[ParsedTransactionSchema] = None
+    amount: Optional[float] = None
     counterparty: Optional[str] = None
     debt_direction: Optional[str] = None
     debt_update: Optional[dict] = None
@@ -1109,6 +1110,7 @@ def parse_message_endpoint(req: ParseMessageRequest):
         intent=result.intent,
         response=result.response,
         transaction=tx,
+        amount=result.amount,
         counterparty=result.counterparty,
         debt_direction=result.debt_direction,
         debt_update=result.debt_update,

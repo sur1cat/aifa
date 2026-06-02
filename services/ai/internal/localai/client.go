@@ -319,6 +319,7 @@ type ParseMessageResponse struct {
 	Intent           string             `json:"intent"`
 	Response         string             `json:"response"`
 	Transaction      *ParsedTransaction `json:"transaction,omitempty"`
+	Amount           *float64           `json:"amount,omitempty"`
 	Counterparty     *string            `json:"counterparty,omitempty"`
 	DebtDirection    *string            `json:"debt_direction,omitempty"`
 	DebtUpdate       *ParseDebtUpdate   `json:"debt_update,omitempty"`

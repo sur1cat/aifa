@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sur1cat/aifa/ai-service/internal/config"
+	"github.com/sur1cat/aifa/ai-service/internal/finance"
 	"github.com/sur1cat/aifa/ai-service/internal/handler"
 	"github.com/sur1cat/aifa/ai-service/internal/jwt"
 	"github.com/sur1cat/aifa/ai-service/internal/localai"
@@ -54,6 +55,7 @@ func main() {
 	}
 
 	localClient := localai.NewClient(cfg.AILocalURL, cfg.AILocalTimeout)
+	financeClient := finance.NewClient(cfg.FinanceURL)
 	if localClient.Healthy(ctx) {
 		log.Info("ai-local-service is available", "url", cfg.AILocalURL)
 	} else {
@@ -61,7 +63,7 @@ func main() {
 	}
 
 	authMW := middleware.NewAuth(validator, blacklist)
-	aiHandler := handler.NewAIHandler(openaiClient, localClient)
+	aiHandler := handler.NewAIHandler(openaiClient, localClient, financeClient)
 
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.RequestLogger(log))
