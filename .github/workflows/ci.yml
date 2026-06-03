@@ -2,7 +2,7 @@ name: CI (all services)
 
 on:
   push:
-    branches: [main, feature/diploma-final]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -45,7 +45,7 @@ jobs:
             cd ${{ secrets.SERVER_PATH }}
             git fetch origin
             git checkout main
-            git reset --hard origin/main
+            git pull
             docker compose up -d --build 
 
   docker:
