@@ -14,8 +14,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -34,6 +33,7 @@ LABELS_KZ = {
 }
 
 SENSITIVITY_THRESHOLDS = {"high": 2.0, "medium": 2.5, "low": 3.0}
+PAIR_RATIO_THRESHOLDS = {"high": 2.0, "medium": 3.0, "low": 4.0}
 
 
 @dataclass
@@ -59,6 +59,8 @@ class AnomalyResult:
     sensitivity: str
     z_threshold: float
     method: str             # "zscore" | "zscore+isolation_forest"
+    observation_days: int
+    enough_history: bool
     stats: dict             # summary per category
 
 
@@ -86,14 +88,41 @@ def _modified_zscore(values: np.ndarray) -> np.ndarray:
 def _zscore_anomalies(
     daily_cat: pd.DataFrame,      # columns: date, category, amount
     threshold: float,
+    sensitivity: str,
 ) -> list[AnomalyPoint]:
     results: list[AnomalyPoint] = []
 
     for cat, grp in daily_cat.groupby("category"):
-        if len(grp) < 3:
+        if len(grp) < 2:
             continue
 
         amounts = grp["amount"].values.astype(float)
+        if len(grp) == 2:
+            ratio_threshold = PAIR_RATIO_THRESHOLDS.get(sensitivity, 3.0)
+            ordered = grp.sort_values("amount").reset_index(drop=True)
+            low = float(ordered.loc[0, "amount"])
+            high = float(ordered.loc[1, "amount"])
+            ratio = high / max(low, 1.0)
+            if ratio >= ratio_threshold:
+                row = ordered.loc[1]
+                scale = max(high - low, low * 0.25, 1.0)
+                z = max(threshold, ratio)
+                results.append(AnomalyPoint(
+                    date=str(pd.Timestamp(row["date"]).date()),
+                    category=str(cat),
+                    label_ru=LABELS_RU.get(str(cat), str(cat)),
+                    label_kz=LABELS_KZ.get(str(cat), str(cat)),
+                    amount=round(high, 2),
+                    mean=round(low, 2),
+                    std=round(scale, 2),
+                    z_score=round(float(z), 3),
+                    severity=_severity(float(z), threshold),
+                    source="zscore",
+                    expected_lower=round(max(0.0, low * 0.8), 2),
+                    expected_upper=round(low * 1.2, 2),
+                ))
+            continue
+
         median = float(np.median(amounts))
         mad = float(np.median(np.abs(amounts - median)))
         # Для отображения expected range используем median±1.64*MAD/0.6745
@@ -129,7 +158,7 @@ def _isolation_anomalies(
     """Ловит аномальные дни по суммарным тратам — только если не пойман z-score."""
     from sklearn.ensemble import IsolationForest
 
-    if len(daily_total) < 10:
+    if len(daily_total) < 5:
         return []
 
     X = daily_total.values.reshape(-1, 1)
@@ -163,6 +192,49 @@ def _isolation_anomalies(
     return results
 
 
+def _single_spend_anomalies(
+    df: pd.DataFrame,
+    threshold: float,
+) -> list[AnomalyPoint]:
+    """Fallback for short histories: one spend dominates the whole window."""
+    if df.empty:
+        return []
+
+    total = float(df["amount"].sum())
+    if total <= 0:
+        return []
+
+    max_idx = df["amount"].idxmax()
+    row = df.loc[max_idx]
+    amount = float(row["amount"])
+    share = amount / total
+
+    threshold_map = {3.0: 0.70, 2.5: 0.55, 2.0: 0.45}
+    min_share = threshold_map.get(threshold, 0.55)
+    if share < min_share:
+        return []
+
+    cat = str(row["category"])
+    baseline = max(total - amount, 0.0)
+    z = max(threshold, share * 5.0)
+    return [
+        AnomalyPoint(
+            date=str(pd.Timestamp(row["date"]).date()),
+            category=cat,
+            label_ru=LABELS_RU.get(cat, cat),
+            label_kz=LABELS_KZ.get(cat, cat),
+            amount=round(amount, 2),
+            mean=round(baseline, 2),
+            std=round(max(baseline * 0.25, 1.0), 2),
+            z_score=round(float(z), 3),
+            severity=_severity(float(z), threshold),
+            source="single_spend",
+            expected_lower=0.0,
+            expected_upper=round(max(total * 0.30, baseline), 2),
+        )
+    ]
+
+
 def detect_anomalies(
     transactions: list[dict],
     sensitivity: str = "medium",
@@ -183,18 +255,30 @@ def detect_anomalies(
 
     daily_cat = df.groupby(["date", "category"], as_index=False)["amount"].sum()
     daily_total = df.groupby("date")["amount"].sum()
+    observation_days = int(df["date"].dt.date.nunique())
+    enough_history = observation_days >= 5 or any(
+        len(grp) >= 2 for _, grp in daily_cat.groupby("category")
+    )
 
-    zscore_hits = _zscore_anomalies(daily_cat, threshold)
+    zscore_hits = _zscore_anomalies(daily_cat, threshold, sensitivity)
     known = {a.date for a in zscore_hits}
 
     iso_hits = _isolation_anomalies(daily_total, threshold, known)
+    single_hits = _single_spend_anomalies(df, threshold)
+
+    seen = {(a.date, a.category, a.source) for a in zscore_hits + iso_hits}
+    for item in single_hits:
+        key = (item.date, item.category, item.source)
+        if key not in seen:
+            zscore_hits.append(item)
+            seen.add(key)
 
     all_anomalies = sorted(zscore_hits + iso_hits, key=lambda a: (-a.z_score, a.date))
 
     # stats per category
     stats: dict = {}
     for cat, grp in daily_cat.groupby("category"):
-        if len(grp) >= 3:
+        if len(grp) >= 2:
             stats[str(cat)] = {
                 "mean_daily": round(float(grp["amount"].mean()), 2),
                 "std_daily": round(float(grp["amount"].std()), 2),
@@ -202,7 +286,7 @@ def detect_anomalies(
                 "n_days": int(len(grp)),
             }
 
-    method = "zscore+isolation_forest" if len(daily_total) >= 10 else "zscore"
+    method = "zscore+isolation_forest" if len(daily_total) >= 5 else "zscore"
 
     return AnomalyResult(
         anomalies=all_anomalies,
@@ -210,5 +294,7 @@ def detect_anomalies(
         sensitivity=sensitivity,
         z_threshold=threshold,
         method=method,
+        observation_days=observation_days,
+        enough_history=enough_history,
         stats=stats,
     )

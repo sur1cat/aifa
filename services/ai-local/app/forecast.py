@@ -50,6 +50,14 @@ LABELS_KZ = {
     "transfer": "Аударым",
 }
 
+EXCLUDED_FORECAST_CATEGORIES = {
+    "income",
+    "salary",
+    "savings",
+    "gift",
+    "transfer",
+}
+
 
 def _holt_winters(series: pd.Series, horizon: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     from statsmodels.tsa.holtwinters import ExponentialSmoothing
@@ -165,7 +173,11 @@ def forecast_all(
     horizon_days: int = 30,
     ref_date: Optional[date] = None,
 ) -> list[CategoryForecast]:
-    categories = list({t["category"] for t in transactions if t.get("category")})
+    categories = sorted({
+        t["category"]
+        for t in transactions
+        if t.get("category") and str(t["category"]).strip().lower() not in EXCLUDED_FORECAST_CATEGORIES
+    })
     results = []
     for cat in categories:
         fc = forecast_category(transactions, cat, horizon_days, ref_date)

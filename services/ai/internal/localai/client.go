@@ -201,12 +201,14 @@ type AnomalyPoint struct {
 }
 
 type AnomalyResponse struct {
-	Anomalies      []AnomalyPoint     `json:"anomalies"`
-	TotalAnomalies int                `json:"total_anomalies"`
-	Sensitivity    string             `json:"sensitivity"`
-	ZThreshold     float64            `json:"z_threshold"`
-	Method         string             `json:"method"`
-	Stats          map[string]any     `json:"stats"`
+	Anomalies       []AnomalyPoint `json:"anomalies"`
+	TotalAnomalies  int            `json:"total_anomalies"`
+	Sensitivity     string         `json:"sensitivity"`
+	ZThreshold      float64        `json:"z_threshold"`
+	Method          string         `json:"method"`
+	ObservationDays int            `json:"observation_days"`
+	EnoughHistory   bool           `json:"enough_history"`
+	Stats           map[string]any `json:"stats"`
 }
 
 func (c *Client) DetectAnomalies(ctx context.Context, transactions []ForecastTransaction, sensitivity string) (*AnomalyResponse, error) {
@@ -309,7 +311,7 @@ type ParsedTransaction struct {
 
 // ParseDebtUpdate — данные частичного возврата долга.
 type ParseDebtUpdate struct {
-	Type     string  `json:"type"`      // "half" | "amount" | "not_found"
+	Type     string  `json:"type"` // "half" | "amount" | "not_found"
 	ReduceBy float64 `json:"reduce_by"`
 	DebtID   *string `json:"debt_id,omitempty"`
 }
@@ -327,8 +329,8 @@ type ParseMessageResponse struct {
 	ClarifyQuestions []string           `json:"clarify_questions,omitempty"`
 	// Task
 	TaskTitle    *string  `json:"task_title,omitempty"`
-	TaskTime     *string  `json:"task_time,omitempty"`  // "HH:MM"
-	TaskDay      *string  `json:"task_day,omitempty"`   // today | tomorrow | day_after_tomorrow
+	TaskTime     *string  `json:"task_time,omitempty"` // "HH:MM"
+	TaskDay      *string  `json:"task_day,omitempty"`  // today | tomorrow | day_after_tomorrow
 	TaskKeywords []string `json:"task_keywords,omitempty"`
 	// Habit
 	HabitTitle        *string `json:"habit_title,omitempty"`
@@ -362,37 +364,37 @@ type InsightTransaction struct {
 }
 
 type CategoryStat struct {
-	Category  string  `json:"category"`
-	LabelRu   string  `json:"label_ru"`
-	LabelKz   string  `json:"label_kz"`
-	Amount    float64 `json:"amount"`
-	Pct       float64 `json:"pct"`
-	TxCount   int     `json:"tx_count"`
-	AvgPerTx  float64 `json:"avg_per_tx"`
+	Category string  `json:"category"`
+	LabelRu  string  `json:"label_ru"`
+	LabelKz  string  `json:"label_kz"`
+	Amount   float64 `json:"amount"`
+	Pct      float64 `json:"pct"`
+	TxCount  int     `json:"tx_count"`
+	AvgPerTx float64 `json:"avg_per_tx"`
 }
 
 type SummaryResponse struct {
-	PeriodStart      string         `json:"period_start"`
-	PeriodEnd        string         `json:"period_end"`
-	TotalIncome      float64        `json:"total_income"`
-	TotalExpense     float64        `json:"total_expense"`
-	SavingsRate      float64        `json:"savings_rate"`
-	Net              float64        `json:"net"`
-	AvgDailyExpense  float64        `json:"avg_daily_expense"`
-	TopCategories    []CategoryStat `json:"top_categories"`
-	ExpenseTrend     string         `json:"expense_trend"`
-	ExpenseTrendPct  float64        `json:"expense_trend_pct"`
+	PeriodStart     string         `json:"period_start"`
+	PeriodEnd       string         `json:"period_end"`
+	TotalIncome     float64        `json:"total_income"`
+	TotalExpense    float64        `json:"total_expense"`
+	SavingsRate     float64        `json:"savings_rate"`
+	Net             float64        `json:"net"`
+	AvgDailyExpense float64        `json:"avg_daily_expense"`
+	TopCategories   []CategoryStat `json:"top_categories"`
+	ExpenseTrend    string         `json:"expense_trend"`
+	ExpenseTrendPct float64        `json:"expense_trend_pct"`
 }
 
 type BudgetSuggestion struct {
-	Category           string  `json:"category"`
-	LabelRu            string  `json:"label_ru"`
-	LabelKz            string  `json:"label_kz"`
-	CurrentMonthlyAvg  float64 `json:"current_monthly_avg"`
-	SuggestedLimit     float64 `json:"suggested_limit"`
-	OverspendMonths    int     `json:"overspend_months"`
-	Reason             string  `json:"reason"`
-	Priority           string  `json:"priority"`
+	Category          string  `json:"category"`
+	LabelRu           string  `json:"label_ru"`
+	LabelKz           string  `json:"label_kz"`
+	CurrentMonthlyAvg float64 `json:"current_monthly_avg"`
+	SuggestedLimit    float64 `json:"suggested_limit"`
+	OverspendMonths   int     `json:"overspend_months"`
+	Reason            string  `json:"reason"`
+	Priority          string  `json:"priority"`
 }
 
 type BudgetSuggestResponse struct {

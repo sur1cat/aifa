@@ -198,29 +198,36 @@ def budget_suggestions(
     for cat, grp in df.groupby("category"):
         cat = str(cat)
         monthly = grp.groupby("month")["amount"].sum()
-        if len(monthly) < 2:
-            continue
-
         monthly_vals = monthly.values.astype(float)
         avg = float(np.mean(monthly_vals))
-        suggested = float(np.percentile(monthly_vals, percentile))
-        suggested = round(suggested / 500) * 500  # округляем до 500
-
-        cv = float(np.std(monthly_vals) / avg) if avg > 0 else 0
-        overspend = int(np.sum(monthly_vals > suggested))
-
-        if cv > 0.5:
-            priority = "high"
-            reason = f"Траты нестабильны (разброс {round(cv*100)}%), стоит контролировать"
-        elif overspend >= len(monthly_vals) // 2:
-            priority = "high"
-            reason = f"Превышение лимита в {overspend} из {len(monthly_vals)} месяцев"
-        elif suggested < avg * 0.9:
-            priority = "medium"
-            reason = f"Средние траты {round(avg)} ₸, лимит поможет сэкономить"
+        if len(monthly_vals) == 1:
+            current = monthly_vals[0]
+            suggested = float(round(max(current * 0.9, 500.0) / 500) * 500)
+            overspend = 0
+            if current >= 10000:
+                priority = "medium"
+            else:
+                priority = "low"
+            reason = "Пока доступен только один месяц данных; лимит рассчитан по текущим тратам и станет точнее после накопления истории"
         else:
-            priority = "low"
-            reason = f"Траты стабильны, лимит для контроля"
+            suggested = float(np.percentile(monthly_vals, percentile))
+            suggested = round(suggested / 500) * 500  # округляем до 500
+
+            cv = float(np.std(monthly_vals) / avg) if avg > 0 else 0
+            overspend = int(np.sum(monthly_vals > suggested))
+
+            if cv > 0.5:
+                priority = "high"
+                reason = f"Траты нестабильны (разброс {round(cv*100)}%), стоит контролировать"
+            elif overspend >= len(monthly_vals) // 2:
+                priority = "high"
+                reason = f"Превышение лимита в {overspend} из {len(monthly_vals)} месяцев"
+            elif suggested < avg * 0.9:
+                priority = "medium"
+                reason = f"Средние траты {round(avg)} ₸, лимит поможет сэкономить"
+            else:
+                priority = "low"
+                reason = f"Траты стабильны, лимит для контроля"
 
         suggestions.append(BudgetSuggestion(
             category=cat,

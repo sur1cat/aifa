@@ -484,3 +484,52 @@ func TestParseMessageCreateDebtExecutesFinanceCreate(t *testing.T) {
 		t.Fatal("expected finance create debt to be executed")
 	}
 }
+
+func TestSanitizeExpenseAnalysisBodyClampsSavingsAndDifficulty(t *testing.T) {
+	potential := 999999.0
+	body := expenseResponseBody{
+		SavingsSuggestions: []savingsSuggestion{
+			{
+				Category:         "Food",
+				CurrentSpending:  0,
+				SuggestedBudget:  0,
+				PotentialSavings: 999999,
+				Reason:           "test",
+				Difficulty:       "easy",
+			},
+		},
+		QuestionableTransactions: []questionableTx{
+			{
+				TransactionID:    "tx-1",
+				PotentialSavings: &potential,
+			},
+		},
+	}
+	payload := expensePayload{
+		Transactions: []expensePayloadTx{
+			{ID: "tx-1", Amount: 60000, Type: "expense", Category: "shopping"},
+			{ID: "tx-2", Amount: 1000, Type: "expense", Category: "food"},
+		},
+	}
+
+	sanitizeExpenseAnalysisBody(&body, payload)
+
+	if got := body.SavingsSuggestions[0].CurrentSpending; got != 1000 {
+		t.Fatalf("expected current spending 1000, got %v", got)
+	}
+	if got := body.SavingsSuggestions[0].PotentialSavings; got != 150 {
+		t.Fatalf("expected potential savings 150, got %v", got)
+	}
+	if got := body.SavingsSuggestions[0].SuggestedBudget; got != 850 {
+		t.Fatalf("expected suggested budget 850, got %v", got)
+	}
+	if got := body.SavingsSuggestions[0].Difficulty; got != "medium" {
+		t.Fatalf("expected difficulty medium, got %q", got)
+	}
+	if body.QuestionableTransactions[0].PotentialSavings == nil {
+		t.Fatal("expected questionable transaction potential savings")
+	}
+	if got := *body.QuestionableTransactions[0].PotentialSavings; got != 60000 {
+		t.Fatalf("expected clamped questionable savings 60000, got %v", got)
+	}
+}

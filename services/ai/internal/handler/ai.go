@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net/http"
 	"strings"
 	"unicode"
@@ -466,7 +467,8 @@ func (h *AIHandler) GenerateInsight(c *gin.Context) {
 // ---------------- expense analysis ----------------
 
 type expenseRequest struct {
-	Data string `json:"data" binding:"required"`
+	Data   string `json:"data" binding:"required"`
+	Locale string `json:"locale,omitempty"`
 }
 
 type expenseInsightItem struct {
@@ -500,21 +502,253 @@ type expenseResponseBody struct {
 	SavingsSuggestions       []savingsSuggestion  `json:"savingsSuggestions"`
 }
 
+const expenseAnalysisTranslatePrompt = `You are a strict JSON translator for Aifa expense-analysis responses.
+
+Task:
+- Translate ALL human-readable string fields in the provided JSON into the requested target language.
+- Preserve the JSON structure exactly.
+- Do NOT add, remove, or rename fields.
+- Do NOT change any numeric values.
+- Keep difficulty values exactly as easy, medium, or hard.
+
+Human-readable fields include:
+- insights[].title
+- insights[].message
+- questionableTransactions[].reason
+- questionableTransactions[].category
+- savingsSuggestions[].category
+- savingsSuggestions[].reason
+
+Output ONLY valid JSON.`
+
+type expensePayloadTx struct {
+	ID       string  `json:"id"`
+	Amount   float64 `json:"amount"`
+	Type     string  `json:"type"`
+	Category string  `json:"category"`
+}
+
+type expensePayload struct {
+	Transactions []expensePayloadTx `json:"transactions"`
+}
+
+func normalizeExpenseCategory(raw string) string {
+	s := strings.ToLower(strings.TrimSpace(raw))
+	switch {
+	case s == "":
+		return ""
+	case strings.Contains(s, "cafe"), strings.Contains(s, "café"),
+		strings.Contains(s, "restaurant"), strings.Contains(s, "кафе"),
+		strings.Contains(s, "мейрам"), strings.Contains(s, "ресторан"):
+		return "cafe"
+	case strings.Contains(s, "food"), strings.Contains(s, "grocery"),
+		strings.Contains(s, "grocer"), strings.Contains(s, "продукт"),
+		strings.Contains(s, "азық"), strings.Contains(s, "еда"),
+		strings.Contains(s, "food spending"):
+		return "food"
+	case strings.Contains(s, "shopping"), strings.Contains(s, "purchase"),
+		strings.Contains(s, "shop"), strings.Contains(s, "покуп"),
+		strings.Contains(s, "сатып"):
+		return "shopping"
+	case strings.Contains(s, "education"), strings.Contains(s, "образ"),
+		strings.Contains(s, "білім"):
+		return "education"
+	case strings.Contains(s, "entertain"), strings.Contains(s, "развлеч"),
+		strings.Contains(s, "ойын"), strings.Contains(s, "kino"),
+		strings.Contains(s, "cinema"):
+		return "entertainment"
+	case strings.Contains(s, "health"), strings.Contains(s, "денса"),
+		strings.Contains(s, "здоров"):
+		return "health"
+	case strings.Contains(s, "utilit"), strings.Contains(s, "bill"),
+		strings.Contains(s, "коммун"):
+		return "utilities"
+	case strings.Contains(s, "transport"), strings.Contains(s, "көлік"),
+		strings.Contains(s, "транспорт"), strings.Contains(s, "road"):
+		return "transport"
+	case strings.Contains(s, "travel"), strings.Contains(s, "путеше"),
+		strings.Contains(s, "саяхат"):
+		return "travel"
+	case strings.Contains(s, "transfer"), strings.Contains(s, "аудар"),
+		strings.Contains(s, "перевод"):
+		return "transfer"
+	case strings.Contains(s, "income"), strings.Contains(s, "salary"),
+		strings.Contains(s, "доход"), strings.Contains(s, "кіріс"),
+		strings.Contains(s, "жалақы"):
+		return "income"
+	default:
+		return s
+	}
+}
+
+func roundMoney(v float64) float64 {
+	return math.Round(v*100) / 100
+}
+
+func clamp(v, minV, maxV float64) float64 {
+	if v < minV {
+		return minV
+	}
+	if v > maxV {
+		return maxV
+	}
+	return v
+}
+
+func difficultyFromSavingsRatio(ratio float64) string {
+	switch {
+	case ratio <= 0.10:
+		return "easy"
+	case ratio <= 0.20:
+		return "medium"
+	default:
+		return "hard"
+	}
+}
+
+func parseExpensePayload(raw string) expensePayload {
+	var payload expensePayload
+	_ = json.Unmarshal([]byte(raw), &payload)
+	return payload
+}
+
+func firstExpenseInsightTitle(body *expenseResponseBody) string {
+	if body == nil || len(body.Insights) == 0 {
+		return ""
+	}
+	return body.Insights[0].Title
+}
+
+func firstExpenseInsightMessage(body *expenseResponseBody) string {
+	if body == nil || len(body.Insights) == 0 {
+		return ""
+	}
+	return body.Insights[0].Message
+}
+
+func (h *AIHandler) translateExpenseAnalysisBody(c *gin.Context, locale string, body *expenseResponseBody) *expenseResponseBody {
+	if body == nil {
+		return nil
+	}
+	target := normalizeInsightLocale(locale)
+	if target == "" || target == "en" {
+		return body
+	}
+	rawBody, err := json.Marshal(body)
+	if err != nil {
+		return body
+	}
+	targetLang := map[string]string{
+		"ru": "Russian",
+		"kk": "Kazakh",
+	}[target]
+	userMessage := fmt.Sprintf("Translate this expense-analysis JSON to %s.\n\nJSON:\n%s", targetLang, string(rawBody))
+	raw, ok := h.chat(c, expenseAnalysisTranslatePrompt, userMessage)
+	if !ok {
+		return nil
+	}
+	var translated expenseResponseBody
+	if err := json.Unmarshal([]byte(raw), &translated); err != nil {
+		return body
+	}
+	return &translated
+}
+
+func sanitizeExpenseAnalysisBody(body *expenseResponseBody, payload expensePayload) {
+	if body == nil {
+		return
+	}
+
+	categoryTotals := map[string]float64{}
+	txAmounts := map[string]float64{}
+	for _, tx := range payload.Transactions {
+		if strings.TrimSpace(tx.Type) != "expense" || tx.Amount <= 0 {
+			continue
+		}
+		cat := normalizeExpenseCategory(tx.Category)
+		if cat != "" {
+			categoryTotals[cat] += tx.Amount
+		}
+		if id := strings.TrimSpace(tx.ID); id != "" {
+			txAmounts[id] = tx.Amount
+		}
+	}
+
+	for i := range body.SavingsSuggestions {
+		s := &body.SavingsSuggestions[i]
+		actual := categoryTotals[normalizeExpenseCategory(s.Category)]
+		if actual <= 0 {
+			actual = s.CurrentSpending
+		}
+		if actual <= 0 {
+			continue
+		}
+
+		actual = roundMoney(actual)
+		s.CurrentSpending = actual
+
+		targetBudget := s.SuggestedBudget
+		if targetBudget <= 0 || targetBudget >= actual {
+			if s.PotentialSavings > 0 && s.PotentialSavings < actual {
+				targetBudget = actual - s.PotentialSavings
+			} else {
+				targetBudget = actual * 0.85
+			}
+		}
+
+		maxSavings := actual * 0.25
+		actualSavings := clamp(actual-targetBudget, 0, maxSavings)
+		targetBudget = roundMoney(actual - actualSavings)
+		actualSavings = roundMoney(actualSavings)
+
+		s.SuggestedBudget = targetBudget
+		s.PotentialSavings = actualSavings
+		s.Difficulty = difficultyFromSavingsRatio(actualSavings / actual)
+	}
+
+	for i := range body.QuestionableTransactions {
+		q := &body.QuestionableTransactions[i]
+		if q.PotentialSavings == nil {
+			continue
+		}
+		if amt, ok := txAmounts[strings.TrimSpace(q.TransactionID)]; ok && amt > 0 {
+			v := roundMoney(clamp(*q.PotentialSavings, 0, amt))
+			q.PotentialSavings = &v
+		}
+	}
+}
+
 func (h *AIHandler) GenerateExpenseAnalysis(c *gin.Context) {
 	var req expenseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, codeValidation, err.Error())
 		return
 	}
+	userMessage := "Analyze this spending data and identify patterns, questionable expenses, and savings opportunities:\n\n" + req.Data
+	if instruction := insightLocaleInstruction(req.Locale); instruction != "" {
+		userMessage = instruction + "\n\n" + userMessage
+	}
 	raw, ok := h.chat(c,
 		openai.InsightPrompt(openai.InsightExpenseAnalysis),
-		"Analyze this spending data and identify patterns, questionable expenses, and savings opportunities:\n\n"+req.Data,
+		userMessage,
 	)
 	if !ok {
 		return
 	}
 	var body expenseResponseBody
-	respondJSONOrRaw(c, raw, &body)
+	if err := json.Unmarshal([]byte(raw), &body); err != nil {
+		respondOK(c, gin.H{"raw": raw})
+		return
+	}
+	if normalized := normalizeInsightLocale(req.Locale); normalized == "ru" || normalized == "kk" {
+		translated := h.translateExpenseAnalysisBody(c, req.Locale, &body)
+		if translated == nil {
+			return
+		}
+		body = *translated
+	}
+	sanitizeExpenseAnalysisBody(&body, parseExpensePayload(req.Data))
+	respondOK(c, body)
 }
 
 // ---------------- goal → habits ----------------

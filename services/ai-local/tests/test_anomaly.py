@@ -29,6 +29,33 @@ class AnomalyUnitTests(unittest.TestCase):
         self.assertGreaterEqual(result.total_anomalies, 1)
         self.assertEqual(result.anomalies[0].category, "food")
 
+    def test_detect_anomalies_flags_pair_spike_with_short_history(self) -> None:
+        txs = [
+            {"date": "2026-05-01", "amount": 900.0, "category": "shopping"},
+            {"date": "2026-05-02", "amount": 60000.0, "category": "shopping"},
+        ]
+
+        result = anomaly.detect_anomalies(txs, sensitivity="medium")
+
+        self.assertEqual(result.total_anomalies, 1)
+        self.assertEqual(result.anomalies[0].category, "shopping")
+        self.assertEqual(result.anomalies[0].amount, 60000.0)
+
+    def test_detect_anomalies_flags_dominant_single_spend_with_short_history(self) -> None:
+        txs = [
+            {"date": "2026-05-01", "amount": 60000.0, "category": "shopping"},
+            {"date": "2026-05-01", "amount": 500.0, "category": "food"},
+            {"date": "2026-05-02", "amount": 900.0, "category": "gift"},
+        ]
+
+        result = anomaly.detect_anomalies(txs, sensitivity="medium")
+
+        self.assertEqual(result.total_anomalies, 1)
+        self.assertEqual(result.anomalies[0].category, "shopping")
+        self.assertEqual(result.anomalies[0].source, "single_spend")
+        self.assertFalse(result.enough_history)
+        self.assertEqual(result.observation_days, 2)
+
     @patch("app.anomaly._isolation_anomalies")
     def test_detect_anomalies_includes_isolation_hits_for_long_series(self, mock_iso) -> None:
         mock_iso.return_value = [

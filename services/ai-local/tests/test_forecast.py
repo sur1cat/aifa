@@ -64,6 +64,20 @@ class ForecastUnitTests(unittest.TestCase):
 
         self.assertGreaterEqual(results[0].total_predicted, results[-1].total_predicted)
 
+    def test_forecast_all_excludes_non_spending_like_categories(self) -> None:
+        txs = [
+            {"date": "2026-05-01", "amount": 1000.0, "category": "food"},
+            {"date": "2026-05-02", "amount": 1200.0, "category": "food"},
+            {"date": "2026-05-03", "amount": 50000.0, "category": "salary"},
+            {"date": "2026-05-04", "amount": 7000.0, "category": "savings"},
+            {"date": "2026-05-05", "amount": 900.0, "category": "gift"},
+            {"date": "2026-05-06", "amount": 3000.0, "category": "transfer"},
+        ]
+
+        results = forecast.forecast_all(txs, horizon_days=1, ref_date=date(2026, 5, 6))
+
+        self.assertEqual([r.category for r in results], ["food"])
+
 
 if __name__ == "__main__":
     unittest.main()
