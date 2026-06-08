@@ -40,6 +40,7 @@ type CreateDebtRequest struct {
 
 type PatchDebtRequest struct {
 	ReduceBy *float64 `json:"reduce_by,omitempty"`
+	Amount   *float64 `json:"amount,omitempty"`
 	Settle   bool     `json:"settle,omitempty"`
 }
 

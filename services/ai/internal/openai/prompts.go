@@ -516,8 +516,11 @@ HIGHEST PRIORITY FINANCE OVERRIDE:
 - "create_transaction" — user reports a ONE-TIME spending or income with specific amount today (e.g. "потратил 7000 на обед", "купил кофе за 800", "получил 5000 от Кима"). NEVER use for savings goals or investment income.
 - "create_habit"       — user wants to form a new habit
 - "create_task"        — user wants to add a single task
+- "update_task"        — user wants to edit/reschedule an existing task (e.g. "перенеси задачу на 2 дня", "передвинь запись к психологу на 2 дня вперед")
+- "delete_task"        — user wants to delete one or more existing tasks (e.g. "удали задачу", "удали все задачи по бегу")
 - "create_plan"        — user wants a compound plan: goal + habits + tasks together (e.g. "хочу накопить на машину", "хочу похудеть")
-- "create_debt"        — user EXPLICITLY records a debt using words like "в долг", "взаймы", "одолжил", "должен" (e.g. "я должен Киму 5000", "дал Саше в долг 3000", "одолжил другу 2000", "[имя] должен мне [сумма]"). CRITICAL: "дал/перевёл/отправил [имя] [сумма]" WITHOUT "в долг/взаймы" = create_transaction (expense, category=transfer), NOT create_debt.
+- "create_debt"        — user EXPLICITLY records a NEW debt using words like "в долг", "взаймы", "одолжил", "должен" (e.g. "я должен Киму 5000", "дал Саше в долг 3000", "одолжил другу 2000", "[имя] должен мне [сумма]"). CRITICAL: "дал/перевёл/отправил [имя] [сумма]" WITHOUT "в долг/взаймы" = create_transaction (expense, category=transfer), NOT create_debt.
+- "update_debt"        — user CORRECTS or REPLACES an existing debt amount (e.g. "ой, он должен 10000", "не 1000, а 10000", "исправь долг Кима на 10000", "обнови долг Кима: 10000"). Use conversation history and debt context to infer the same counterparty when the message is a short correction.
 - "settle_debt"        — someone RETURNED money or a debt is CLOSED (e.g. "Нурс вернул мне 300", "Ким вернул долг", "Саша отдал деньги", "закрыть долг Кима", "вернул деньги Саше", "получил долг от [имя]") — IMPORTANT: if someone returns money that was previously a debt, use settle_debt NOT create_transaction
 - "create_recurring"   — user describes a REGULAR/RECURRING income or expense using habitual/present tense (e.g. "у меня зп 300к", "получаю зарплату 500к каждый месяц", "с инвестиций капает 30к", "дивиденды 50к в месяц", "пассивный доход 20к", "плачу за интернет 5000 в месяц", "трачу на проезд 10 тг в день", "откладываю 30к каждый день"). CRITICAL: "получил зарплату", "пришла зарплата", "зачислили зп" = past tense = ONE-TIME income today → use create_transaction, NOT create_recurring.
 - "advice"             — user asks for analysis or recommendation based on their data (e.g. "сколько я потратил на еду?")
@@ -530,7 +533,7 @@ food, cafe, transport, health, entertainment, utilities, shopping, education, tr
 ## Output Format (JSON ONLY, no markdown, no explanation outside JSON):
 
 {
-  "intent": "create_transaction|create_habit|create_task|create_plan|create_debt|settle_debt|create_recurring|advice|chat|unsupported",
+  "intent": "create_transaction|create_habit|create_task|update_task|delete_task|create_plan|create_debt|update_debt|settle_debt|create_recurring|advice|chat|unsupported",
   "status": "completed",
   "response": "Conversational reply to show the user (required for all intents)",
   "transaction": {
@@ -551,7 +554,19 @@ food, cafe, transport, health, entertainment, utilities, shopping, education, tr
   "task": {
     "title": "Task title",
     "description": "Optional details",
-    "priority": "low|medium|high"
+    "priority": "low|medium|high",
+    "due_date": "YYYY-MM-DD absolute local date"
+  },
+  "task_update": {
+    "task_keywords": ["keyword1", "keyword2"],
+    "due_date": "YYYY-MM-DD absolute local date or null",
+    "due_date_shift_days": 2,
+    "title": "Optional replacement title if user renames the task"
+  },
+  "task_delete": {
+    "task_keywords": ["keyword1", "keyword2"],
+    "delete_all_matches": true,
+    "title": "Optional exact task title if user names it directly"
   },
   "tasks": [
     { "title": "...", "description": "...", "priority": "low|medium|high" }
@@ -598,9 +613,24 @@ food, cafe, transport, health, entertainment, utilities, shopping, education, tr
 - "status" is always "completed" for action intents (create_*, settle_*)
 - Only populate fields relevant to the intent (omit others or set null)
 - "create_transaction" — one-time payment or income; MUST populate "transaction" with all fields; "date" is "today" unless specified
+- Messages like "продал X за Y", "я продал X за Y", "sold X for Y", "sell X for Y" are ONE-TIME income and MUST use "create_transaction" with type="income".
+- "create_task" — MUST populate "task.due_date" as an absolute ISO date in YYYY-MM-DD using the user's local current date provided in the system prompt. Do NOT return relative words like "today" or "tomorrow" inside task.due_date.
+- "update_task" — MUST populate "task_update.task_keywords" with 1-3 search keywords for the existing task. If the user says "на 2 дня вперед/назад", populate "due_date_shift_days" with a signed integer. If the user gives an exact new date, populate "due_date" as YYYY-MM-DD.
+- "update_task" — when the user refers to an existing task by description ("запись к психологу", "задача по бегу"), return search keywords that help the client find the existing task. If the user says "через 2 дня", "на 2 дня вперед", "перенеси на послезавтра", populate either "due_date_shift_days" or absolute "due_date".
+- "delete_task" — MUST populate "task_delete.task_keywords" with 1-3 search keywords for the task to delete. Set "delete_all_matches"=true for requests like "удали все задачи по бегу", otherwise false.
+- "delete_task" — use this only for deleting existing tasks, not for marking them completed.
 - For expense transactions: type="expense"; for income (зарплата, получил, пришло, salary): type="income"
 - "create_recurring" — use ONLY when user describes a habit/schedule (habitual present tense: "получаю", "плачу", "трачу", "капает", "у меня зп X"). Past tense ("получил", "пришло", "зачислили", "заплатил") → create_transaction. Infer frequency: "в день"/"каждый день"→daily, "в неделю"/"еженедельно"→weekly, "в месяц"/"каждый месяц"→monthly
 - "create_debt": direction "i_owe" = I owe them (я должен, взял в долг у кого-то); "they_owe" = they owe me (они должны мне, я одолжил им, дал в долг кому-то). CRITICAL: simple "дал/перевёл [имя] [сумма]" without debt keywords → create_transaction (type=expense, category=transfer)
+- "update_debt": MUST populate "debt" with the FINAL corrected amount, not the delta. Example: if the user says "ой, он должен 10000", debt.amount must be 10000. Reuse the same direction semantics as create_debt.
+- Debt direction disambiguation:
+  - "[имя] должен мне [сумма]" => direction="they_owe"
+  - "мне должен [имя] [сумма]" => direction="they_owe"
+  - "[имя] взял в долг [сумма]" => direction="they_owe"
+  - "[имя] занял у меня [сумма]" => direction="they_owe"
+  - "я должен [имя] [сумма]" => direction="i_owe"
+  - "я взял в долг у [имя] [сумма]" => direction="i_owe"
+  - "я занял у [имя] [сумма]" => direction="i_owe"
 - "settle_debt": CRITICAL — "вернул/отдал/закрыл долг" → settle_debt; only populate "settle_debt.counterparty" — name of the person (ignore the amount, find by name)
 - category must be one of the listed values: продукты/еда→food, кафе/ресторан→cafe, такси/проезд/транспорт→transport, продукты→food, одежда→shopping
 - "create_plan" must populate "plan" with a goal and habits; add savings_rule for financial/savings goals
@@ -652,8 +682,8 @@ Analyze the goal and generate 2-4 specific clarifying questions that will help y
   "text" and OMIT "options" entirely (do not return an empty array).
 - Output ONLY valid JSON, no other text`
 
-func ReceiptScanPrompt() string  { return promptReceiptScan }
-func VoiceParsePrompt() string   { return promptVoiceParse }
+func ReceiptScanPrompt() string { return promptReceiptScan }
+func VoiceParsePrompt() string  { return promptVoiceParse }
 
 const promptReceiptScan = `You are a receipt OCR assistant for a personal finance app.
 Extract transaction data from the receipt image and return ONLY valid JSON.

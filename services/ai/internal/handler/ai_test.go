@@ -362,6 +362,54 @@ func TestIsSupportedDomainMessageAcceptsDebtWording(t *testing.T) {
 	}
 }
 
+func TestIsSupportedDomainMessageAcceptsSaleWording(t *testing.T) {
+	cases := []string{
+		"я продал свой сайт за 1кк",
+		"продала ноутбук за 300000",
+		"sold my course for 500",
+	}
+	for _, tc := range cases {
+		if !isSupportedDomainMessage(tc) {
+			t.Fatalf("expected sale wording to be supported: %q", tc)
+		}
+	}
+}
+
+func TestIsSupportedDomainMessageAcceptsTaskNaturalWording(t *testing.T) {
+	cases := []string{
+		"видишь запись купить скоросшиватель? передвинь на 2 дня вперед",
+		"мне 09.06 надо встать в 6 утра",
+	}
+	for _, tc := range cases {
+		if !isSupportedDomainMessage(tc) {
+			t.Fatalf("expected task wording to be supported: %q", tc)
+		}
+	}
+}
+
+func TestIsContextualFollowUpAcceptsShortAffirmation(t *testing.T) {
+	history := []historyMessage{
+		{Role: "user", Content: "поставь цель стать быстрее леопарда"},
+		{Role: "assistant", Content: "Я могу помочь создать план тренировок. Готовы ли вы начать?"},
+	}
+	if !isContextualFollowUp("го", history) {
+		t.Fatal(`expected "го" to be treated as contextual follow-up`)
+	}
+}
+
+func TestIsContextualFollowUpAcceptsShortFreeformReplyAfterAssistantQuestion(t *testing.T) {
+	history := []historyMessage{
+		{Role: "user", Content: "поставь цель стать быстрее леопарда"},
+		{Role: "assistant", Content: "Отлично. Как вы хотите организовать свои силовые тренировки? Если есть идеи, поделитесь ими!"},
+	}
+	if !isContextualFollowUp("не знаю", history) {
+		t.Fatal(`expected "не знаю" to be treated as contextual follow-up`)
+	}
+	if !isContextualFollowUp("как хочешь", history) {
+		t.Fatal(`expected "как хочешь" to be treated as contextual follow-up`)
+	}
+}
+
 func TestCommandCreateDebtReturnsCompleted(t *testing.T) {
 	created := false
 	h := NewAIHandler(&fakeOpenAIClient{
@@ -411,6 +459,108 @@ func TestCommandCreateDebtReturnsCompleted(t *testing.T) {
 	}
 }
 
+func TestCommandCreateDebtNormalizesDirectionForVzyalVDolg(t *testing.T) {
+	created := false
+	h := NewAIHandler(&fakeOpenAIClient{
+		chatFn: func(ctx context.Context, systemPrompt, userMessage string) (string, error) {
+			return `{
+				"intent":"create_debt",
+				"response":"Записал, что Нурс взял у вас в долг 789.",
+				"debt":{
+					"counterparty":"Нурс",
+					"direction":"i_owe",
+					"amount":789
+				}
+			}`, nil
+		},
+	}, &fakeLocalAIClient{}, &fakeFinanceClient{
+		createDebtFn: func(ctx context.Context, authHeader string, req finance.CreateDebtRequest) error {
+			created = true
+			if req.Counterparty != "Нурс" || req.Direction != "they_owe" || req.Amount != 789 {
+				t.Fatalf("unexpected create debt request after normalization: %+v", req)
+			}
+			return nil
+		},
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/ai/command", bytes.NewBufferString(`{"message":"у меня Нурс взял в долг 789"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer token")
+	setupRouter(h).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	payload := decodeData(t, rec)
+	data := payload["data"].(map[string]any)
+	debt := data["debt"].(map[string]any)
+	if debt["direction"] != "they_owe" {
+		t.Fatalf("expected normalized they_owe direction, got %v", debt["direction"])
+	}
+	if !created {
+		t.Fatal("expected finance create debt to be executed")
+	}
+}
+
+func TestCommandCreateDebtCorrectionUpdatesExistingDebt(t *testing.T) {
+	created := false
+	patched := false
+	h := NewAIHandler(&fakeOpenAIClient{
+		chatFn: func(ctx context.Context, systemPrompt, userMessage string) (string, error) {
+			return `{
+				"intent":"create_debt",
+				"response":"Теперь он должен вам 10000.",
+				"debt":{
+					"counterparty":"Ким",
+					"direction":"they_owe",
+					"amount":10000
+				}
+			}`, nil
+		},
+	}, &fakeLocalAIClient{}, &fakeFinanceClient{
+		createDebtFn: func(ctx context.Context, authHeader string, req finance.CreateDebtRequest) error {
+			created = true
+			return nil
+		},
+		listDebtsFn: func(ctx context.Context, authHeader string, settled *bool) ([]finance.Debt, error) {
+			return []finance.Debt{{
+				ID:           "debt-1",
+				Counterparty: "Ким",
+				Direction:    "they_owe",
+				Amount:       1000,
+				Settled:      false,
+			}}, nil
+		},
+		patchDebtFn: func(ctx context.Context, authHeader, debtID string, req finance.PatchDebtRequest) error {
+			patched = true
+			if debtID != "debt-1" {
+				t.Fatalf("unexpected debt id: %s", debtID)
+			}
+			if req.Amount == nil || *req.Amount != 10000 {
+				t.Fatalf("expected exact amount update to 10000, got %+v", req)
+			}
+			return nil
+		},
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/ai/command", bytes.NewBufferString(`{"message":"ой, он должен 10000"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer token")
+	setupRouter(h).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if created {
+		t.Fatal("expected correction to update existing debt, not create a new one")
+	}
+	if !patched {
+		t.Fatal("expected existing debt to be patched")
+	}
+}
+
 func TestCommandCreateRecurringReturnsCompleted(t *testing.T) {
 	h := NewAIHandler(&fakeOpenAIClient{
 		chatFn: func(ctx context.Context, systemPrompt, userMessage string) (string, error) {
@@ -443,6 +593,45 @@ func TestCommandCreateRecurringReturnsCompleted(t *testing.T) {
 	}
 	if data["intent"] != "create_recurring" {
 		t.Fatalf("expected create_recurring intent, got %v", data["intent"])
+	}
+}
+
+func TestDeriveCommandStatusAcceptsUpdateTask(t *testing.T) {
+	shift := 2
+	body := &commandResponse{
+		Intent: "update_task",
+		TaskUpdate: &commandTaskUpdate{
+			TaskKeywords:     []string{"психолог"},
+			DueDateShiftDays: &shift,
+		},
+	}
+
+	missing := deriveCommandStatus(body)
+
+	if len(missing) != 0 {
+		t.Fatalf("expected no missing fields, got %v", missing)
+	}
+	if body.Status != cmdStatusCompleted {
+		t.Fatalf("expected completed, got %q", body.Status)
+	}
+}
+
+func TestDeriveCommandStatusAcceptsDeleteTask(t *testing.T) {
+	body := &commandResponse{
+		Intent: "delete_task",
+		TaskDelete: &commandTaskDelete{
+			TaskKeywords:     []string{"бег"},
+			DeleteAllMatches: true,
+		},
+	}
+
+	missing := deriveCommandStatus(body)
+
+	if len(missing) != 0 {
+		t.Fatalf("expected no missing fields, got %v", missing)
+	}
+	if body.Status != cmdStatusCompleted {
+		t.Fatalf("expected completed, got %q", body.Status)
 	}
 }
 

@@ -104,6 +104,7 @@ func (h *DebtHandler) Create(c *gin.Context) {
 
 type patchDebtRequest struct {
 	ReduceBy *float64 `json:"reduce_by,omitempty"`
+	Amount   *float64 `json:"amount,omitempty"`
 	Settle   bool     `json:"settle,omitempty"`
 }
 
@@ -121,12 +122,19 @@ func (h *DebtHandler) Patch(c *gin.Context) {
 	}
 
 	var d *domain.Debt
+	if req.Amount != nil && *req.Amount < 0 {
+		respondError(c, http.StatusBadRequest, codeValidation, "amount must be >= 0")
+		return
+	}
+
 	if req.Settle {
 		d, err = h.debts.Settle(c.Request.Context(), id, userID)
+	} else if req.Amount != nil {
+		d, err = h.debts.Patch(c.Request.Context(), id, userID, nil, req.Amount)
 	} else if req.ReduceBy != nil && *req.ReduceBy > 0 {
-		d, err = h.debts.Patch(c.Request.Context(), id, userID, *req.ReduceBy)
+		d, err = h.debts.Patch(c.Request.Context(), id, userID, req.ReduceBy, nil)
 	} else {
-		respondError(c, http.StatusBadRequest, codeValidation, "Provide reduce_by or settle=true")
+		respondError(c, http.StatusBadRequest, codeValidation, "Provide amount, reduce_by or settle=true")
 		return
 	}
 

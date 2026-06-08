@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/sur1cat/aifa/ai-service/internal/finance"
@@ -108,6 +109,39 @@ func (h *AIHandler) executeCreateDebt(ctx context.Context, auth string, debt *co
 	})
 }
 
+func (h *AIHandler) findActiveDebt(ctx context.Context, auth, counterparty, direction string) (*finance.Debt, error) {
+	if h.finance == nil {
+		return nil, nil
+	}
+	settled := false
+	debts, err := h.finance.ListDebts(ctx, auth, &settled)
+	if err != nil {
+		return nil, err
+	}
+	for _, debt := range debts {
+		if sameCounterparty(debt.Counterparty, counterparty) && (direction == "" || debt.Direction == direction) {
+			d := debt
+			return &d, nil
+		}
+	}
+	return nil, nil
+}
+
+func (h *AIHandler) executeUpdateDebtAmount(ctx context.Context, auth string, debt *commandDebt) error {
+	if h.finance == nil || debt == nil {
+		return nil
+	}
+	match, err := h.findActiveDebt(ctx, auth, debt.Counterparty, debt.Direction)
+	if err != nil {
+		return err
+	}
+	if match == nil {
+		return fmt.Errorf("active debt not found for %q", debt.Counterparty)
+	}
+	amount := debt.Amount
+	return h.finance.PatchDebt(ctx, auth, match.ID, finance.PatchDebtRequest{Amount: &amount})
+}
+
 func (h *AIHandler) executeSettleDebt(ctx context.Context, auth string, counterparty string) error {
 	if h.finance == nil {
 		return nil
@@ -125,16 +159,28 @@ func (h *AIHandler) executeSettleDebt(ctx context.Context, auth string, counterp
 	return fmt.Errorf("active debt not found for %q", counterparty)
 }
 
-func (h *AIHandler) applyCommandSideEffects(c *gin.Context, body *commandResponse) bool {
+func (h *AIHandler) applyCommandSideEffects(c *gin.Context, body *commandResponse, originalMessage string) bool {
 	if body == nil || body.Status != cmdStatusCompleted {
 		return true
 	}
 	auth := authHeader(c)
 	switch body.Intent {
 	case "create_debt":
-		if err := h.executeCreateDebt(c.Request.Context(), auth, body.Debt); err != nil {
+		var err error
+		if isDebtCorrectionMessage(originalMessage) {
+			err = h.executeUpdateDebtAmount(c.Request.Context(), auth, body.Debt)
+		} else {
+			err = h.executeCreateDebt(c.Request.Context(), auth, body.Debt)
+		}
+		if err != nil {
 			slog.Error("execute create_debt", "err", err)
 			respondError(c, http.StatusBadGateway, codeAIError, "Failed to save debt")
+			return false
+		}
+	case "update_debt":
+		if err := h.executeUpdateDebtAmount(c.Request.Context(), auth, body.Debt); err != nil {
+			slog.Error("execute update_debt", "err", err)
+			respondError(c, http.StatusBadGateway, codeAIError, "Failed to update debt")
 			return false
 		}
 	case "settle_debt":
@@ -241,14 +287,15 @@ func (h *AIHandler) applyParsedDebtSideEffects(c *gin.Context, parsed *localai.P
 
 var supportedDomainKeywords = []string{
 	// finance
-	"деньг", "финанс", "бюджет", "расход", "доход", "зарплат", "зп", "потрат", "купил", "купила",
-	"заплат", "плач", "получа", "перевод", "долг", "долж", "одолж", "взайм", "взаймы", "накоп", "сбереж", "кредит", "инвест", "ежемесяч", "в месяц", "каждый месяц", "expense", "income", "budget",
-	"spent", "spend", "salary", "debt", "save", "saving", "savings", "transaction", "finance", "money",
+	"деньг", "финанс", "бюджет", "баланс", "расход", "доход", "зарплат", "зп", "потрат", "трат", "траты", "сводк", "отчет", "отчёт", "купил", "купила",
+	"заплат", "плач", "получа", "продал", "продала", "продать", "продаж", "перевод", "долг", "долж", "одолж", "взайм", "взаймы", "накоп", "сбереж", "кредит", "инвест", "ежемесяч", "в месяц", "каждый месяц", "expense", "income", "budget",
+	"spent", "spend", "salary", "sell", "sold", "sale", "debt", "save", "saving", "savings", "transaction", "finance", "money", "balance", "summary", "report", "reports",
 	// habits / goals
 	"привыч", "каждый день", "ежеднев", "стрик", "цель", "бег", "читать", "медит", "тренир",
 	"просып", "похуд", "англий", "study", "habit", "daily", "routine", "streak", "goal", "run", "running", "read", "meditat", "wake up", "workout", "exercise",
 	// tasks / planning
-	"задач", "таск", "напом", "сделать", "выполн", "дедлайн", "план", "todo", "task", "remind", "reminder",
+	"задач", "таск", "напом", "сделать", "выполн", "дедлайн", "план", "запись", "перенес", "перенеси", "передвин", "сдвин", "надо", "встать",
+	"todo", "task", "remind", "reminder", "move task", "reschedule",
 	"complete", "deadline", "plan", "planning",
 }
 
@@ -331,6 +378,78 @@ func historyContainsSupportedDomain(history []historyMessage) bool {
 	return false
 }
 
+func lastAssistantMessage(history []historyMessage) string {
+	for i := len(history) - 1; i >= 0; i-- {
+		if strings.EqualFold(strings.TrimSpace(history[i].Role), "assistant") {
+			return strings.TrimSpace(history[i].Content)
+		}
+	}
+	return ""
+}
+
+func looksLikeAssistantQuestionOrPrompt(message string) bool {
+	lower := strings.ToLower(strings.TrimSpace(message))
+	if lower == "" {
+		return false
+	}
+	if strings.Contains(lower, "?") {
+		return true
+	}
+	signals := []string{
+		"готов",
+		"хотите",
+		"какие",
+		"какой",
+		"как вы хотите",
+		"как будем",
+		"поделитесь",
+		"расскажите",
+		"выберите",
+		"уточните",
+		"начнем",
+		"начнём",
+		"с чего начнем",
+		"с чего начнём",
+	}
+	for _, signal := range signals {
+		if strings.Contains(lower, signal) {
+			return true
+		}
+	}
+	return false
+}
+
+func isShortFreeformFollowUp(message string) bool {
+	lower := strings.ToLower(strings.TrimSpace(message))
+	if lower == "" {
+		return false
+	}
+	phrases := map[string]struct{}{
+		"да":            {},
+		"ага":           {},
+		"ок":            {},
+		"окей":          {},
+		"go":            {},
+		"го":            {},
+		"давай":         {},
+		"поехали":       {},
+		"начнем":        {},
+		"начнём":        {},
+		"согласен":      {},
+		"согласна":      {},
+		"не знаю":       {},
+		"без разницы":   {},
+		"как хочешь":    {},
+		"сам предложи":  {},
+		"сама предложи": {},
+		"можно":         {},
+	}
+	if _, ok := phrases[lower]; ok {
+		return true
+	}
+	return len([]rune(lower)) <= 24 && len(strings.Fields(lower)) <= 4
+}
+
 func isContextualFollowUp(message string, history []historyMessage) bool {
 	if !historyContainsSupportedDomain(history) {
 		return false
@@ -338,6 +457,23 @@ func isContextualFollowUp(message string, history []historyMessage) bool {
 	lower := strings.ToLower(strings.TrimSpace(message))
 	if lower == "" {
 		return false
+	}
+	affirmativeFollowUps := map[string]struct{}{
+		"да":       {},
+		"ага":      {},
+		"ок":       {},
+		"окей":     {},
+		"go":       {},
+		"го":       {},
+		"давай":    {},
+		"поехали":  {},
+		"начнем":   {},
+		"начнём":   {},
+		"согласен": {},
+		"согласна": {},
+	}
+	if _, ok := affirmativeFollowUps[lower]; ok {
+		return true
 	}
 	followUpSignals := []string{
 		"он", "она", "оно", "это", "стоит", "стоил", "стоила", "стоило",
@@ -347,6 +483,9 @@ func isContextualFollowUp(message string, history []historyMessage) bool {
 		if strings.Contains(lower, kw) {
 			return true
 		}
+	}
+	if looksLikeAssistantQuestionOrPrompt(lastAssistantMessage(history)) && isShortFreeformFollowUp(message) {
+		return true
 	}
 	return false
 }
@@ -882,6 +1021,7 @@ type commandRequest struct {
 	Message string           `json:"message" binding:"required"`
 	Context string           `json:"context,omitempty"`
 	History []historyMessage `json:"history,omitempty"`
+	RefDate string           `json:"ref_date,omitempty"`
 }
 
 type commandHabit struct {
@@ -896,6 +1036,20 @@ type commandTask struct {
 	Title       string `json:"title"`
 	Description string `json:"description,omitempty"`
 	Priority    string `json:"priority"`
+	DueDate     string `json:"due_date,omitempty"`
+}
+
+type commandTaskUpdate struct {
+	TaskKeywords     []string `json:"task_keywords,omitempty"`
+	DueDate          string   `json:"due_date,omitempty"`
+	DueDateShiftDays *int     `json:"due_date_shift_days,omitempty"`
+	Title            string   `json:"title,omitempty"`
+}
+
+type commandTaskDelete struct {
+	TaskKeywords     []string `json:"task_keywords,omitempty"`
+	DeleteAllMatches bool     `json:"delete_all_matches,omitempty"`
+	Title            string   `json:"title,omitempty"`
 }
 
 type commandGoal struct {
@@ -953,6 +1107,8 @@ type commandResponse struct {
 	Transaction   *commandTransaction `json:"transaction,omitempty"`
 	Habit         *commandHabit       `json:"habit,omitempty"`
 	Task          *commandTask        `json:"task,omitempty"`
+	TaskUpdate    *commandTaskUpdate  `json:"task_update,omitempty"`
+	TaskDelete    *commandTaskDelete  `json:"task_delete,omitempty"`
 	Tasks         []commandTask       `json:"tasks,omitempty"`
 	Plan          *commandPlan        `json:"plan,omitempty"`
 	Debt          *commandDebt        `json:"debt,omitempty"`
@@ -967,6 +1123,84 @@ const (
 	cmdStatusNeedsConfirmation  = "needs_confirmation"
 	cmdStatusUnsupported        = "unsupported"
 )
+
+func isISODate(value string) bool {
+	if value == "" {
+		return false
+	}
+	_, err := time.Parse("2006-01-02", value)
+	return err == nil
+}
+
+func normalizeDebtDirectionFromMessage(message string, debt *commandDebt) {
+	if debt == nil {
+		return
+	}
+	lower := strings.ToLower(strings.TrimSpace(message))
+	if lower == "" {
+		return
+	}
+
+	theyOweSignals := []string{
+		"должен мне",
+		"должна мне",
+		"должны мне",
+		"мне должен",
+		"мне должна",
+		"мне должны",
+		"взял у меня в долг",
+		"занял у меня",
+	}
+	for _, signal := range theyOweSignals {
+		if strings.Contains(lower, signal) {
+			debt.Direction = "they_owe"
+			return
+		}
+	}
+	if strings.Contains(lower, "взял в долг") && !strings.Contains(lower, "я взял в долг") {
+		debt.Direction = "they_owe"
+		return
+	}
+
+	iOweSignals := []string{
+		"я должен",
+		"я должна",
+		"я взял в долг",
+		"я взяла в долг",
+		"я занял",
+		"я заняла",
+		"взял в долг у",
+		"взяла в долг у",
+		"занял у",
+		"заняла у",
+	}
+	for _, signal := range iOweSignals {
+		if strings.Contains(lower, signal) {
+			debt.Direction = "i_owe"
+			return
+		}
+	}
+}
+
+func isDebtCorrectionMessage(message string) bool {
+	lower := strings.ToLower(strings.TrimSpace(message))
+	if lower == "" {
+		return false
+	}
+	signals := []string{
+		"ой",
+		"вернее",
+		"точнее",
+		"исправ",
+		"обнов",
+	}
+	for _, signal := range signals {
+		if strings.Contains(lower, signal) {
+			return true
+		}
+	}
+	return false
+}
 
 // deriveCommandStatus turns the LLM-emitted `intent` + payload completeness
 // into the four-state status the Flutter chat controller understands. Any
@@ -1006,7 +1240,45 @@ func deriveCommandStatus(body *commandResponse) []string {
 			missing = append(missing, "task")
 			return missing
 		}
+		if !isISODate(strings.TrimSpace(body.Task.DueDate)) {
+			missing = append(missing, "due_date")
+		}
+		if len(missing) > 0 {
+			body.Status = cmdStatusNeedsClarification
+			return missing
+		}
 		body.Status = cmdStatusNeedsConfirmation
+	case "update_task":
+		if body.TaskUpdate == nil {
+			body.Status = cmdStatusNeedsClarification
+			missing = append(missing, "task_update")
+			return missing
+		}
+		if len(body.TaskUpdate.TaskKeywords) == 0 && strings.TrimSpace(body.TaskUpdate.Title) == "" {
+			missing = append(missing, "task_keywords")
+		}
+		if !isISODate(strings.TrimSpace(body.TaskUpdate.DueDate)) && body.TaskUpdate.DueDateShiftDays == nil {
+			missing = append(missing, "due_date")
+		}
+		if len(missing) > 0 {
+			body.Status = cmdStatusNeedsClarification
+			return missing
+		}
+		body.Status = cmdStatusCompleted
+	case "delete_task":
+		if body.TaskDelete == nil {
+			body.Status = cmdStatusNeedsClarification
+			missing = append(missing, "task_delete")
+			return missing
+		}
+		if len(body.TaskDelete.TaskKeywords) == 0 && strings.TrimSpace(body.TaskDelete.Title) == "" {
+			missing = append(missing, "task_keywords")
+		}
+		if len(missing) > 0 {
+			body.Status = cmdStatusNeedsClarification
+			return missing
+		}
+		body.Status = cmdStatusCompleted
 	case "create_plan":
 		if body.Plan == nil || strings.TrimSpace(body.Plan.Goal.Title) == "" {
 			body.Status = cmdStatusNeedsClarification
@@ -1014,7 +1286,7 @@ func deriveCommandStatus(body *commandResponse) []string {
 			return missing
 		}
 		body.Status = cmdStatusNeedsConfirmation
-	case "create_debt":
+	case "create_debt", "update_debt":
 		if body.Debt == nil {
 			body.Status = cmdStatusNeedsClarification
 			missing = append(missing, "debt")
@@ -1094,6 +1366,11 @@ func (h *AIHandler) Command(c *gin.Context) {
 	}
 
 	systemPrompt := openai.CommandPrompt()
+	refDate := strings.TrimSpace(req.RefDate)
+	if !isISODate(refDate) {
+		refDate = time.Now().Format("2006-01-02")
+	}
+	systemPrompt += "\n\n## Current Local Date:\n- Treat " + refDate + " as the user's local current date.\n- Resolve relative task dates against this date.\n- Examples: \"today\" => " + refDate + ", \"tomorrow\" => next calendar day, \"day after tomorrow\" => two calendar days later."
 	var promptContext strings.Builder
 	if strings.TrimSpace(req.Context) != "" {
 		promptContext.WriteString(strings.TrimSpace(req.Context))
@@ -1125,6 +1402,9 @@ func (h *AIHandler) Command(c *gin.Context) {
 		})
 		return
 	}
+	if body.Intent == "create_debt" || body.Intent == "update_debt" {
+		normalizeDebtDirectionFromMessage(req.Message, body.Debt)
+	}
 	body.MissingFields = deriveCommandStatus(&body)
 	if body.Message == "" {
 		body.Message = body.Response
@@ -1132,7 +1412,7 @@ func (h *AIHandler) Command(c *gin.Context) {
 	if body.Advice != "" && body.Message == "" {
 		body.Message = body.Advice
 	}
-	if !h.applyCommandSideEffects(c, &body) {
+	if !h.applyCommandSideEffects(c, &body, req.Message) {
 		return
 	}
 	respondOK(c, body)

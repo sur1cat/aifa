@@ -72,17 +72,35 @@ func (r *DebtRepository) Create(ctx context.Context, d *domain.Debt) error {
 	), d)
 }
 
-func (r *DebtRepository) Patch(ctx context.Context, id, userID uuid.UUID, reduceBy float64) (*domain.Debt, error) {
+func (r *DebtRepository) Patch(ctx context.Context, id, userID uuid.UUID, reduceBy *float64, amount *float64) (*domain.Debt, error) {
 	d := &domain.Debt{}
-	err := scanDebt(r.pool.QueryRow(ctx,
-		`UPDATE debts
-		 SET amount     = GREATEST(0, amount - $3),
-		     settled    = (GREATEST(0, amount - $3) = 0),
-		     updated_at = NOW()
-		 WHERE id = $1 AND user_id = $2
-		 RETURNING `+debtColumns,
-		id, userID, reduceBy,
-	), d)
+	var err error
+	if amount != nil {
+		err = scanDebt(r.pool.QueryRow(ctx,
+			`UPDATE debts
+			 SET amount           = GREATEST(0, $3),
+			     original_amount = GREATEST(0, $3),
+			     settled         = (GREATEST(0, $3) = 0),
+			     updated_at      = NOW()
+			 WHERE id = $1 AND user_id = $2
+			 RETURNING `+debtColumns,
+			id, userID, *amount,
+		), d)
+	} else {
+		value := 0.0
+		if reduceBy != nil {
+			value = *reduceBy
+		}
+		err = scanDebt(r.pool.QueryRow(ctx,
+			`UPDATE debts
+			 SET amount     = GREATEST(0, amount - $3),
+			     settled    = (GREATEST(0, amount - $3) = 0),
+			     updated_at = NOW()
+			 WHERE id = $1 AND user_id = $2
+			 RETURNING `+debtColumns,
+			id, userID, value,
+		), d)
+	}
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
