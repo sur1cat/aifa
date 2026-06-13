@@ -77,19 +77,37 @@ def transcribe_audio(audio_bytes: bytes, filename: str, language: Optional[str] 
             "Қаржы, шығын, табыс, теңге, мың, сатып алдым, жұмсадым, аударма. "
             "Finance, expenses, income, tenge, spent, earned, transfer."
         )
+        _ALLOWED_LANGS = {"ru", "kk", "en"}
+        effective_lang = language if language in _ALLOWED_LANGS else None
+
         segments, info = model.transcribe(
             tmp_path,
-            language=language,
+            language=effective_lang,
             vad_filter=True,
             beam_size=5,
             initial_prompt=initial_prompt,
             condition_on_previous_text=False,
         )
         raw = " ".join(segment.text.strip() for segment in segments if segment.text.strip()).strip()
+
+        detected = getattr(info, "language", "") or ""
+        # If Whisper auto-detected a language outside our supported set, re-transcribe as Russian
+        if effective_lang is None and detected not in _ALLOWED_LANGS:
+            segments2, info = model.transcribe(
+                tmp_path,
+                language="ru",
+                vad_filter=True,
+                beam_size=5,
+                initial_prompt=initial_prompt,
+                condition_on_previous_text=False,
+            )
+            raw = " ".join(s.text.strip() for s in segments2 if s.text.strip()).strip()
+            detected = "ru"
+
         transcript = _fix_financial_transcript(raw)
         return STTResult(
             transcript=transcript,
-            language=getattr(info, "language", "") or "",
+            language=detected,
             language_probability=float(getattr(info, "language_probability", 0.0) or 0.0),
         )
     finally:

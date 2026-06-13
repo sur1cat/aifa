@@ -409,25 +409,28 @@ func deriveCommandStatus(body *commandResponse) []string {
 			missing = append(missing, "habit")
 			return missing
 		}
-		body.Status = cmdStatusNeedsConfirmation
+		body.Status = cmdStatusCompleted
 	case "create_task":
 		if body.Task == nil || strings.TrimSpace(body.Task.Title) == "" {
 			body.Status = cmdStatusNeedsClarification
 			missing = append(missing, "task")
 			return missing
 		}
-		body.Status = cmdStatusNeedsConfirmation
+		body.Status = cmdStatusCompleted
 	case "create_plan":
 		if body.Plan == nil || strings.TrimSpace(body.Plan.Goal.Title) == "" {
 			body.Status = cmdStatusNeedsClarification
 			missing = append(missing, "plan")
 			return missing
 		}
-		body.Status = cmdStatusNeedsConfirmation
+		body.Status = cmdStatusCompleted
+	case "update_habit", "delete_habit", "complete_habit",
+		"update_task", "delete_task", "complete_task",
+		"create_debt", "update_debt", "settle_debt",
+		"create_recurring":
+		body.Status = cmdStatusCompleted
 	default:
-		// "chat", "advice", "unsupported", or unknown — surface the
-		// model's `response` text but let the client know there's no
-		// structured action to apply.
+		// "chat", "advice", "unsupported" — let client show free-form reply.
 		body.Status = cmdStatusUnsupported
 	}
 	return missing
@@ -452,8 +455,6 @@ func (h *AIHandler) Command(c *gin.Context) {
 
 	var body commandResponse
 	if err := json.Unmarshal([]byte(raw), &body); err != nil {
-		// Model didn't produce JSON — degrade gracefully so the client
-		// can still display the text.
 		respondOK(c, commandResponse{
 			Status:  cmdStatusUnsupported,
 			Message: strings.TrimSpace(raw),
@@ -461,6 +462,15 @@ func (h *AIHandler) Command(c *gin.Context) {
 		})
 		return
 	}
+
+	// Capture all fields from GPT so Flutter rawData contains everything
+	// (debt, recurring, settle_debt, habit_update, habit_delete, etc.)
+	var rawMap map[string]interface{}
+	_ = json.Unmarshal([]byte(raw), &rawMap)
+	if rawMap == nil {
+		rawMap = map[string]interface{}{}
+	}
+
 	body.MissingFields = deriveCommandStatus(&body)
 	if body.Message == "" {
 		body.Message = body.Response
@@ -468,7 +478,14 @@ func (h *AIHandler) Command(c *gin.Context) {
 	if body.Advice != "" && body.Message == "" {
 		body.Message = body.Advice
 	}
-	respondOK(c, body)
+
+	// Inject Go-computed fields so they override GPT values
+	rawMap["status"] = body.Status
+	rawMap["message"] = body.Message
+	if len(body.MissingFields) > 0 {
+		rawMap["missing_fields"] = body.MissingFields
+	}
+	respondOK(c, rawMap)
 }
 
 // ---------------- local AI: message parser ----------------
