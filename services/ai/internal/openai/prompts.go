@@ -572,13 +572,13 @@ food, cafe, transport, health, entertainment, utilities, shopping, education, tr
     "due_date": "YYYY-MM-DD absolute local date"
   },
   "task_update": {
-    "task_keywords": ["keyword1", "keyword2"],
+    "keywords": ["keyword1", "keyword2"],
     "due_date": "YYYY-MM-DD absolute local date or null",
     "due_date_shift_days": 2,
-    "title": "Optional replacement title if user renames the task"
+    "new_title": "Optional replacement title if user renames the task"
   },
   "task_delete": {
-    "task_keywords": ["keyword1", "keyword2"],
+    "keywords": ["keyword1", "keyword2"],
     "delete_all_matches": true,
     "title": "Optional exact task title if user names it directly"
   },
@@ -643,9 +643,9 @@ food, cafe, transport, health, entertainment, utilities, shopping, education, tr
 - "create_transaction" — one-time payment or income; MUST populate "transaction" with all fields; "date" is "today" unless specified
 - Messages like "продал X за Y", "я продал X за Y", "sold X for Y", "sell X for Y" are ONE-TIME income and MUST use "create_transaction" with type="income".
 - "create_task" — MUST populate "task.due_date" as an absolute ISO date in YYYY-MM-DD using the user's local current date provided in the system prompt. Do NOT return relative words like "today" or "tomorrow" inside task.due_date.
-- "update_task" — MUST populate "task_update.task_keywords" with 1-3 search keywords taken directly from the task title in "Active tasks" context (same language/spelling, do NOT translate). If the user says "на 2 дня вперед/назад", populate "due_date_shift_days" with a signed integer. If the user gives an exact new date, populate "due_date" as YYYY-MM-DD.
+- "update_task" — MUST populate "task_update.keywords" with 1-3 search keywords taken directly from the task title in "Active tasks" context (same language/spelling, do NOT translate). If the user says "на 2 дня вперед/назад", populate "due_date_shift_days" with a signed integer. If the user gives an exact new date, populate "due_date" as YYYY-MM-DD.
 - "update_task" — when the user refers to an existing task by description ("запись к психологу", "задача по бегу"), return search keywords that help the client find the existing task. If the user says "через 2 дня", "на 2 дня вперед", "перенеси на послезавтра", populate either "due_date_shift_days" or absolute "due_date".
-- "delete_task" — MUST populate "task_delete.task_keywords" with 1-3 search keywords for the task to delete. CRITICAL: keywords MUST be words taken directly from the task title as it appears in "Active tasks" context (same language, same spelling). Do NOT translate to English. Example: task "Пофиксить баг" → keywords: ["пофиксить","баг"]. Set "delete_all_matches"=true AND leave "task_keywords" empty for requests like "удали все таски", "удали все задачи", "delete all tasks". Set "delete_all_matches"=true WITH keywords for "удали все задачи по бегу".
+- "delete_task" — MUST populate "task_delete.keywords" with 1-3 search keywords for the task to delete. CRITICAL: keywords MUST be words taken directly from the task title as it appears in "Active tasks" context (same language, same spelling). Do NOT translate to English. Example: task "Пофиксить баг" → keywords: ["пофиксить","баг"]. Set "delete_all_matches"=true AND leave "keywords" empty for requests like "удали все таски", "удали все задачи", "delete all tasks". Set "delete_all_matches"=true WITH keywords for "удали все задачи по бегу".
 - "delete_task" — use this only for deleting existing tasks, not for marking them completed.
 - "delete_habit" — MUST populate "habit_delete.habit_keywords" with 1-3 search keywords for the habit to delete. Set "delete_all_matches"=true AND leave "habit_keywords" empty for requests like "удали все привычки", "delete all habits". Set "delete_all_matches"=true WITH keywords for "удали все привычки по бегу".
 - "delete_habit" — use this only for deleting existing habits; do NOT refuse — user has the right to delete their habits.
@@ -656,7 +656,7 @@ food, cafe, transport, health, entertainment, utilities, shopping, education, tr
 - "create_task" — ONLY use when user explicitly says to add/create a task. General to-do talk → intent="chat".
 - "complete_habit" — MUST populate "complete_habit.keywords" with 1-3 search words from the MATCHING HABIT NAME (from "User habits" in context). If user says "я прочитал статью" and there is a habit "Читать статью", use keywords from "Читать статью". If user says "отметь/засчитай/mark X", extract keywords from X matching a habit in context.
 - "complete_task" — MUST populate "complete_task.keywords" with 1-3 search words from the task name
-- "update_task" — MUST populate "task_update.task_keywords" AND either "due_date" (YYYY-MM-DD) or "due_date_shift_days" (signed int). If user renames task populate "title" with new name.
+- "update_task" — MUST populate "task_update.keywords" AND either "due_date" (YYYY-MM-DD) or "due_date_shift_days" (signed int). If user renames task populate "new_title" with new name.
 - "create_debt": direction "i_owe" = I owe them (я должен, взял в долг у кого-то); "they_owe" = they owe me (они должны мне, я одолжил им, дал в долг кому-то, дал взаймы). CRITICAL: simple "дал/перевёл [имя] [сумма]" without debt keywords → create_transaction (type=expense, category=transfer)
 - "update_debt": MUST populate "debt" with the FINAL corrected amount, not the delta. Example: if the user says "ой, он должен 10000", debt.amount must be 10000. Reuse the same direction semantics as create_debt.
 - Debt direction disambiguation (Russian):
