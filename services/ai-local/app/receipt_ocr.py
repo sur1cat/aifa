@@ -15,7 +15,6 @@ from app.model import get_classifier
 
 TOTAL_HINTS = (
     "итого",
-    "итог",
     "сумма",
     "к оплате",
     "барлығы",
@@ -27,7 +26,6 @@ TOTAL_HINTS = (
 SECTION_BREAK_HINTS = (
     "сатылым",
     "продажа",
-    "продама",
     "итого",
     "барлығы",
     "кассир",
@@ -38,7 +36,6 @@ SECTION_BREAK_HINTS = (
     "офд",
     "фиск.",
     "спасибо",
-    "товара",
 )
 
 LEGAL_FORM_HINTS = (
@@ -60,9 +57,6 @@ HEADER_NOISE_HINTS = (
     "место расчетов",
     "павильон",
     "адрес",
-    "чек на продажу",
-    "чек на приход",
-    "кассовый",
 )
 
 FOOTER_HINTS = (
@@ -104,30 +98,6 @@ CYRILLIC_LOOKALIKE_TO_LATIN = str.maketrans(
     }
 )
 
-# Reverse map: Latin OCR-lookalikes → Cyrillic, for hint matching on mixed OCR output.
-# Tesseract sometimes reads Cyrillic letters as their Latin look-alikes (e.g. "CYMMA" instead of "СУММА").
-LATIN_LOOKALIKE_TO_CYRILLIC = str.maketrans(
-    {
-        "A": "А", "B": "В", "E": "Е", "K": "К", "M": "М", "H": "Н",
-        "O": "О", "P": "Р", "C": "С", "T": "Т", "Y": "У", "X": "Х",
-        "a": "а", "e": "е", "o": "о", "p": "р", "c": "с", "y": "у",
-        "x": "х", "k": "к", "m": "м", "t": "т", "b": "в",
-    }
-)
-
-# Pattern to detect document/receipt serial numbers or tax IDs that should not be treated as amounts.
-# e.g. "ЧЕК НА ПРОДАЖУ N:277087", "N:12345", "№277087", "ИИН 600464", "БИН 123456"
-_DOC_NUMBER_RE = re.compile(
-    r"(?:чек\s+на\s+(?:продажу|приход)"
-    r"|n\s*:\s*\d{4,}"
-    r"|№\s*\d{4,}"
-    r"|#\s*\d{4,}"
-    r"|(?:иин|iin|бин|bin|инн|inn|рнн|кпп|бсн|рн\s+ккт|рн\s*ккт)\s*\d{4,}"
-    r"|эвд\s*n\s*:\s*\d+"
-    r")",
-    re.IGNORECASE,
-)
-
 DATE_PATTERNS = [
     re.compile(r"\b(\d{2}[./-]\d{2}[./-]\d{4})(?:[,\s]+(\d{2}:\d{2}(?::\d{2})?))?\b"),
     re.compile(r"\b(\d{4}[./-]\d{2}[./-]\d{2})(?:[,\s]+(\d{2}:\d{2}(?::\d{2})?))?\b"),
@@ -159,7 +129,7 @@ _TEXT_DATE_MDY = re.compile(
     re.IGNORECASE,
 )
 
-MONEY_RE = re.compile(r"(?<!\d)(\d{1,3}(?:[ \u00a0']?\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?!\d)")
+MONEY_RE = re.compile(r"(?<!\d)(\d{1,3}(?:[ \u00a0]?\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?!\d)")
 TIME_RE = re.compile(r"\b(\d{2}:\d{2}(?::\d{2})?)\b")
 
 
@@ -179,7 +149,7 @@ class ReceiptScanResult:
 
 
 def _parse_money(raw: str) -> Optional[float]:
-    candidate = raw.replace("\u00a0", " ").replace(" ", "").replace(",", ".").replace("'", "")
+    candidate = raw.replace("\u00a0", " ").replace(" ", "").replace(",", ".")
     try:
         value = float(candidate)
     except ValueError:
@@ -226,32 +196,27 @@ def _score_ocr_text(text: str) -> int:
 
 
 def _contains_hint(line: str, hints: tuple[str, ...]) -> bool:
-    # Check both the raw lowercased line and a version where Latin OCR lookalikes
-    # are converted to Cyrillic (e.g. "CYMMA" → "СУММА").
     lowered = line.lower()
-    normalized = line.translate(LATIN_LOOKALIKE_TO_CYRILLIC).lower()
     for hint in hints:
         pattern = rf"(?<![a-zа-я]){re.escape(hint)}(?![a-zа-я])"
-        if re.search(pattern, lowered) or re.search(pattern, normalized):
+        if re.search(pattern, lowered):
             return True
     return False
 
 
 def _preprocess_variants(image: Image.Image) -> list[Image.Image]:
     base = ImageOps.exif_transpose(image).convert("RGB")
-    max_width = 1600
-    if base.width > max_width:
-        ratio = max_width / base.width
-        base = base.resize((max_width, int(base.height * ratio)), Image.LANCZOS)
-    elif base.width < 800:
+    if base.width < 1400:
         scale = max(2, int(1600 / max(base.width, 1)))
         base = base.resize((base.width * scale, base.height * scale))
 
     grayscale = ImageOps.grayscale(base)
     autocontrast = ImageOps.autocontrast(grayscale)
     sharpened = autocontrast.filter(ImageFilter.SHARPEN)
+    median = autocontrast.filter(ImageFilter.MedianFilter(size=3))
     threshold = autocontrast.point(lambda p: 255 if p > 168 else 0)
-    return [autocontrast, sharpened, threshold]
+    threshold_soft = median.point(lambda p: 255 if p > 150 else 0)
+    return [autocontrast, sharpened, median, threshold, threshold_soft]
 
 
 def _ocr_image(image: Image.Image, languages: str, psm_modes: tuple[str, ...]) -> list[str]:
@@ -270,7 +235,7 @@ def _ocr_image(image: Image.Image, languages: str, psm_modes: tuple[str, ...]) -
             except Exception:
                 return ""
 
-    with ThreadPoolExecutor(max_workers=min(len(tasks), 2)) as pool:
+    with ThreadPoolExecutor(max_workers=min(len(tasks), 6)) as pool:
         return [text for text in pool.map(_run_one, tasks) if text.strip()]
 
 
@@ -471,15 +436,10 @@ def _parse_text_month_date(line: str) -> Optional[str]:
 
 
 def _extract_total(lines: list[str]) -> tuple[Optional[float], str]:
-    discounted: list[tuple[float, str, int]] = []
-    pre_discount: list[tuple[float, str, int]] = []
     prioritized: list[tuple[float, str, int]] = []
     fallback: list[tuple[float, str, int]] = []
 
     for idx, line in enumerate(lines):
-        # Skip document/receipt number lines — their serial numbers look like amounts.
-        if _DOC_NUMBER_RE.search(line):
-            continue
         matches = MONEY_RE.findall(line)
         if not matches:
             continue
@@ -489,58 +449,30 @@ def _extract_total(lines: list[str]) -> tuple[Optional[float], str]:
             continue
 
         line_lower = line.lower()
+        bucket = prioritized if _contains_hint(line_lower, TOTAL_HINTS) else fallback
         for value, raw in parsed:
             if TIME_RE.search(line):
                 continue
             if value < 1:
                 continue
-            if any(hint in line_lower for hint in _DISCOUNT_APPLIED_HINTS):
-                discounted.append((value, raw, idx))
-            elif any(hint in line_lower for hint in _PRE_DISCOUNT_HINTS):
-                pre_discount.append((value, raw, idx))
-            elif _contains_hint(line_lower, TOTAL_HINTS):
-                prioritized.append((value, raw, idx))
-            else:
-                fallback.append((value, raw, idx))
+            bucket.append((value, raw, idx))
 
-    # Priority: after-discount > regular total hints > pre-discount > fallback
-    candidates = discounted or prioritized or pre_discount or fallback
+    candidates = prioritized or fallback
     if not candidates:
         return None, ""
 
-    # Filter obviously wrong amounts (fiscal doc numbers, barcodes)
-    # Real receipts in KZT are typically 1 - 5_000_000
-    realistic = [(v, r, i) for v, r, i in candidates if 1 <= v <= 5_000_000]
-    if not realistic:
-        realistic = [(v, r, i) for v, r, i in candidates if v <= 100_000_000]
-    if not realistic:
-        realistic = candidates
-
-    # If we are relying only on fallback (no total-hint line found), reject large
-    # whole integers (>= 50 000) without a fractional part — these are almost always
-    # document/fiscal serial numbers, not purchase amounts.
-    using_only_fallback = not (discounted or prioritized or pre_discount)
-    if using_only_fallback:
-        filtered = [(v, r, i) for v, r, i in realistic if not (v >= 50_000 and v == int(v))]
-        if filtered:
-            realistic = filtered
-
-    amount, raw, _ = max(realistic, key=lambda item: item[0])
+    amount, raw, _ = max(
+        candidates,
+        key=lambda item: (
+            item[0],
+            1 if item[2] > len(lines) // 3 else 0,
+        ),
+    )
     return amount, raw
 
 
-_DISCOUNT_APPLIED_HINTS = ("с учетом скидок", "с учётом скидок", "после скидок", "с учетом скидки", "с учётом скидки")
-_PRE_DISCOUNT_HINTS = ("без скидок", "до скидок")
-
-
 def _extract_total_from_zone(lines: list[str]) -> tuple[Optional[float], str]:
-    discounted: tuple[Optional[float], str] = (None, "")
-    pre_discount: tuple[Optional[float], str] = (None, "")
-    regular: tuple[Optional[float], str] = (None, "")
-
     for line in lines:
-        if _DOC_NUMBER_RE.search(line):
-            continue
         lowered = line.lower()
         if not _contains_hint(lowered, TOTAL_HINTS):
             continue
@@ -550,26 +482,11 @@ def _extract_total_from_zone(lines: list[str]) -> tuple[Optional[float], str]:
         if not parsed:
             continue
         amount, raw = max(parsed, key=lambda item: item[0])
-        if amount is None:
-            continue
-
-        if any(hint in lowered for hint in _DISCOUNT_APPLIED_HINTS):
-            if discounted[0] is None:
-                discounted = (amount, raw)
-        elif any(hint in lowered for hint in _PRE_DISCOUNT_HINTS):
-            if pre_discount[0] is None:
-                pre_discount = (amount, raw)
-        else:
-            if regular[0] is None:
-                regular = (amount, raw)
-
-    # Priority: after-discount total > regular total > pre-discount total
-    return discounted if discounted[0] else (regular if regular[0] else pre_discount)
+        return amount, raw
+    return None, ""
 
 
 def _clean_merchant_line(line: str) -> str:
-    import re as _re2
-    line = _re2.sub(r"^(ООО|ТОО|ИП|АО|ЗАО|ОАО|ПАО|LLP|LLC)\s*", "", line.strip(), flags=_re2.IGNORECASE).strip()
     line = line.strip().strip('"').strip("'").strip("`").strip("“”«»")
     return re.sub(r"\s+", " ", line)[:80]
 
@@ -678,10 +595,7 @@ def _merchant_score(line: str, index: int) -> int:
     if 4 <= len(line) <= 42:
         score += 3
     if any(hint in lowered for hint in LEGAL_FORM_HINTS):
-        if chr(171) in line or chr(8220) in line or '"' in line:
-            score += 5
-        else:
-            score -= 3
+        score -= 3
     if any(
         token in lowered
         for token in (
@@ -705,31 +619,6 @@ def _merchant_score(line: str, index: int) -> int:
     if any(ch.isdigit() for ch in line):
         score -= 5
     return score
-
-
-# Common OCR-misread or generic receipt words that are never valid merchant names
-_INVALID_MERCHANT_WORDS: frozenset[str] = frozenset({
-    "чек", "чак", "час", "чак", "наличные", "наличными", "итого", "сумма",
-    "receipt", "total", "cash", "change",
-})
-
-
-def _is_valid_merchant(name: str) -> bool:
-    """Return False for obvious OCR garbage (too many non-alpha chars, punctuation typical of address/code lines)."""
-    if len(name) < 3:
-        return False
-    # Exact match against known non-merchant words
-    if name.lower().strip() in _INVALID_MERCHANT_WORDS:
-        return False
-    if any(ch in name for ch in (':', '/', '%', '@', '#', '|', '\\', '=', '*', ')', '(')):
-        return False
-    alpha = sum(ch.isalpha() for ch in name)
-    if alpha < len(name) * 0.45:
-        return False
-    digits = sum(ch.isdigit() for ch in name)
-    if digits > len(name) * 0.3:
-        return False
-    return True
 
 
 def _extract_merchant(lines: list[str], header_lines: list[str]) -> str:
@@ -777,10 +666,6 @@ def _extract_merchant(lines: list[str], header_lines: list[str]) -> str:
         grouped_candidates.values(),
         key=lambda item: (item[0], item[1], len(item[2])),
     )[2]
-
-    if not _is_valid_merchant(best_candidate):
-        return ""
-
     return _correct_merchant_with_hints(best_candidate)
 
 
@@ -881,7 +766,7 @@ def scan_receipt(image_bytes: bytes, languages: Optional[str] = None) -> Receipt
 
     image = _load_image(image_bytes)
 
-    with ThreadPoolExecutor(max_workers=2) as pool:
+    with ThreadPoolExecutor(max_workers=4) as pool:
         fut_text = pool.submit(_extract_text, image, languages)
         fut_header = pool.submit(_extract_header_candidates, image, languages)
         fut_footer = pool.submit(_extract_footer_candidates, image, languages)
