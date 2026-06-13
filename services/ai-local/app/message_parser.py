@@ -12,7 +12,7 @@
 
 import re
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 
 from app.model import get_classifier
@@ -30,7 +30,67 @@ _NON_FINANCIAL_UNITS = re.compile(
     re.IGNORECASE | re.UNICODE,
 )
 
+# ── Словесные числа → цифры (RU + KZ) ───────────────────────────────────────
+_WORD_ONES = {
+    'один': 1, 'одну': 1, 'одна': 1, 'одного': 1,
+    'два': 2, 'две': 2, 'двух': 2,
+    'три': 3, 'трёх': 3, 'трех': 3,
+    'четыре': 4, 'четырёх': 4, 'четырех': 4,
+    'пять': 5, 'пяти': 5,
+    'шесть': 6, 'шести': 6,
+    'семь': 7, 'семи': 7,
+    'восемь': 8, 'восьми': 8,
+    'девять': 9, 'девяти': 9,
+    'десять': 10, 'десяти': 10,
+    'одиннадцать': 11, 'двенадцать': 12, 'тринадцать': 13,
+    'четырнадцать': 14, 'пятнадцать': 15, 'шестнадцать': 16,
+    'семнадцать': 17, 'восемнадцать': 18, 'девятнадцать': 19,
+    'двадцать': 20, 'тридцать': 30, 'сорок': 40,
+    'пятьдесят': 50, 'шестьдесят': 60, 'семьдесят': 70,
+    'восемьдесят': 80, 'девяносто': 90,
+    'сто': 100, 'двести': 200, 'триста': 300, 'четыреста': 400,
+    'пятьсот': 500, 'шестьсот': 600, 'семьсот': 700,
+    'восемьсот': 800, 'девятьсот': 900,
+    # KZ
+    'бір': 1, 'екі': 2, 'үш': 3, 'төрт': 4, 'бес': 5,
+    'алты': 6, 'жеті': 7, 'сегіз': 8, 'тоғыз': 9, 'он': 10,
+    'жиырма': 20, 'отыз': 30, 'қырық': 40, 'елу': 50,
+    'алпыс': 60, 'жетпіс': 70, 'сексен': 80, 'тоқсан': 90,
+    'жүз': 100,
+}
+_WORD_SCALE = {
+    'тысяч': 1000, 'тысячи': 1000, 'тысячу': 1000, 'тысяча': 1000,
+    'тыщ': 1000, 'тыщу': 1000, 'тысяч ': 1000,
+    'миллион': 1_000_000, 'миллиона': 1_000_000, 'миллионов': 1_000_000,
+    'мың': 1000, 'мыңды': 1000, 'мыңға': 1000,
+}
+
+def _words_to_number(text: str) -> str:
+    """Replace verbal number expressions like 'пять тысяч' → '5000'."""
+    ones_pat = '|'.join(re.escape(w) for w in sorted(_WORD_ONES, key=len, reverse=True))
+    scale_pat = '|'.join(re.escape(w) for w in sorted(_WORD_SCALE, key=len, reverse=True))
+
+    # "[ones] scale" e.g. "пять тысяч", "тысячу" alone
+    combined = re.compile(
+        rf'\b(?:({ones_pat})\s+)?({scale_pat})\b',
+        re.IGNORECASE | re.UNICODE,
+    )
+    def _replace_scale(m: re.Match) -> str:
+        ones_w = (m.group(1) or '').lower().strip()
+        scale_w = m.group(2).lower().strip()
+        mult = _WORD_ONES.get(ones_w, 1)
+        scale = _WORD_SCALE.get(scale_w, 1)
+        return str(int(mult * scale))
+    text = combined.sub(_replace_scale, text)
+
+    # Standalone ones not followed by scale e.g. "потратил пятьсот"
+    ones_re = re.compile(rf'\b({ones_pat})\b', re.IGNORECASE | re.UNICODE)
+    text = ones_re.sub(lambda m: str(_WORD_ONES[m.group(1).lower()]), text)
+    return text
+
+
 def _extract_amount(text: str) -> Optional[float]:
+    text = _words_to_number(text)
     # Убираем временны́е паттерны (19:00) и нефинансовые числа (30 дней, 20 минут)
     clean = _TIME_PATTERN.sub('', text)
     clean = _NON_FINANCIAL_UNITS.sub('', clean)
@@ -50,9 +110,11 @@ def _extract_amount(text: str) -> Optional[float]:
 # ── Тип транзакции ────────────────────────────────────────────────────────────
 _INCOME_KW = [
     'закинул', 'закинула', 'скинул', 'скинула', 'перевёл', 'перевела',
-    'получил', 'получила', 'заработал', 'заработала', 'зарплата', 'зп',
-    'пришло', 'пришли', 'начислили', 'вернул', 'вернула',
-    'earned', 'received', 'salary', 'income', 'got',
+    'получил', 'получила', 'получаю', 'заработал', 'заработала', 'зарплата', 'зп',
+    'пришло', 'пришли', 'начислили', 'вернул', 'вернула', 'доход',
+    'отложил', 'отложила', 'накопил', 'накопила', 'сберег', 'сберегла',
+    'в копилку', 'на накопления', 'в накопления', 'в сбережения',
+    'earned', 'received', 'salary', 'income', 'got', 'saved',
 ]
 _EXPENSE_KW = [
     'потратил', 'потратила', 'заплатил', 'заплатила', 'купил', 'купила',
@@ -110,12 +172,13 @@ _KEYWORD_CATEGORY: list[tuple[list[str], str]] = [
     (['кофе', 'кафе', 'ресторан', 'бар', 'coffee', 'cafe', 'restaurant'], 'cafe'),
     (['такси', 'метро', 'автобус', 'маршрутка', 'бензин', 'проезд', 'taxi', 'uber', 'transport'], 'transport'),
     (['аренд', 'коммунальн', 'электр', 'газ', 'интернет', 'услуг', 'rent', 'utility'], 'utilities'),
-    (['одежда', 'обувь', 'покупк', 'shopping', 'clothes'], 'shopping'),
+    (['одежда', 'обувь', 'покупк', 'шоппинг', 'шопинг', 'магазин', 'shopping', 'clothes', 'store'], 'shopping'),
     (['аптек', 'врач', 'больниц', 'лекарств', 'health', 'pharmacy', 'doctor'], 'health'),
     (['кино', 'концерт', 'игр', 'развлечен', 'cinema', 'game', 'entertainment'], 'entertainment'),
     (['курс', 'книг', 'учёб', 'образован', 'school', 'course', 'education'], 'education'),
     (['отел', 'отпуск', 'авиа', 'поезд', 'hotel', 'flight', 'travel'], 'travel'),
-    (['перевод', 'transfer', 'скинул', 'скинула', 'закинул', 'закинула', 'отправил', 'должен', 'долг'], 'transfer'),
+    (['перевод', 'transfer', 'скинул', 'скинула', 'закинул', 'закинула', 'отправил', 'должен', 'долг',
+      'отложил', 'отложила', 'накопил', 'накопила', 'в копилку', 'накопления', 'сбережения'], 'transfer'),
     (['зарплат', 'доход', 'salary', 'income', 'заработ', 'зп'], 'income'),
 ]
 
@@ -204,6 +267,8 @@ _SAVINGS_PLAN_KW = [
     'хочу копить', 'хочу накопить', 'откладывать каждый месяц',
     'накопить на', 'копить на', 'откладывать ежемесячно',
     'каждый месяц откладывать', 'ежемесячно откладывать',
+    'хочу откладывать', 'буду откладывать', 'планирую откладывать',
+    'начну откладывать', 'хочу сберегать', 'ежемесячные накопления',
 ]
 _SAVINGS_RULE_KW = [
     'с каждого дохода', 'с любого дохода', 'каждый раз когда получаю',
@@ -401,6 +466,23 @@ def _partial_return(text: str, amount: Optional[float]) -> dict:
         return {'type': 'amount', 'value': amount}
     return {'type': 'unknown', 'value': None}
 
+# ── Дата транзакции ───────────────────────────────────────────────────────────
+_DAYS_AGO_RE = re.compile(r'(\d+)\s*(?:день|дня|дней)\s*назад', re.IGNORECASE | re.UNICODE)
+
+
+def _extract_tx_date(text: str) -> str:
+    """Возвращает ISO дату транзакции: вчера/позавчера/N дней назад или сегодня."""
+    lower = text.lower()
+    if 'позавчера' in lower:
+        return (date.today() - timedelta(days=2)).isoformat()
+    if 'вчера' in lower:
+        return (date.today() - timedelta(days=1)).isoformat()
+    m = _DAYS_AGO_RE.search(lower)
+    if m:
+        return (date.today() - timedelta(days=int(m.group(1)))).isoformat()
+    return date.today().isoformat()
+
+
 # ── Периодичность для recurring ───────────────────────────────────────────────
 def _detect_frequency(text: str) -> str:
     lower = text.lower()
@@ -446,12 +528,155 @@ class ParsedMessage:
     alert_period: Optional[str] = None    # daily | monthly
 
 
+_KK_CHARS = set('әғқңөұүһіӘҒҚҢӨҰҮҺІ')
+_KK_WORDS = {'теңге', 'сатып', 'алдым', 'бердім', 'жаздым', 'қарыз', 'табыс', 'шығыс', 'еске', 'саламын'}
+
+
+def _detect_lang(text: str) -> str:
+    lower = text.lower()
+    if any(c in _KK_CHARS for c in text) or any(w in lower for w in _KK_WORDS):
+        return "kk"
+    cyrillic = sum(1 for c in text if '\u0400' <= c <= '\u04ff')
+    latin = sum(1 for c in text if c.isalpha() and c.isascii())
+    return "en" if latin > cyrillic else "ru"
+
+
+_R = {
+    "ru": {
+        "income_from":       "Деньги от {party} получены, запись добавлена. {amount}₸ → {label}.",
+        "expense_to":        "Перевод для {party} записан. {amount}₸ → {label}.",
+        "income":            "Записал доход {amount}₸ ({label}).",
+        "expense":           "Записал расход {amount}₸ ({label}).",
+        "debt_need_amount":  "Укажи сумму долга.",
+        "i_owe":             "Записал: ты должен {party} — {amount}₸.",
+        "they_owe":          "Записал: {party} теперь должен тебе {amount}₸.",
+        "debt_not_found":    "Не нашёл долг от {party}. Проверь список долгов.",
+        "debt_half":         "{party} вернул половину долга ({amount}₸), всё пересчитано.",
+        "debt_over":         "Сумма возврата ({amount}₸) больше остатка долга. Уточни сумму.",
+        "debt_return":       "Возврат долга от {party} на {amount}₸ записан.",
+        "debt_return_gen":   "Возврат долга от {party} записан.",
+        "recurring_need":    "Укажи сумму регулярного платежа.",
+        "salary":            "Зарплата сохранена ({amount}₸/мес), буду учитывать автоматически каждый месяц.",
+        "recurring":         "Регулярный платёж {amount}₸ ({freq}) добавлен.",
+        "task_remind":       "Напомню «{title}» {day}{time}.",
+        "task_day_today":    "сегодня",
+        "task_day_tomorrow": "завтра",
+        "task_day_after":    "послезавтра",
+        "task_done":         "Отлично! Отметил «{kw}» как выполненное.",
+        "task_done_unclear": "Что именно ты сделал? Уточни название задачи.",
+        "habit_challenge":   "Запустили челлендж «{title}» на {days} дней, погнали!",
+        "habit_added_daily": "Привычка «{title}» добавлена, буду напоминать каждый день.",
+        "habit_added_week":  "Привычка «{title}» добавлена, буду напоминать каждую неделю.",
+        "habit_archived":    "Окей, привычка «{title}» остановлена.",
+        "savings_plan":      "Добавил цель «{goal}» и создал правило откладывать {amount}₸ каждый месяц. Буду напоминать!",
+        "savings_rule":      "Теперь с каждого дохода буду автоматически откладывать {amount}₸ в накопления.",
+        "spend_alert":       "Понял! Если суточные расходы превысят {amount}₸ — сразу предупрежу.",
+        "clarify_intro":     "Добавил кредит с платежом {amount}₸/мес. Давай уточним детали, чтобы всё корректно считать:",
+        "clarify_q": [
+            "Какова общая сумма кредита?",
+            "На какой срок (в месяцах)?",
+            "Процентная ставка (% годовых)? Если рассрочка — напиши 0.",
+            "Дата первого платежа?",
+            "Название кредита (например: Kaspi, Отбасы)?",
+        ],
+        "chat_fallback":     "Не могу распознать операцию. Уточни сумму и тип (потратил/получил/должен).",
+    },
+    "en": {
+        "income_from":       "Received {amount} from {party} → {label}. Recorded.",
+        "expense_to":        "Transfer to {party} recorded. {amount} → {label}.",
+        "income":            "Income recorded: {amount} ({label}).",
+        "expense":           "Expense recorded: {amount} ({label}).",
+        "debt_need_amount":  "Please specify the debt amount.",
+        "i_owe":             "Noted: you owe {party} — {amount}.",
+        "they_owe":          "Noted: {party} owes you {amount}.",
+        "debt_not_found":    "Couldn't find a debt from {party}. Check your debt list.",
+        "debt_half":         "{party} returned half the debt ({amount}). All updated.",
+        "debt_over":         "Return amount ({amount}) exceeds the remaining debt. Please clarify.",
+        "debt_return":       "Debt repayment from {party} of {amount} recorded.",
+        "debt_return_gen":   "Debt repayment from {party} recorded.",
+        "recurring_need":    "Please specify the recurring payment amount.",
+        "salary":            "Salary saved ({amount}/month), will track it automatically.",
+        "recurring":         "Recurring payment {amount} ({freq}) added.",
+        "task_remind":       "I'll remind you about «{title}» {day}{time}.",
+        "task_day_today":    "today",
+        "task_day_tomorrow": "tomorrow",
+        "task_day_after":    "the day after tomorrow",
+        "task_done":         "Great! Marked «{kw}» as completed.",
+        "task_done_unclear": "What exactly did you do? Please clarify the task name.",
+        "habit_challenge":   "Started challenge «{title}» for {days} days. Let's go!",
+        "habit_added_daily": "Habit «{title}» added. I'll remind you every day.",
+        "habit_added_week":  "Habit «{title}» added. I'll remind you every week.",
+        "habit_archived":    "Done, habit «{title}» has been stopped.",
+        "savings_plan":      "Added goal «{goal}» with a monthly saving rule of {amount}. I'll remind you!",
+        "savings_rule":      "From now on I'll automatically save {amount} from every income.",
+        "spend_alert":       "Got it! I'll warn you if daily spending exceeds {amount}.",
+        "clarify_intro":     "Added a loan with payment {amount}/month. Let me clarify the details:",
+        "clarify_q": [
+            "What is the total loan amount?",
+            "For how many months?",
+            "Interest rate (% per year)? Write 0 for installment.",
+            "Date of first payment?",
+            "Loan name (e.g. Kaspi, Bank)?",
+        ],
+        "chat_fallback":     "Couldn't recognize the operation. Please specify amount and type (spent/received/owe).",
+    },
+    "kk": {
+        "income_from":       "{party}-дан ақша алынды, жазба қосылды. {amount}₸ → {label}.",
+        "expense_to":        "{party}-ға аудару жазылды. {amount}₸ → {label}.",
+        "income":            "Кіріс жазылды: {amount}₸ ({label}).",
+        "expense":           "Шығыс жазылды: {amount}₸ ({label}).",
+        "debt_need_amount":  "Қарыз сомасын көрсетіңіз.",
+        "i_owe":             "Жазылды: сіз {party}-ға — {amount}₸ қарыздарсыз.",
+        "they_owe":          "Жазылды: {party} сізге {amount}₸ қарыздар.",
+        "debt_not_found":    "{party}-дан қарыз табылмады. Қарыздар тізімін тексеріңіз.",
+        "debt_half":         "{party} қарыздың жартысын қайтарды ({amount}₸), барлығы қайта есептелді.",
+        "debt_over":         "Қайтару сомасы ({amount}₸) қалдық қарыздан артық. Сомасын нақтылаңыз.",
+        "debt_return":       "{party}-дан {amount}₸ қарыз қайтарылды, жазылды.",
+        "debt_return_gen":   "{party}-дан қарыз қайтарылды, жазылды.",
+        "recurring_need":    "Тұрақты төлем сомасын көрсетіңіз.",
+        "salary":            "Жалақы сақталды ({amount}₸/ай), автоматты түрде есепке аламын.",
+        "recurring":         "Тұрақты төлем {amount}₸ ({freq}) қосылды.",
+        "task_remind":       "«{title}» туралы {day}{time} еске саламын.",
+        "task_day_today":    "бүгін",
+        "task_day_tomorrow": "ертең",
+        "task_day_after":    "бүрсігүні",
+        "task_done":         "Керемет! «{kw}» орындалды деп белгіледім.",
+        "task_done_unclear": "Нені жасадыңыз? Тапсырма атауын нақтылаңыз.",
+        "habit_challenge":   "«{title}» челленджі {days} күнге іске қосылды, алға!",
+        "habit_added_daily": "«{title}» әдеті қосылды, күн сайын еске саламын.",
+        "habit_added_week":  "«{title}» әдеті қосылды, апта сайын еске саламын.",
+        "habit_archived":    "Жарайды, «{title}» әдеті тоқтатылды.",
+        "savings_plan":      "«{goal}» мақсаты қосылды, ай сайын {amount}₸ жинау ережесі жасалды. Еске саламын!",
+        "savings_rule":      "Енді әр кірістен автоматты түрде {amount}₸ жинаққа аударамын.",
+        "spend_alert":       "Түсінікті! Күндік шығыс {amount}₸-тен асса, бірден ескертемін.",
+        "clarify_intro":     "{amount}₸/ай төлеммен несие қосылды. Барлығы дұрыс есептелуі үшін толықтырайық:",
+        "clarify_q": [
+            "Несиенің жалпы сомасы қанша?",
+            "Қанша айға?",
+            "Пайыздық мөлшерлеме (жылдық %)? Бөліп төлеу болса — 0 жазыңыз.",
+            "Бірінші төлем күні?",
+            "Несие атауы (мысалы: Kaspi, Отбасы)?",
+        ],
+        "chat_fallback":     "Операцияны тани алмадым. Сома мен түрін көрсетіңіз (жұмсадым/алдым/қарыздамын).",
+    },
+}
+
+
+def _fmt(amount: Optional[float]) -> str:
+    if amount is None:
+        return "—"
+    return f"{amount:,.0f}"
+
+
 def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMessage:
-    today = date.today().isoformat()
+    lang = _detect_lang(text)
+    tx_date = _extract_tx_date(text)
     amount = _extract_amount(text)
     tx_type = _detect_type(text)
     counterparty = _extract_counterparty(text)
     intent = _detect_intent(text, amount, tx_type)
+    r = _R[lang]
+    a = _fmt(amount)
 
     # ── create_transaction ────────────────────────────────────────────────────
     if intent == 'create_transaction':
@@ -460,35 +685,35 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
         title = _make_title(text, counterparty, tx_type)
 
         if counterparty and tx_type == 'income':
-            response = f"Деньги от {counterparty} получены, запись добавлена. {amount:,.0f}₸ → {label}."
+            response = r["income_from"].format(party=counterparty, amount=a, label=label)
         elif counterparty and tx_type == 'expense':
-            response = f"Перевод для {counterparty} записан. {amount:,.0f}₸ → {label}."
+            response = r["expense_to"].format(party=counterparty, amount=a, label=label)
         elif tx_type == 'income':
-            response = f"Записал доход {amount:,.0f}₸ ({label})."
+            response = r["income"].format(amount=a, label=label)
         else:
-            response = f"Записал расход {amount:,.0f}₸ ({label})."
+            response = r["expense"].format(amount=a, label=label)
 
         return ParsedMessage(
             intent='create_transaction', response=response,
             tx_type=tx_type, amount=amount, title=title,
             category=category, category_label=label,
-            tx_date=today, counterparty=counterparty,
+            tx_date=tx_date, counterparty=counterparty,
         )
 
     # ── create_debt ───────────────────────────────────────────────────────────
     if intent == 'create_debt':
         direction = _debt_direction(text)
         if not amount:
-            return ParsedMessage(intent='chat', response='Укажи сумму долга.')
-        party = counterparty or 'Неизвестно'
+            return ParsedMessage(intent='chat', response=r["debt_need_amount"])
+        party = counterparty or {'en': 'Unknown', 'kk': 'Белгісіз'}.get(lang, 'Неизвестно')
         if direction == 'i_owe':
-            response = f"Записал: ты должен {party} — {amount:,.0f}₸."
+            response = r["i_owe"].format(party=party, amount=a)
         else:
-            response = f"Записал: {party} теперь должен тебе {amount:,.0f}₸."
+            response = r["they_owe"].format(party=party, amount=a)
         return ParsedMessage(
             intent='create_debt', response=response,
             amount=amount, counterparty=party,
-            debt_direction=direction, tx_date=today,
+            debt_direction=direction, tx_date=tx_date,
         )
 
     # ── update_debt ───────────────────────────────────────────────────────────
@@ -496,7 +721,6 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
         party = counterparty or ''
         partial = _partial_return(text, amount)
 
-        # Ищем долг в контексте
         debt_found = None
         if debts_context and party:
             for d in debts_context:
@@ -507,48 +731,47 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
         if not debt_found and debts_context is not None:
             return ParsedMessage(
                 intent='update_debt',
-                response=f'Не нашёл долг от {party}. Проверь список долгов.',
+                response=r["debt_not_found"].format(party=party),
                 counterparty=party, debt_update={'type': 'not_found'},
             )
 
         if partial['type'] == 'half' and debt_found:
             reduce_by = debt_found.get('amount', 0) / 2
-            response = f"{party} вернул половину долга ({reduce_by:,.0f}₸), всё пересчитано."
+            response = r["debt_half"].format(party=party, amount=_fmt(reduce_by))
         elif partial['type'] == 'amount' and partial['value']:
             reduce_by = partial['value']
             if debt_found and reduce_by > debt_found.get('amount', 0):
-                response = f"Сумма возврата ({reduce_by:,.0f}₸) больше остатка долга. Уточни сумму."
+                response = r["debt_over"].format(amount=_fmt(reduce_by))
             else:
-                response = f"Возврат долга от {party} на {reduce_by:,.0f}₸ записан."
+                response = r["debt_return"].format(party=party, amount=_fmt(reduce_by))
         else:
             reduce_by = amount
-            response = f"Возврат долга от {party} записан."
+            response = r["debt_return_gen"].format(party=party)
 
         return ParsedMessage(
             intent='update_debt', response=response,
             amount=reduce_by, counterparty=party,
-            tx_date=today,
+            tx_date=tx_date,
             debt_update={'type': partial['type'], 'reduce_by': reduce_by, 'debt_id': debt_found.get('id') if debt_found else None},
         )
 
     # ── create_recurring ─────────────────────────────────────────────────────
     if intent == 'create_recurring':
         if not amount:
-            return ParsedMessage(intent='chat', response='Укажи сумму регулярного платежа.')
+            return ParsedMessage(intent='chat', response=r["recurring_need"])
         freq = _detect_frequency(text)
-        # Зарплата → income, иначе expense
         lower = text.lower()
-        rec_type = 'income' if any(w in lower for w in ['зп', 'зарплат', 'salary']) else 'expense'
-        title = 'Зарплата' if rec_type == 'income' else _make_title(text, counterparty, rec_type)
+        rec_type = tx_type if tx_type == 'income' else 'expense'
+        title = {'en': 'Salary', 'kk': 'Жалақы'}.get(lang, 'Зарплата') if rec_type == 'income' else _make_title(text, counterparty, rec_type)
         if rec_type == 'income':
-            response = f"Зарплата сохранена ({amount:,.0f}₸/мес), буду учитывать автоматически каждый месяц."
+            response = r["salary"].format(amount=a)
         else:
-            response = f"Регулярный платёж {amount:,.0f}₸ ({freq}) добавлен."
+            response = r["recurring"].format(amount=a, freq=freq)
         return ParsedMessage(
             intent='create_recurring', response=response,
             tx_type=rec_type, amount=amount, title=title,
             category='income' if rec_type == 'income' else 'utilities',
-            tx_date=today, frequency=freq,
+            tx_date=tx_date, frequency=freq,
         )
 
     # ── create_task ───────────────────────────────────────────────────────────
@@ -556,9 +779,13 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
         task_title = _extract_task_title(text)
         task_time = _extract_task_time(text)
         task_day = _extract_task_day(text)
-        day_ru = {'today': 'сегодня', 'tomorrow': 'завтра', 'day_after_tomorrow': 'послезавтра'}.get(task_day, 'сегодня')
-        time_str = f' в {task_time}' if task_time else ''
-        response = f"Напомню «{task_title}» {day_ru}{time_str}."
+        day_label = {
+            'today': r["task_day_today"],
+            'tomorrow': r["task_day_tomorrow"],
+            'day_after_tomorrow': r["task_day_after"],
+        }.get(task_day, r["task_day_today"])
+        time_str = f' {"at" if lang == "en" else "в"} {task_time}' if task_time else ''
+        response = r["task_remind"].format(title=task_title, day=day_label, time=time_str)
         return ParsedMessage(
             intent='create_task', response=response,
             task_title=task_title, task_time=task_time, task_day=task_day,
@@ -566,14 +793,14 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
 
     # ── complete_task ─────────────────────────────────────────────────────────
     if intent == 'complete_task':
-        # Извлекаем ключевые слова для поиска задачи
         lower = text.lower()
-        stop = {'я', 'сделал', 'сделала', 'выполнил', 'выполнила', 'закончил', 'закончила', 'готово', 'сделано'}
+        stop = {'я', 'сделал', 'сделала', 'выполнил', 'выполнила', 'закончил', 'закончила', 'готово', 'сделано',
+                'i', 'did', 'done', 'completed', 'finished'}
         keywords = [w for w in re.findall(r'\w+', lower) if w not in stop and len(w) > 2]
         if keywords:
-            response = f"Отлично! Отметил «{keywords[0]}» как выполненное."
+            response = r["task_done"].format(kw=keywords[0])
         else:
-            response = "Что именно ты сделал? Уточни название задачи."
+            response = r["task_done_unclear"]
         return ParsedMessage(
             intent='complete_task', response=response,
             task_keywords=keywords,
@@ -586,9 +813,11 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
         habit_time = _extract_task_time(text)
         freq = _detect_frequency(text)
         if duration:
-            response = f"Запустили челлендж «{habit_title}» на {duration} дней, погнали!"
+            response = r["habit_challenge"].format(title=habit_title, days=duration)
+        elif freq == 'daily':
+            response = r["habit_added_daily"].format(title=habit_title)
         else:
-            response = f"Привычка «{habit_title}» добавлена, буду напоминать {('каждый день' if freq == 'daily' else 'каждую неделю')}."
+            response = r["habit_added_week"].format(title=habit_title)
         return ParsedMessage(
             intent='create_habit', response=response,
             habit_title=habit_title,
@@ -600,7 +829,7 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
     # ── archive_habit ─────────────────────────────────────────────────────────
     if intent == 'archive_habit':
         habit_title = _extract_habit_title(text)
-        response = f"Окей, привычка «{habit_title}» остановлена."
+        response = r["habit_archived"].format(title=habit_title)
         return ParsedMessage(
             intent='archive_habit', response=response,
             habit_title=habit_title,
@@ -611,8 +840,7 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
         goal_title = _extract_goal_title(text)
         freq = _detect_frequency(text)
         period = 'monthly' if freq in ('monthly', 'daily') else freq
-        response = (f"Добавил цель «{goal_title}» и создал правило откладывать "
-                    f"{amount:,.0f}₸ каждый месяц. Буду напоминать!")
+        response = r["savings_plan"].format(goal=goal_title, amount=a)
         return ParsedMessage(
             intent='create_savings_plan', response=response,
             goal_title=goal_title,
@@ -623,8 +851,7 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
 
     # ── create_savings_rule ───────────────────────────────────────────────────
     if intent == 'create_savings_rule':
-        response = (f"Теперь с каждого дохода буду автоматически откладывать "
-                    f"{amount:,.0f}₸ в накопления.")
+        response = r["savings_rule"].format(amount=a)
         return ParsedMessage(
             intent='create_savings_rule', response=response,
             savings_amount=amount,
@@ -633,35 +860,24 @@ def parse_message(text: str, debts_context: Optional[list] = None) -> ParsedMess
 
     # ── create_spending_alert ─────────────────────────────────────────────────
     if intent == 'create_spending_alert':
-        response = (f"Понял! Если суточные расходы превысят {amount:,.0f}₸ — "
-                    f"сразу предупрежу.")
+        response = r["spend_alert"].format(amount=a)
         return ParsedMessage(
             intent='create_spending_alert', response=response,
             alert_limit=amount,
             alert_period='daily',
         )
 
-    # ── ask_clarify (кредит) ──────────────────────────────────────────────────
+    # ── ask_clarify ───────────────────────────────────────────────────────────
     if intent == 'ask_clarify':
-        questions = [
-            'Какова общая сумма кредита?',
-            'На какой срок (в месяцах)?',
-            'Процентная ставка (% годовых)? Если рассрочка — напиши 0.',
-            'Дата первого платежа?',
-            'Название кредита (например: Kaspi, Отбасы)?',
-        ]
-        response = (
-            f"Добавил кредит с платежом {amount:,.0f}₸/мес. "
-            "Давай уточним детали, чтобы всё корректно считать:"
-        )
+        response = r["clarify_intro"].format(amount=a)
         return ParsedMessage(
             intent='ask_clarify', response=response,
-            amount=amount, tx_date=today,
-            clarify_questions=questions,
+            amount=amount, tx_date=tx_date,
+            clarify_questions=r["clarify_q"],
         )
 
-    # ── chat (не распознано) ──────────────────────────────────────────────────
+    # ── chat (fallback) ───────────────────────────────────────────────────────
     return ParsedMessage(
         intent='chat',
-        response='Не могу распознать операцию. Уточни сумму и тип (потратил/получил/должен).',
+        response=r["chat_fallback"],
     )
