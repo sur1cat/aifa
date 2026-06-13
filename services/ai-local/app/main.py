@@ -1555,19 +1555,52 @@ async def receipt_scan_trace(image: UploadFile = File(...)):
          "image bytes", {"category": result.category, "confidence": result.confidence},
          f"Полный результат собран за {round((_time.perf_counter()-t0)*1000, 1)} мс")
 
+    # GPT-4o Vision fallback when OCR missed merchant or date
+    final = result
+    needs_vision = _OPENAI_KEY and (not result.merchant or not result.date or result.confidence < 0.55)
+    if needs_vision:
+        try:
+            vision_resp = await _vision_fallback(image_bytes, result)
+            if vision_resp is not None:
+                step("GPT-4o Vision fallback", "app/main.py",
+                     "base64 image", {
+                         "merchant": vision_resp.merchant,
+                         "date": vision_resp.date,
+                         "amount": vision_resp.amount,
+                     },
+                     "OCR не нашёл магазин/дату — GPT-4o извлёк их напрямую из фото")
+                # Merge: prefer GPT for missing fields, keep OCR amount if GPT didn't find one
+                final_amount = vision_resp.amount if vision_resp.amount is not None else result.amount
+                final_merchant = vision_resp.merchant or result.merchant
+                final_date = vision_resp.date or result.date
+                final_items = vision_resp.items if vision_resp.items else result.items
+                import dataclasses
+                final = dataclasses.replace(
+                    result,
+                    amount=final_amount,
+                    merchant=final_merchant,
+                    date=final_date,
+                    items=final_items,
+                    category=vision_resp.category,
+                    label_ru=vision_resp.label_ru,
+                    confidence=max(result.confidence, vision_resp.confidence),
+                )
+        except Exception:
+            pass  # Vision failed — keep OCR result
+
     return {
         "steps": steps,
         "result": {
-            "amount": result.amount,
-            "currency": result.currency,
-            "date": result.date,
-            "merchant": result.merchant,
-            "category": result.category,
-            "label_ru": result.label_ru,
-            "items": result.items,
-            "confidence": result.confidence,
-            "raw_total": result.raw_total,
-            "raw_text": result.raw_text[:300] if result.raw_text else "",
+            "amount": final.amount,
+            "currency": final.currency,
+            "date": final.date,
+            "merchant": final.merchant,
+            "category": final.category,
+            "label_ru": final.label_ru,
+            "items": final.items,
+            "confidence": final.confidence,
+            "raw_total": final.raw_total,
+            "raw_text": final.raw_text[:300] if final.raw_text else "",
         },
         "elapsed_ms": round((_time.perf_counter() - t0) * 1000, 1),
         "total_steps": len(steps),
